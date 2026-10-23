@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using Microsoft.Win32;
 
 namespace ReleaseSync.Core;
 
@@ -45,15 +44,6 @@ public static class Legacy
         catch { return false; }
     }
 
-    /// <summary>Renames a "start with Windows" entry, pointing it at the new program. Returns true if there was an old entry.</summary>
-    public static bool MoveRunValue(RegistryKey runKey, string oldName, string newName, string exePath)
-    {
-        if (runKey.GetValue(oldName) == null) return false;
-        runKey.SetValue(newName, $"\"{exePath}\" --background");
-        runKey.DeleteValue(oldName, false);
-        return true;
-    }
-
     // ---------- the real thing, run once at start-up ----------
     static string Local => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
@@ -75,26 +65,4 @@ public static class Legacy
         return path;
     }
 
-    /// <summary>Moves the Start menu folder and "start with Windows" entry to the new name, and removes the old link handler.</summary>
-    public static void MigrateSystemEntries()
-    {
-        if (IsTestMode) return;
-        try
-        {
-            var programs = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
-            var oldMenu = Path.Combine(programs, OldName); var newMenu = Path.Combine(programs, "ReleaseSync");
-            if (MoveDirectoryIfNeeded(oldMenu, newMenu))
-            {
-                try { File.Delete(Path.Combine(newMenu, OldName + ".lnk")); } catch { }      // the old notification shortcut; a new one is made when needed
-            }
-        }
-        catch { }
-        try
-        {
-            using var run = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
-            if (run != null && Environment.ProcessPath is { Length: > 0 } exe) MoveRunValue(run, OldName, "ReleaseSync", exe);
-        }
-        catch { }
-        try { Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\" + OldName.ToLowerInvariant(), false); } catch { }
-    }
 }

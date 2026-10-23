@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The part of ReleaseSync that is not tied to Windows: models, GitHub/GitLab/Codeberg access, Discover, sync. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>ReleaseSync.Core</RootNamespace>
+    <AssemblyName>ReleaseSync.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReleaseSync" />
+    <InternalsVisibleTo Include="ReleaseSync.Core.Tests" />
+  </ItemGroup>
+
+</Project>

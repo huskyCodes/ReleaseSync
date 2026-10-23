@@ -22,6 +22,9 @@ public partial class App : Application
         EventManager.RegisterClassHandler(typeof(System.Windows.Controls.ToolTip), System.Windows.Controls.ToolTip.OpenedEvent, new RoutedEventHandler(CenterTip));
         mutex = new Mutex(true, @"Local\ReleaseSync.SingleInstance" + tag, out bool first);
         showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\ReleaseSync.Show" + tag);
+        System.Windows.Input.CommandManager.RequerySuggested += (_, _) => ReleaseSync.Core.RelayCommand.RaiseRequery();      // buttons re-check whether they are enabled
+        ReleaseSync.Core.Secrets.Store = new ReleaseSync.Core.WindowsSecretStore();                 // tokens live in Windows Credential Manager
+        ReleaseSync.Core.Secrets.LegacyUnprotect = ReleaseSync.Core.Secret.Unprotect;               // tokens saved by very old versions
         bool checkOnce = e.Args.Contains("--check-once");
         var uri = e.Args.FirstOrDefault(a => a.StartsWith("releasesync://", StringComparison.OrdinalIgnoreCase) || a.StartsWith(ReleaseSync.Core.Legacy.OldName + "://", StringComparison.OrdinalIgnoreCase));
         if (!first)
@@ -46,7 +49,7 @@ public partial class App : Application
 
         try { VM = new MainViewModel(); }
         catch (Exception ex) { LogCrash(ex); MessageBox.Show("ReleaseSync couldn't start:\n\n" + ex.Message + "\n\nDetails were saved to " + System.IO.Path.Combine(ReleaseSync.Core.Paths.DataDir, "error.log"), "ReleaseSync", MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(); return; }
-        ReleaseSync.Core.Legacy.MigrateSystemEntries();      // first run after the rename: Start menu, start-with-Windows and link handler move to the new name
+        ReleaseSync.Core.WindowsMigration.Run();      // first run after the rename: Start menu, start-with-Windows and link handler move to the new name
         VM.Settings.DownloadFolder = ReleaseSync.Core.Legacy.RemapLocalPath(VM.Settings.DownloadFolder);
         ThemeManager.Apply(VM.Settings);
         Microsoft.Win32.SystemEvents.UserPreferenceChanged += (_, _) =>

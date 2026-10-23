@@ -67,39 +67,3 @@ public static class WingetService
         return null;
     }
 }
-
-// ---------------- library sync document ----------------
-public sealed class SyncApp
-{
-    public string Key { get; set; } = "";
-    public string Source { get; set; } = "github";
-    public string Owner { get; set; } = "";
-    public string Repo { get; set; } = "";
-    public string? Group { get; set; }
-    public bool Pinned { get; set; }
-    public bool Hidden { get; set; }
-    public bool IncludePrereleases { get; set; }
-    public bool IgnoreUpdates { get; set; }
-    public bool AutoUpdate { get; set; }
-    public InstallMode Mode { get; set; }
-    public string? CustomArgs { get; set; }
-    public string? DisplayName { get; set; }
-    public string? Note { get; set; }
-    public string? Tags { get; set; }
-    public string? SkippedVersion { get; set; }
-    public string? AssetPattern { get; set; }
-    public bool TrustUnsigned { get; set; }
-    public DateTime AddedAt { get; set; }
-    public DateTime ModifiedAt { get; set; }
-}
-
-public sealed class SyncDoc
-{
-    public int Version { get; set; } = 1;
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    public string WrittenBy { get; set; } = Environment.MachineName;
-    public List<SyncApp> Apps { get; set; } = new();
-    public List<TryLaterItem> TryLater { get; set; } = new();
-    public List<string> CustomGroups { get; set; } = new();
-    public Dictionary<string, DateTime> Tombstones { get; set; } = new();
-}

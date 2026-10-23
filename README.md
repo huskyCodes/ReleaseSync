@@ -16,7 +16,8 @@ ReleaseSync is a native Windows (WPF, .NET 8) program. Everything it knows lives
 - **Scan this PC.** Finds apps you already have and links them to their projects so they can get updates.
 - **Safety checks** (each can be switched off in Settings → Security): checksum and signature verification, a Windows Security scan, build provenance, and an optional VirusTotal lookup.
 - **Rollback.** Pick any release, roll back, or skip a version. Apps are backed up before they're changed.
-- **Backups.** Scheduled backups to a folder you choose, automatic local safety copies, and optional library sync across your PCs through a shared folder.
+- **Backups.** Scheduled backups to a folder you choose and automatic local safety copies.
+- **Sync across your devices.** Keep your library, groups, notes and Try later list the same on every device, through a **private GitHub Gist** in your own account or a folder that OneDrive/Dropbox shares. Optionally lock it with a passphrase (AES-256, end-to-end). Changes from any device merge safely, including deletions, and Settings → Data lists the devices that take part.
 
 ## Install
 
@@ -25,22 +26,26 @@ Download `ReleaseSync.exe` from the [Releases](../../releases) page and run it. 
 ## Build from source
 
 ```
-cd ReleaseSync
-dotnet build
-dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o ..\dist
+dotnet build ReleaseSync.sln
+dotnet test ReleaseSync.Core.Tests
+dotnet publish ReleaseSync -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o dist
 ```
 
-Requires the .NET 8 SDK on Windows 10 (1903) or later.
+Requires the .NET 8 SDK on Windows 10 (1903) or later. The code is split in two: `ReleaseSync.Core` is the platform-neutral part (library model, release sources, Discover, backups, the sync engine) and `ReleaseSync` is the Windows app. `ReleaseSync.Core.Tests` simulates several devices syncing through a fake GitHub and a shared folder.
 
 ## Privacy
 
 - **No accounts, no telemetry, no analytics.** ReleaseSync talks only to the sites hosting the projects you track (and, if you turn it on, VirusTotal).
 - **Your GitHub token is optional.** It raises GitHub's rate limit from 60 to 5,000 requests an hour. It is stored in Windows Credential Manager — never in ReleaseSync's files, backups or exports.
-- **Your data stays local.** The library and settings live in `%APPDATA%\ReleaseSync`; downloaded installers go to `%LOCALAPPDATA%\ReleaseSync\Downloads`; portable apps unpack to `%LOCALAPPDATA%\Programs\ReleaseSync Apps`. Nothing is uploaded anywhere unless you point backups or sync at a cloud-synced folder yourself.
+- **Your data stays local.** The library and settings live in `%APPDATA%\ReleaseSync`; downloaded installers go to `%LOCALAPPDATA%\ReleaseSync\Downloads`; portable apps unpack to `%LOCALAPPDATA%\Programs\ReleaseSync Apps`. Nothing is uploaded anywhere unless you turn on sync (a private Gist in your own GitHub account, or a folder you choose) or point backups at a cloud-synced folder yourself. Sync shares your list of apps, groups, notes and Try later list — never your token, passphrase or installed files.
 
 ## Contributing
 
 Issues and pull requests are welcome. Please don't include tokens, personal paths or personal library data in bug reports — ReleaseSync's Settings → Data → "Open folder" shows what's stored locally, so you can check before sharing anything.
+
+## Credits
+
+Created by [@huskyCodes](https://github.com/huskyCodes) together with [Claude](https://www.anthropic.com/claude), an AI assistant made by Anthropic, which wrote much of the code and is credited as a co-author on the commits it contributed to.
 
 ## Disclaimer
 

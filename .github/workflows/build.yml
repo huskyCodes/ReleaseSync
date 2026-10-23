@@ -6,6 +6,17 @@ on:
   pull_request:
 
 jobs:
+  # the shared core is plain .NET, so its tests also run on Linux — a check that nothing Windows-only sneaks into it
+  core-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Test
+        run: dotnet test ReleaseSync.Core.Tests -c Release
+
   windows:
     runs-on: windows-latest
     steps:

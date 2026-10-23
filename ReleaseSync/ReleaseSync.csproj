@@ -1,29 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- The Windows app: window, pages, installers, Windows Security checks, Credential Manager. Everything portable is in ReleaseSync.Core. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>ReleaseSync</AssemblyName>
     <RootNamespace>ReleaseSync</RootNamespace>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.9.1</Version>
     <Product>ReleaseSync</Product>
-    <!-- keep the folder this was built in (and the builder's user name) out of the compiled files -->
-    <Deterministic>true</Deterministic>
-    <PathMap>$(MSBuildProjectDirectory)=/src/ReleaseSync</PathMap>
-    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <NoWarn>$(NoWarn);CS8618;CS8625;CS8601;CS8602;CS8604;CS8603;CS8600</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
+    <ProjectReference Include="..\ReleaseSync.Core\ReleaseSync.Core.csproj" />
   </ItemGroup>
 
 </Project>
-
-

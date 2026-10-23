@@ -27,7 +27,7 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer x:Name="PageScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <Grid Margin="32,0,32,40" MaxWidth="860" HorizontalAlignment="Left">
                 <!-- ===== General ===== -->
                 <StackPanel Visibility="{Binding SettingsSection, Converter={StaticResource EqVis}, ConverterParameter=General}">
@@ -343,16 +343,55 @@
                     </Border>
                     <Border Style="{StaticResource Section}">
                         <StackPanel>
-                            <TextBlock Text="Other PCs and sharing" Style="{StaticResource H3}" FontSize="15" Margin="0,14,0,2"/>
-                            <TextBlock Text="These aren't backups. One keeps two of your PCs in step; the other hands your list of apps to somebody else." Style="{StaticResource Dim}" Margin="0,0,0,6"/>
-                            <ui:SettingRow Title="Sync across your PCs" Description="Pick a folder that OneDrive, Dropbox or any sync app shares between your PCs. Your apps, groups, favorites, notes and try-later list stay in step; what's installed stays per-PC.">
+                            <TextBlock Text="Your devices and sharing" Style="{StaticResource H3}" FontSize="15" Margin="0,14,0,2"/>
+                            <TextBlock Text="These aren't backups. One keeps your devices in step; the other hands your list of apps to somebody else." Style="{StaticResource Dim}" Margin="0,0,0,6"/>
+                            <ui:SettingRow Title="Sync across your devices" Description="Keeps your apps, groups, favorites, notes and try-later list the same on every device you set up. What's installed stays per-device.">
+                                <ComboBox Width="260" SelectedValue="{Binding Settings.SyncMethod, Mode=TwoWay}" SelectedValuePath="Tag">
+                                    <ComboBoxItem Tag="off" Content="Off"/>
+                                    <ComboBoxItem Tag="gist" Content="Private GitHub Gist (recommended)"/>
+                                    <ComboBoxItem Tag="folder" Content="A shared folder (OneDrive, Dropbox…)"/>
+                                </ComboBox>
+                            </ui:SettingRow>
+                            <StackPanel Visibility="{Binding Settings.SyncUsesGist, Converter={StaticResource BoolVis}}">
+                                <TextBlock Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,4,0,8"
+                                           Text="Your library is kept in a secret gist in your own GitHub account, using the token you added above (a classic token with the “gist” box ticked). Nothing goes to any other server. Add the same token on your other devices and they find it on their own."/>
+                                <ui:SettingRow Title="Gist" Description="Created for you the first time you sync. You only need this if you want to point a device at a specific gist.">
+                                    <TextBox Width="260" Text="{Binding Settings.GistId, UpdateSourceTrigger=LostFocus}" ui:Ext.Hint="Created on first sync"/>
+                                </ui:SettingRow>
+                            </StackPanel>
+                            <ui:SettingRow Title="Sync folder" Description="Pick a folder that OneDrive, Dropbox or any sync app shares between your devices." Visibility="{Binding Settings.SyncUsesFolder, Converter={StaticResource BoolVis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBox Width="260" Text="{Binding Settings.SyncFolder, UpdateSourceTrigger=LostFocus}" ui:Ext.Hint="No folder chosen"/>
                                     <Button Content="Browse" Margin="8,0,0,0" Height="36" Padding="14,0" Click="BrowseSync_Click"/>
-                                    <Button Content="Sync now" Margin="8,0,0,0" Height="36" Padding="14,0" Command="{Binding SyncNowCommand}"/>
                                 </StackPanel>
                             </ui:SettingRow>
-                            <TextBlock Text="{Binding SyncStatus}" Style="{StaticResource Dim}" Margin="0,8,0,4" Visibility="{Binding HasSyncStatus, Converter={StaticResource BoolVis}}"/>
+                            <StackPanel Visibility="{Binding Settings.SyncIsOn, Converter={StaticResource BoolVis}}">
+                                <ui:SettingRow Title="Lock with a passphrase" Description="Optional. Encrypts the synced library so nobody who can see the gist or folder can read it. Use the same passphrase on every device — if you forget it, a new sync file has to be started.">
+                                    <StackPanel Orientation="Horizontal">
+                                        <PasswordBox x:Name="SyncPass" Width="200" Height="36"/>
+                                        <Button Content="Save" Margin="8,0,0,0" Height="36" Padding="14,0" Click="SaveSyncPass_Click"/>
+                                        <Button Content="Remove" Margin="8,0,0,0" Height="36" Padding="14,0" Click="ClearSyncPass_Click" Visibility="{Binding Settings.HasSyncPassphrase, Converter={StaticResource BoolVis}}"/>
+                                    </StackPanel>
+                                </ui:SettingRow>
+                                <TextBlock Text="A passphrase is set on this device." Style="{StaticResource Dim}" Margin="0,0,0,6" Visibility="{Binding Settings.HasSyncPassphrase, Converter={StaticResource BoolVis}}"/>
+                                <ui:SettingRow Title="This device's name" Description="How this device appears in the list below.">
+                                    <TextBox Width="260" Text="{Binding Settings.DeviceName, UpdateSourceTrigger=LostFocus}"/>
+                                </ui:SettingRow>
+                                <ui:SettingRow Title="Sync now" Description="It also syncs by itself a few seconds after you change something.">
+                                    <Button Content="Sync now" Height="36" Padding="16,0" Command="{Binding SyncNowCommand}"/>
+                                </ui:SettingRow>
+                                <ItemsControl ItemsSource="{Binding SyncDevices}" Margin="0,6,0,0" Visibility="{Binding HasSyncDevices, Converter={StaticResource BoolVis}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,0,0,6">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Dim}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                            <TextBlock Text="{Binding SyncStatus}" Style="{StaticResource Dim}" TextWrapping="Wrap" Margin="0,8,0,4" Visibility="{Binding HasSyncStatus, Converter={StaticResource BoolVis}}"/>
                             <ui:SettingRow Title="Share or import a list of apps" Description="Export just your list of apps (their links and groups) to give to someone, or import a list from a file or links. It leaves out your settings, notes and try-later list, so it's not a backup.">
                                 <Button Content="Import &amp; Export" Height="36" Padding="16,0" Command="{Binding NavigateCommand}" CommandParameter="Import"/>
                             </ui:SettingRow>

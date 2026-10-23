@@ -1,0 +1,13 @@
+<Project>
+  <!-- settings shared by every project in the repo -->
+  <PropertyGroup>
+    <Version>1.9.1</Version>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <NoWarn>$(NoWarn);CS8618;CS8625;CS8601;CS8602;CS8604;CS8603;CS8600</NoWarn>
+    <!-- keep the folder this was built in (and the builder's user name) out of the compiled files -->
+    <PathMap>$(MSBuildProjectDirectory)=/src/$(MSBuildProjectName)</PathMap>
+  </PropertyGroup>
+</Project>

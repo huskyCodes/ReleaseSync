@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -17,7 +18,13 @@ public sealed class SectionChecked : IMultiValueConverter
 
 public partial class SettingsView : UserControl
 {
-    public SettingsView() => InitializeComponent();
+    public SettingsView()
+    {
+        InitializeComponent();
+        // developer shortcut: --scroll=800 opens the page already scrolled (for screenshots)
+        var arg = Environment.GetCommandLineArgs().FirstOrDefault(a => a.StartsWith("--scroll=", StringComparison.OrdinalIgnoreCase));
+        if (arg != null && double.TryParse(arg[9..], out var y)) Loaded += (_, _) => Dispatcher.BeginInvoke(new Action(() => PageScroll.ScrollToVerticalOffset(y)), System.Windows.Threading.DispatcherPriority.ContextIdle);
+    }
 
     void Token_Changed(object sender, RoutedEventArgs e) =>
         TokenHint.Visibility = TokenBox.Password.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -31,7 +38,22 @@ public partial class SettingsView : UserControl
     void BrowseSync_Click(object sender, RoutedEventArgs e)
     {
         using var dlg = new Forms.FolderBrowserDialog { Description = "Choose a folder that's synced between your PCs (OneDrive, Dropbox…)", UseDescriptionForTitle = true, SelectedPath = App.VM.Settings.SyncFolder ?? "" };
-        if (dlg.ShowDialog() == Forms.DialogResult.OK) App.VM.Settings.SyncFolder = dlg.SelectedPath;
+        if (dlg.ShowDialog() == Forms.DialogResult.OK) { App.VM.Settings.SyncMethod = "folder"; App.VM.Settings.SyncFolder = dlg.SelectedPath; }
+    }
+
+    void SaveSyncPass_Click(object sender, RoutedEventArgs e)
+    {
+        var pass = SyncPass.Password;
+        if (pass.Length < 8) { App.VM.Toast("Use at least 8 characters for the passphrase", "warn"); return; }
+        App.VM.Settings.SyncPassphrase = pass;
+        SyncPass.Clear();
+        App.VM.Toast("Passphrase saved — the synced library is now locked", "success");
+    }
+
+    void ClearSyncPass_Click(object sender, RoutedEventArgs e)
+    {
+        App.VM.Settings.SyncPassphrase = "";
+        App.VM.Toast("Passphrase removed — the synced library is no longer locked", "info");
     }
 
     void Vt_Changed(object sender, RoutedEventArgs e) =>

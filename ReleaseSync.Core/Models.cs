@@ -35,7 +35,10 @@ public sealed class RelayCommand : ICommand
     readonly Predicate<object?>? can;
     public RelayCommand(Action<object?> run, Predicate<object?>? can = null) { this.run = run; this.can = can; }
     public RelayCommand(Action run) : this(_ => run()) { }
-    public event EventHandler? CanExecuteChanged { add => CommandManager.RequerySuggested += value; remove => CommandManager.RequerySuggested -= value; }
+    /// <summary>Raised by the app whenever buttons should re-check whether they are enabled (WPF wires this to its own re-query signal).</summary>
+    public static event EventHandler? Requery;
+    public static void RaiseRequery() => Requery?.Invoke(null, EventArgs.Empty);
+    public event EventHandler? CanExecuteChanged { add => Requery += value; remove => Requery -= value; }
     public bool CanExecute(object? p) => can?.Invoke(p) ?? true;
     public void Execute(object? p) => run(p);
 }
@@ -253,7 +256,7 @@ public class TrackedApp : Observable
 public class AppSettings : Observable
 {
     // ---- GitHub ----
-    /// <summary>Legacy location (older builds). Read once to migrate into Windows Credential Manager, then cleared.</summary>
+    /// <summary>Legacy location (older builds). Read once to migrate into the secret store, then cleared.</summary>
     public string? ProtectedToken { get; set; }
     string? _token; bool _tokenLoaded;
     [JsonIgnore] public string GitHubToken
@@ -263,14 +266,14 @@ public class AppSettings : Observable
             if (!_tokenLoaded)
             {
                 _tokenLoaded = true;
-                try { _token = CredentialStore.Read(); } catch { _token = null; }
+                try { _token = Secrets.Store.Read(Secrets.GitHubTarget); } catch { _token = null; }
                 if (string.IsNullOrEmpty(_token) && !string.IsNullOrEmpty(ProtectedToken))
                 {
-                    var legacy = Secret.Unprotect(ProtectedToken);
+                    var legacy = Secrets.LegacyUnprotect?.Invoke(ProtectedToken);
                     if (!string.IsNullOrEmpty(legacy))
                     {
                         _token = legacy;
-                        try { if (CredentialStore.Write(legacy)) ProtectedToken = null; } catch { }
+                        try { if (Secrets.Store.Write(Secrets.GitHubTarget, legacy)) ProtectedToken = null; } catch { }
                     }
                 }
             }
@@ -280,7 +283,7 @@ public class AppSettings : Observable
         {
             var v = (value ?? "").Trim();
             _tokenLoaded = true; _token = v.Length == 0 ? null : v; ProtectedToken = null;
-            try { if (v.Length == 0) CredentialStore.Delete(); else CredentialStore.Write(v); } catch { }
+            try { if (v.Length == 0) Secrets.Store.Delete(Secrets.GitHubTarget); else Secrets.Store.Write(Secrets.GitHubTarget, v); } catch { }
             Raise(); Raise(nameof(HasToken));
         }
     }
@@ -327,19 +330,19 @@ public class AppSettings : Observable
     bool _useVt; public bool UseVirusTotal { get => _useVt; set => Set(ref _useVt, value); }
     bool _hints = true; public bool ShowSafetyHints { get => _hints; set => Set(ref _hints, value); }
     string? _vtKey; bool _vtLoaded;
-    /// <summary>The VirusTotal API key, kept in Windows Credential Manager like the GitHub token.</summary>
+    /// <summary>The VirusTotal API key, kept in the platform's secret store (Windows Credential Manager on Windows) like the GitHub token.</summary>
     [JsonIgnore] public string VirusTotalKey
     {
         get
         {
-            if (!_vtLoaded) { _vtLoaded = true; try { _vtKey = CredentialStore.Read(CredentialStore.VirusTotalTarget); } catch { _vtKey = null; } }
+            if (!_vtLoaded) { _vtLoaded = true; try { _vtKey = Secrets.Store.Read(Secrets.VirusTotalTarget); } catch { _vtKey = null; } }
             return _vtKey ?? "";
         }
         set
         {
             var v = (value ?? "").Trim();
             _vtLoaded = true; _vtKey = v.Length == 0 ? null : v;
-            try { if (v.Length == 0) CredentialStore.Delete(CredentialStore.VirusTotalTarget); else CredentialStore.Write(v, CredentialStore.VirusTotalTarget); } catch { }
+            try { if (v.Length == 0) Secrets.Store.Delete(Secrets.VirusTotalTarget); else Secrets.Store.Write(Secrets.VirusTotalTarget, v); } catch { }
             Raise(); Raise(nameof(HasVirusTotalKey));
         }
     }
@@ -347,6 +350,40 @@ public class AppSettings : Observable
     bool _bgChecks; public bool BackgroundChecks { get => _bgChecks; set => Set(ref _bgChecks, value); }
     bool _toasts = true; public bool UseToasts { get => _toasts; set => Set(ref _toasts, value); }
     string? _syncFolder; public string? SyncFolder { get => _syncFolder; set => Set(ref _syncFolder, value); }
+    string? _syncMethod;
+    /// <summary>How the library is kept in step between devices: "off", "folder" (a shared folder) or "gist" (a private GitHub Gist). Libraries set up before this existed use their sync folder, if any.</summary>
+    public string SyncMethod
+    {
+        get => _syncMethod ?? (string.IsNullOrWhiteSpace(SyncFolder) ? "off" : "folder");
+        set { if (value != _syncMethod) { _syncMethod = value; Raise(); Raise(nameof(SyncUsesFolder)); Raise(nameof(SyncUsesGist)); Raise(nameof(SyncIsOn)); } }
+    }
+    [JsonIgnore] public bool SyncUsesFolder => SyncMethod == "folder";
+    [JsonIgnore] public bool SyncUsesGist => SyncMethod == "gist";
+    [JsonIgnore] public bool SyncIsOn => SyncMethod is "folder" or "gist";
+    string? _gistId; public string? GistId { get => _gistId; set => Set(ref _gistId, string.IsNullOrWhiteSpace(value) ? null : value.Trim()); }
+    string? _deviceId; public string DeviceId { get => _deviceId ??= Guid.NewGuid().ToString("N"); set => _deviceId = value; }
+    string? _deviceName; public string DeviceName { get => string.IsNullOrWhiteSpace(_deviceName) ? Environment.MachineName : _deviceName; set => Set(ref _deviceName, value); }
+    /// <summary>When each of your own groups was created; lets a deleted-then-recreated group survive syncing.</summary>
+    public Dictionary<string, DateTime> GroupStamps { get; set; } = new();
+
+    string? _syncPass; bool _syncPassLoaded;
+    /// <summary>Optional passphrase that locks the sync file. Kept in the system's secret store, never in files or backups.</summary>
+    [JsonIgnore] public string SyncPassphrase
+    {
+        get
+        {
+            if (!_syncPassLoaded) { _syncPassLoaded = true; try { _syncPass = Secrets.Store.Read(Secrets.SyncPassphraseTarget); } catch { _syncPass = null; } }
+            return _syncPass ?? "";
+        }
+        set
+        {
+            var v = value ?? "";
+            _syncPassLoaded = true; _syncPass = v.Length == 0 ? null : v;
+            try { if (v.Length == 0) Secrets.Store.Delete(Secrets.SyncPassphraseTarget); else Secrets.Store.Write(Secrets.SyncPassphraseTarget, v); } catch { }
+            Raise(); Raise(nameof(HasSyncPassphrase));
+        }
+    }
+    [JsonIgnore] public bool HasSyncPassphrase => SyncPassphrase.Length > 0;
     string? _selfRepo; public string? SelfUpdateRepo { get => _selfRepo; set => Set(ref _selfRepo, value); }
     public Dictionary<string, DateTime> Tombstones { get; set; } = new();
     public List<string> ScanFolders { get; set; } = new();
@@ -462,8 +499,11 @@ public class TryLaterItem : Observable
     public string? AvatarUrl { get; set; }
     public List<string>? Topics { get; set; }
     public DateTime SavedAt { get; set; } = DateTime.UtcNow;
-    string? _note; public string? Note { get => _note; set { if (Set(ref _note, value)) Raise(nameof(HasNote)); } }
+    /// <summary>When the note last changed (used when merging with your other devices).</summary>
+    public DateTime? ModifiedAt { get; set; }
+    string? _note; public string? Note { get => _note; set { if (Set(ref _note, value)) { ModifiedAt = DateTime.UtcNow; Raise(nameof(HasNote)); } } }
 
+    [JsonIgnore] public string Key => $"{Source}:{Owner}/{Repo}".ToLowerInvariant();
     [JsonIgnore] public string FullName => $"{Owner}/{Repo}";
     [JsonIgnore] public string Url => RepoRef.UrlFor(Source, Owner, Repo);
     string? _category;

@@ -291,7 +291,9 @@ public sealed partial class MainViewModel : Observable
         foreach (var w in store.LoadWatch()) { TryLater.Add(w); w.PropertyChanged += (_, _) => ScheduleSaveWatch(); }
         TryLater.CollectionChanged += (_, e) =>
         {
-            if (e.NewItems != null) foreach (TryLaterItem w in e.NewItems) w.PropertyChanged += (_, _) => ScheduleSaveWatch();
+            if (e.NewItems != null) foreach (TryLaterItem w in e.NewItems) { w.PropertyChanged += (_, _) => { ScheduleSaveWatch(); if (!syncApplying) ScheduleSync(); }; Settings.Tombstones.Remove(SyncMerger.LaterKey(w)); }
+            if (e.OldItems != null && !syncApplying) foreach (TryLaterItem w in e.OldItems) { Settings.Tombstones[SyncMerger.LaterKey(w)] = DateTime.UtcNow; ScheduleSaveSettings(); }
+            if (!syncApplying) ScheduleSync();
             Raise(nameof(TryLaterCount)); Raise(nameof(HasTryLater)); Raise(nameof(NoTryLater));
             ScheduleSaveWatch();
         };
@@ -821,7 +823,10 @@ public sealed partial class MainViewModel : Observable
                 _ = Platform.ApplyBackgroundTaskAsync(Settings);
                 Toast(Settings.BackgroundChecks ? "ReleaseSync will check for updates in the background, even when it's closed" : "Background checks turned off", "info");
                 break;
-            case nameof(AppSettings.SyncFolder): ConfigureSync(); if (SyncFile != null) SyncNow(); break;
+            case nameof(AppSettings.SyncFolder): case nameof(AppSettings.SyncMethod): case nameof(AppSettings.GistId): case nameof(AppSettings.SyncPassphrase):
+                if (syncQuiet) break;
+                ConfigureSync(); if (SyncReady) SyncNow(); break;
+            case nameof(AppSettings.DeviceName): if (SyncReady) ScheduleSync(); break;
             case nameof(AppSettings.BackupFolder): case nameof(AppSettings.BackupIntervalHours): case nameof(AppSettings.BackupIncludeApps): case nameof(AppSettings.BackupKeep):
                 Raise(nameof(BackupSummary)); Raise(nameof(CanBackUpNow)); lastBackupAttempt = DateTime.MinValue;
                 if (e.PropertyName is nameof(AppSettings.BackupIntervalHours) or nameof(AppSettings.BackupFolder)) _ = Task.Delay(1500).ContinueWith(_ => Application.Current?.Dispatcher.BeginInvoke(new Action(async () => await RunScheduledBackupIfDueAsync())));
@@ -854,7 +859,8 @@ public sealed partial class MainViewModel : Observable
                 var d = new AppSettings();
                 foreach (var p in typeof(AppSettings).GetProperties().Where(p => p.CanWrite && p.GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonIgnoreAttribute), true).Length == 0))
                 {
-                    if (p.Name is nameof(AppSettings.ProtectedToken) or nameof(AppSettings.CustomGroups) or nameof(AppSettings.LastFullCheck) or nameof(AppSettings.WindowLeft) or nameof(AppSettings.WindowTop)) continue;
+                    if (p.Name is nameof(AppSettings.ProtectedToken) or nameof(AppSettings.CustomGroups) or nameof(AppSettings.LastFullCheck) or nameof(AppSettings.WindowLeft) or nameof(AppSettings.WindowTop)
+                        or nameof(AppSettings.Tombstones) or nameof(AppSettings.GroupStamps) or nameof(AppSettings.DeviceId) or nameof(AppSettings.DeviceName)) continue;
                     p.SetValue(Settings, p.GetValue(d));
                 }
                 Toast("Settings reset to defaults", "success");
@@ -1686,7 +1692,7 @@ public sealed partial class MainViewModel : Observable
                 var name = p.Text.Trim();
                 if (name.Length == 0) return "Give the group a name.";
                 if (GroupNameExists(name)) return "A group with that name already exists.";
-                Settings.CustomGroups.Add(name); ScheduleSaveSettings();
+                Settings.CustomGroups.Add(name); GroupAdded(name); ScheduleSaveSettings();
                 if (assign != null) assign.Group = name;
                 RefreshViews();
                 Toast($"Created group “{name}”", "success");
@@ -1709,6 +1715,7 @@ public sealed partial class MainViewModel : Observable
                 var old = g.Name;
                 int i = Settings.CustomGroups.IndexOf(old);
                 if (i >= 0) Settings.CustomGroups[i] = name;
+                if (!name.Equals(old, StringComparison.OrdinalIgnoreCase)) { GroupRemoved(old); GroupAdded(name); }
                 foreach (var a in Apps.Where(a => a.Group == old)) a.Group = name;
                 if (GroupFilter == old) GroupFilter = name;
                 ScheduleSaveSettings(); RefreshViews();
@@ -1726,7 +1733,7 @@ public sealed partial class MainViewModel : Observable
             OkText = "Delete group", IsDanger = true,
             OnOk = _ =>
             {
-                Settings.CustomGroups.Remove(g.Name);
+                Settings.CustomGroups.Remove(g.Name); GroupRemoved(g.Name);
                 foreach (var a in Apps.Where(a => a.Group == g.Name)) a.Group = null;
                 if (GroupFilter == g.Name) GroupFilter = null;
                 ScheduleSaveSettings(); RefreshViews();
@@ -1791,7 +1798,7 @@ public sealed partial class MainViewModel : Observable
                     if (!string.IsNullOrWhiteSpace(group))
                     {
                         group = group!.Trim();
-                        if (!Categorizer.AllCategories.Contains(group) && !Settings.CustomGroups.Contains(group)) Settings.CustomGroups.Add(group);
+                        if (!Categorizer.AllCategories.Contains(group) && !Settings.CustomGroups.Contains(group)) { Settings.CustomGroups.Add(group); GroupAdded(group); }
                         app.Group = group == app.Category ? null : group;
                     }
                     if (ImportMarkInstalled && app.HasRelease) app.InstalledVersion = app.LatestVersion;

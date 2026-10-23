@@ -417,9 +417,10 @@ public sealed partial class MainViewModel
         if (!string.IsNullOrWhiteSpace(Settings.SelfUpdateRepo)) await CheckSelfUpdateAsync(false);
     }
 
-    // ===================== library sync through a shared folder =====================
-    bool syncApplying;
+    // ===================== library sync (a shared folder or a private GitHub Gist) =====================
+    bool syncApplying, syncBusy, syncAgain, syncQuiet;
     readonly DispatcherTimer syncTimer = new() { Interval = TimeSpan.FromSeconds(2.5) };
+    readonly DispatcherTimer syncPollTimer = new() { Interval = TimeSpan.FromMinutes(15) };
     FileSystemWatcher? syncWatcher;
     DateTime lastSyncWrite = DateTime.MinValue;
     string? SyncFile
@@ -434,6 +435,12 @@ public sealed partial class MainViewModel
         }
     }
 
+    /// <summary>Sync is switched on and has what it needs (a folder, or a GitHub token for the Gist).</summary>
+    public bool SyncReady => Settings.SyncMethod switch { "folder" => !string.IsNullOrWhiteSpace(Settings.SyncFolder), "gist" => Settings.HasToken, _ => false };
+    public bool SyncNeedsToken => Settings.SyncUsesGist && !Settings.HasToken;
+    public System.Collections.ObjectModel.ObservableCollection<SyncDeviceRow> SyncDevices { get; } = new();
+    public bool HasSyncDevices => SyncDevices.Count > 0;
+
     string _syncStatus = ""; public string SyncStatus { get => _syncStatus; set { Set(ref _syncStatus, value); Raise(nameof(HasSyncStatus)); } }
     public bool HasSyncStatus => !string.IsNullOrEmpty(_syncStatus);
 
@@ -446,21 +453,33 @@ public sealed partial class MainViewModel
     {
         CheckSelfCommand = new RelayCommand(async () => await CheckSelfUpdateAsync(true));
         UpdateSelfCommand = new RelayCommand(async () => await UpdateSelfAsync());
-        SyncNowCommand = new RelayCommand(() => { if (SyncFile == null) Toast("Choose a sync folder first", "info"); else SyncNow(); });
+        SyncNowCommand = new RelayCommand(() =>
+        {
+            if (!Settings.SyncIsOn) Toast("Choose how to sync first", "info");
+            else if (SyncNeedsToken) Toast("Add your GitHub token in Settings first — the sync gist is stored in your GitHub account", "info");
+            else if (!SyncReady) Toast("Choose a sync folder first", "info");
+            else SyncNow();
+        });
         ClearSyncFolderCommand = new RelayCommand(() => Settings.SyncFolder = null);
         syncTimer.Tick += (_, _) => { syncTimer.Stop(); SyncNow(); };
+        syncPollTimer.Tick += (_, _) => { if (SyncReady && Settings.SyncUsesGist) SyncNow(); };
+        Settings.PropertyChanged += (_, e) => { if (e.PropertyName is nameof(AppSettings.GitHubToken) or nameof(AppSettings.HasToken)) { Raise(nameof(SyncReady)); Raise(nameof(SyncNeedsToken)); } };
         ConfigureSync();
     }
 
     public void ScheduleSync()
     {
-        if (SyncFile == null) return;
+        if (!SyncReady) return;
+        syncTimer.Interval = TimeSpan.FromSeconds(Settings.SyncUsesGist ? 20 : 2.5);        // a Gist is edited over the internet, so batch changes together
         syncTimer.Stop(); syncTimer.Start();
     }
 
     void ConfigureSync()
     {
-        syncWatcher?.Dispose(); syncWatcher = null;
+        syncWatcher?.Dispose(); syncWatcher = null; syncPollTimer.Stop();
+        Raise(nameof(SyncReady)); Raise(nameof(SyncNeedsToken));
+        if (!SyncReady) { SyncStatus = SyncNeedsToken ? "Add your GitHub token in Settings to sync through a private Gist." : ""; return; }
+        if (Settings.SyncUsesGist) { syncPollTimer.Start(); return; }
         var file = SyncFile;
         if (file == null) { SyncStatus = ""; return; }
         try
@@ -477,25 +496,57 @@ public sealed partial class MainViewModel
         catch (Exception ex) { SyncStatus = "Can't use that folder: " + ex.Message; }
     }
 
-    public void SyncNow()
+    public void SyncNow() => _ = SyncNowAsync();
+
+    public async Task SyncNowAsync()
     {
-        var file = SyncFile;
-        if (file == null) return;
+        if (!SyncReady) return;
+        if (syncBusy) { syncAgain = true; return; }
+        syncBusy = true; syncTimer.Stop();
+        System.Net.Http.HttpClient? http = null;
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+            SyncStatus = "Syncing…";
+            var sent = BuildLocalDoc();
+            ISyncTransport transport;
+            if (Settings.SyncUsesGist) { http = GistTransport.CreateClient(Settings.GitHubToken); transport = new GistTransport(http, Settings.GistId); }
+            else { transport = new FolderTransport(SyncFile!); lastSyncWrite = DateTime.UtcNow; }
+            var self = new SyncDevice { Id = Settings.DeviceId, Name = Settings.DeviceName, Platform = "Windows", AppVersion = AppVersion };
+            var result = await SyncService.RunAsync(transport, sent, Settings.HasSyncPassphrase ? Settings.SyncPassphrase : null, self, DateTime.UtcNow);
+            lastSyncWrite = DateTime.UtcNow;
+            if (transport is GistTransport g && g.GistId != Settings.GistId) { syncQuiet = true; try { Settings.GistId = g.GistId; } finally { syncQuiet = false; } ScheduleSaveSettings(); }
+
             int before = Apps.Count;
-            if (File.Exists(file))
-            {
-                var doc = JsonSerializer.Deserialize<SyncDoc>(File.ReadAllText(file), Store.Options);
-                if (doc != null) MergeDoc(doc);
-            }
-            WriteDoc(file);
-            SyncStatus = $"Synced at {DateTime.Now:t}  ·  {Apps.Count} apps, {TryLater.Count} on your try-later list";
-            if (Apps.Count > before) { Toast($"Sync added {Apps.Count - before} app{(Apps.Count - before == 1 ? "" : "s")} from your other PC", "success"); _ = CheckAllAsync(false); }
+            if (result.Changed) ApplyDoc(result.Doc, sent);
+            ShowSyncDevices(result.Doc);
+            var others = result.Doc.Devices.Count - 1;
+            SyncStatus = $"Synced at {DateTime.Now:t}  ·  {Apps.Count} apps, {TryLater.Count} on your try-later list" + (others > 0 ? $"  ·  {others} other device{(others == 1 ? "" : "s")}" : "");
+            if (Apps.Count > before) { Toast($"Sync added {Apps.Count - before} app{(Apps.Count - before == 1 ? "" : "s")} from your other devices", "success"); _ = CheckAllAsync(false); }
         }
+        catch (SyncPassphraseException ex) { SyncStatus = ex.Message; }
+        catch (SyncException ex) { SyncStatus = "Sync problem: " + ex.Message; }
         catch (Exception ex) { SyncStatus = "Sync problem: " + ex.Message; }
+        finally
+        {
+            http?.Dispose(); syncBusy = false;
+            if (syncAgain) { syncAgain = false; ScheduleSync(); }
+        }
     }
+
+    void ShowSyncDevices(SyncDoc doc)
+    {
+        SyncDevices.Clear();
+        foreach (var d in doc.Devices.Values.OrderByDescending(d => d.Id == Settings.DeviceId).ThenByDescending(d => d.LastSeen))
+        {
+            bool me = d.Id == Settings.DeviceId;
+            SyncDevices.Add(new SyncDeviceRow { Name = me ? d.Name + " (this device)" : d.Name, Detail = $"{d.Platform}  ·  ReleaseSync {d.AppVersion}  ·  " + (me ? "just now" : "last seen " + Fmt.Ago(d.LastSeen)) });
+        }
+        Raise(nameof(HasSyncDevices));
+    }
+
+    /// <summary>A group the user created or renamed to; recorded so other devices (and a deleted group of the same name) are handled correctly.</summary>
+    void GroupAdded(string name) { Settings.GroupStamps[name] = DateTime.UtcNow; Settings.Tombstones.Remove(SyncMerger.GroupKey(name)); ScheduleSync(); }
+    void GroupRemoved(string name) { Settings.GroupStamps.Remove(name); Settings.Tombstones[SyncMerger.GroupKey(name)] = DateTime.UtcNow; ScheduleSync(); }
 
     static void ApplyPrefs(TrackedApp a, SyncApp d)
     {
@@ -504,26 +555,24 @@ public sealed partial class MainViewModel
         a.AssetPattern = d.AssetPattern; a.TrustUnsigned = d.TrustUnsigned;
     }
 
-    void MergeDoc(SyncDoc doc)
+    /// <summary>Brings the library in line with the merged document. Only things that were part of what was sent can be removed, so anything the user did while the sync was running is kept.</summary>
+    void ApplyDoc(SyncDoc doc, SyncDoc sent)
     {
         syncApplying = true;
         try
         {
-            // deletions made on either PC
-            foreach (var (k, t) in doc.Tombstones)
-                if (!Settings.Tombstones.TryGetValue(k, out var mine) || mine < t) Settings.Tombstones[k] = t;
-            foreach (var kv in Settings.Tombstones.ToList())
-            {
-                var local = Apps.FirstOrDefault(a => a.Key == kv.Key);
-                if (local == null) continue;
-                if (local.ModifiedAt <= kv.Value && local.AddedAt <= kv.Value) { Apps.Remove(local); if (SelectedApp == local) SelectedApp = null; }
-                else Settings.Tombstones.Remove(kv.Key);        // it was re-added after the deletion
-            }
-            foreach (var kv in Settings.Tombstones.Where(k => k.Value < DateTime.UtcNow.AddDays(-90)).ToList()) Settings.Tombstones.Remove(kv.Key);
+            foreach (var (k, t) in doc.Tombstones) if (!Settings.Tombstones.TryGetValue(k, out var mine) || mine < t) Settings.Tombstones[k] = t;
+            foreach (var k in sent.Tombstones.Keys.Where(k => !doc.Tombstones.ContainsKey(k)).ToList()) Settings.Tombstones.Remove(k);
+            foreach (var (k, t) in doc.GroupStamps) if (!Settings.GroupStamps.TryGetValue(k, out var mine) || mine < t) Settings.GroupStamps[k] = t;
 
+            var wanted = doc.Apps.ToDictionary(a => a.Key);
+            var sentApps = sent.Apps.Select(a => a.Key).ToHashSet();
+            foreach (var local in Apps.Where(a => sentApps.Contains(a.Key) && !wanted.ContainsKey(a.Key)).ToList())
+            {
+                Apps.Remove(local); if (SelectedApp == local) SelectedApp = null;
+            }
             foreach (var d in doc.Apps)
             {
-                if (Settings.Tombstones.TryGetValue(d.Key, out var del) && del >= d.ModifiedAt) continue;
                 var local = Apps.FirstOrDefault(a => a.Key == d.Key);
                 if (local == null)
                 {
@@ -538,32 +587,34 @@ public sealed partial class MainViewModel
                     ApplyPrefs(local, d); local.ModifiedAt = d.ModifiedAt; local.PrefSignature = PrefSig(local);
                 }
             }
-            foreach (var g in doc.CustomGroups) if (!Settings.CustomGroups.Contains(g)) Settings.CustomGroups.Add(g);
+
+            foreach (var g in sent.CustomGroups.Where(g => !doc.CustomGroups.Contains(g, StringComparer.OrdinalIgnoreCase)).ToList()) Settings.CustomGroups.RemoveAll(x => string.Equals(x, g, StringComparison.OrdinalIgnoreCase));
+            foreach (var g in doc.CustomGroups) if (!Settings.CustomGroups.Contains(g, StringComparer.OrdinalIgnoreCase)) Settings.CustomGroups.Add(g);
+
+            var wantedLater = doc.TryLater.ToDictionary(w => w.Key);
+            var sentLater = sent.TryLater.Select(w => w.Key).ToHashSet();
+            foreach (var w in TryLater.Where(w => sentLater.Contains(w.Key) && !wantedLater.ContainsKey(w.Key)).ToList()) TryLater.Remove(w);
             foreach (var w in doc.TryLater)
-                if (FindWatch(w.Owner, w.Repo) == null && Find(w.Owner, w.Repo) == null) TryLater.Add(w);
-            ScheduleSaveSettings(); ScheduleSaveApps();
+            {
+                var mine = TryLater.FirstOrDefault(x => x.Key == w.Key);
+                if (mine == null) { if (Find(w.Owner, w.Repo) == null) TryLater.Add(w); }
+                else if (!ReferenceEquals(mine, w) && (w.ModifiedAt ?? default) > (mine.ModifiedAt ?? default)) mine.Note = w.Note;
+            }
+            ScheduleSaveSettings(); ScheduleSaveApps(); ScheduleSaveWatch();
         }
         finally { syncApplying = false; RefreshViews(); OptionsRefresh(); }
     }
 
-    void WriteDoc(string file)
+    SyncDoc BuildLocalDoc() => new()
     {
-        var doc = new SyncDoc
+        CustomGroups = Settings.CustomGroups.ToList(), TryLater = TryLater.ToList(), Tombstones = new(Settings.Tombstones), GroupStamps = new(Settings.GroupStamps),
+        Apps = Apps.Select(a => new SyncApp
         {
-            CustomGroups = Settings.CustomGroups.ToList(), TryLater = TryLater.ToList(), Tombstones = new(Settings.Tombstones),
-            Apps = Apps.Select(a => new SyncApp
-            {
-                Key = a.Key, Source = a.Source, Owner = a.Owner, Repo = a.Repo, Group = a.Group, Pinned = a.Pinned, Hidden = a.Hidden, IncludePrereleases = a.IncludePrereleases,
-                IgnoreUpdates = a.IgnoreUpdates, AutoUpdate = a.AutoUpdate, Mode = a.Mode, CustomArgs = a.CustomArgs, DisplayName = a.DisplayName, Note = a.Note, Tags = a.Tags,
-                SkippedVersion = a.SkippedVersion, AssetPattern = a.AssetPattern, TrustUnsigned = a.TrustUnsigned, AddedAt = a.AddedAt, ModifiedAt = a.ModifiedAt,
-            }).ToList(),
-        };
-        var tmp = file + ".tmp";
-        lastSyncWrite = DateTime.UtcNow;
-        File.WriteAllText(tmp, JsonSerializer.Serialize(doc, Store.Options));
-        File.Move(tmp, file, true);
-        lastSyncWrite = DateTime.UtcNow;
-    }
+            Key = a.Key, Source = a.Source, Owner = a.Owner, Repo = a.Repo, Group = a.Group, Pinned = a.Pinned, Hidden = a.Hidden, IncludePrereleases = a.IncludePrereleases,
+            IgnoreUpdates = a.IgnoreUpdates, AutoUpdate = a.AutoUpdate, Mode = a.Mode, CustomArgs = a.CustomArgs, DisplayName = a.DisplayName, Note = a.Note, Tags = a.Tags,
+            SkippedVersion = a.SkippedVersion, AssetPattern = a.AssetPattern, TrustUnsigned = a.TrustUnsigned, AddedAt = a.AddedAt, ModifiedAt = a.ModifiedAt,
+        }).ToList(),
+    };
 
     // ===================== ReleaseSync updating itself =====================
     ReleaseSummary? selfRelease; AssetInfo? selfAsset;
@@ -694,7 +745,14 @@ public sealed partial class MainViewModel
         else RefreshDataBackups();
         try { System.IO.File.Delete(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath ?? "")!, "ReleaseSync.old.exe")); } catch { }
         if (Settings.BackgroundChecks) _ = Platform.ApplyBackgroundTaskAsync(Settings);
-        if (SyncFile != null) SyncNow();
+        if (SyncReady) SyncNow();
         if (!string.IsNullOrWhiteSpace(Settings.SelfUpdateRepo)) _ = CheckSelfUpdateAsync(false);
     }
+}
+
+/// <summary>One line in the list of devices that sync with this library.</summary>
+public sealed class SyncDeviceRow
+{
+    public string Name { get; init; } = "";
+    public string Detail { get; init; } = "";
 }
