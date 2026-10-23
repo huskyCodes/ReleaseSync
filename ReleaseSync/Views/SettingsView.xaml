@@ -1,0 +1,392 @@
+<UserControl x:Class="ReleaseSync.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:ReleaseSync.UI"
+             xmlns:v="clr-namespace:ReleaseSync.Views"
+             xmlns:app="clr-namespace:ReleaseSync">
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <StackPanel Margin="32,14,32,0">
+            <TextBlock Text="Settings" Style="{StaticResource H1}"/>
+            <TextBlock Text="Everything is saved automatically." Style="{StaticResource Dim}" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <ItemsControl Grid.Row="1" Margin="32,18,32,16" ItemsSource="{x:Static ui:MainViewModel.SettingsSections}" Focusable="False">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <RadioButton Style="{StaticResource Chip}" GroupName="settingsSection" Content="{Binding}" Command="{Binding SetSectionCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                        <RadioButton.IsChecked>
+                            <MultiBinding Converter="{x:Static v:SectionChecked.Instance}" Mode="OneWay">
+                                <Binding/>
+                                <Binding Path="SettingsSection" Source="{x:Static app:App.VM}"/>
+                            </MultiBinding>
+                        </RadioButton.IsChecked>
+                    </RadioButton>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="32,0,32,40" MaxWidth="860" HorizontalAlignment="Left">
+                <!-- ===== General ===== -->
+                <StackPanel Visibility="{Binding SettingsSection, Converter={StaticResource EqVis}, ConverterParameter=General}">
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <ui:SettingRow Title="Start with Windows" Description="Launch ReleaseSync in the background when you sign in so updates are always checked.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.StartWithWindows}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Start minimized" Description="When Windows starts ReleaseSync at sign-in, keep it out of the way in the system tray instead of showing the window. Opening it yourself always shows it.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.StartMinimized}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Show tray icon" Description="Keep ReleaseSync in the notification area for quick access and update alerts.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.ShowTrayIcon}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Close button minimizes to tray" Description="Closing the window keeps ReleaseSync running so scheduled checks continue.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.CloseToTray}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Confirm before removing apps" Description="Ask first when taking something out of your library.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.ConfirmRemove}"/>
+                            </ui:SettingRow>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ===== GitHub ===== -->
+                <StackPanel Visibility="{Binding SettingsSection, Converter={StaticResource EqVis}, ConverterParameter=GitHub}">
+                    <Border Style="{StaticResource Section}" Padding="22,20">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="38" Height="38" CornerRadius="11" Background="{DynamicResource AccentSoftBrush}">
+                                    <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" Foreground="{DynamicResource AccentTextOnSurface}"/>
+                                </Border>
+                                <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="GitHub access token" Style="{StaticResource H2}"/>
+                                    <TextBlock Text="{Binding RateText}" Style="{StaticResource Dim}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Dim}" Margin="0,16,0,14" FontSize="13"
+                                       Text="Without a token GitHub allows about 60 requests per hour — enough for a handful of apps. A free personal access token raises that to 5,000 per hour, so you can track many more apps and check far more often. It needs no special permissions for public repositories. Your token is kept in Windows Credential Manager (encrypted by Windows, tied to your account) — never in ReleaseSync's files — and it is only ever sent to api.github.com."/>
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <PasswordBox x:Name="TokenBox" PasswordChanged="Token_Changed" Margin="0,0,10,0"/>
+                                <TextBlock x:Name="TokenHint" Text="ghp_… or github_pat_…" Foreground="{DynamicResource FaintBrush}" IsHitTestVisible="False" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="Verify &amp; save" Height="36" Padding="18,0" Click="SaveToken_Click"/>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <Button Content="Create a token on GitHub" Height="34" Padding="14,0" Command="{Binding OpenUrlCommand}" CommandParameter="https://github.com/settings/tokens"/>
+                                <Button Style="{StaticResource DangerButton}" Content="Remove saved token" Height="34" Padding="14,0" Margin="8,0,0,0" Click="ClearToken_Click"
+                                        Visibility="{Binding Settings.HasToken, Converter={StaticResource BoolVis}}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <TextBlock Text="Discover and your request allowance" Style="{StaticResource H3}" FontSize="15" Margin="0,14,0,2"/>
+                            <TextBlock Text="Browsing Discover reads live data from GitHub, which counts against the hourly allowance above. A first visit to a category typically uses 100 to 250 requests; after that it is mostly remembered for hours or days. ReleaseSync also pauses its extras on its own when you are running low." Style="{StaticResource Dim}" Margin="0,0,0,6"/>
+                            <ui:SettingRow Title="Light mode" Description="Loads only what you open: 15 projects per list instead of 36, and no background preparation of the other tabs. Good: uses a fraction of the requests (use Load more for extra). Cost: switching tabs for the first time takes a few seconds.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.DiscoverLight}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Only show projects with Windows downloads" Description="Checks each project once (about 1 request each, remembered for 3 days) and hides the ones with nothing to install on Windows. Needs a token. Turn off to save requests.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.DiscoverWindowsOnly}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Show the explainer again" Description="Brings back the short note about request use that appears the first time you open Discover.">
+                                <Button Content="Show it" Height="36" Padding="16,0" Command="{Binding ShowDiscoverIntroCommand}"/>
+                            </ui:SettingRow>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ===== Updates ===== -->
+                <StackPanel Visibility="{Binding SettingsSection, Converter={StaticResource EqVis}, ConverterParameter=Updates}">
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <ui:SettingRow Title="Check for updates" Description="How often ReleaseSync looks for new releases while it's running. Shorter intervals work best with a token.">
+                                <ComboBox Width="200" ItemsSource="{x:Static ui:MainViewModel.IntervalChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Settings.CheckIntervalMinutes}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Check when ReleaseSync starts" Description="Run a check a moment after launch.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.CheckOnStartup}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Notify me about updates" Description="Show a notification when new versions are found.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.NotifyOnUpdates}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Install updates automatically" Description="Download and install every update as soon as it's found. You can also enable this per app.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.AutoInstallUpdates}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Include pre-releases for new apps" Description="Track beta and nightly builds by default. Changeable for each app.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.DefaultIncludePrereleases}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Check even when ReleaseSync is closed" Description="Adds a small Windows scheduled task that looks for updates in the background and tells you. It uses the interval above.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.BackgroundChecks}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Windows notifications" Description="Show updates as Windows notifications with an “Update all” button, instead of a tray balloon.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.UseToasts}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Update ReleaseSync itself" Description="Where ReleaseSync's own releases are published (a GitHub, GitLab, Codeberg or self-hosted address). Leave empty to turn this off.">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Width="260" Text="{Binding Settings.SelfUpdateRepo, UpdateSourceTrigger=LostFocus}" ui:Ext.Hint="https://github.com/owner/releasesync"/>
+                                    <Button Content="Check now" Margin="8,0,0,0" Height="36" Padding="14,0" Command="{Binding CheckSelfCommand}"/>
+                                    <Button Style="{StaticResource PrimaryButton}" Content="Update" Margin="8,0,0,0" Height="36" Padding="14,0" Command="{Binding UpdateSelfCommand}" Visibility="{Binding HasSelfUpdate, Converter={StaticResource BoolVis}}"/>
+                                </StackPanel>
+                            </ui:SettingRow>
+                            <TextBlock Text="{Binding SelfStatus}" Style="{StaticResource Dim}" Margin="0,8,0,4" Visibility="{Binding HasSelfStatus, Converter={StaticResource BoolVis}}"/>
+                            <ui:SettingRow Title="Parallel checks" Description="How many apps are checked at the same time.">
+                                <ComboBox Width="90" SelectedItem="{Binding Settings.MaxConcurrentChecks}">
+                                    <ComboBox.ItemsSource>
+                                        <x:Array Type="{x:Type sys:Int32}" xmlns:sys="clr-namespace:System;assembly=mscorlib"><sys:Int32>1</sys:Int32><sys:Int32>2</sys:Int32><sys:Int32>4</sys:Int32><sys:Int32>6</sys:Int32><sys:Int32>8</sys:Int32></x:Array>
+                                    </ComboBox.ItemsSource>
+                                </ComboBox>
+                            </ui:SettingRow>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ===== Installation ===== -->
+                <StackPanel Visibility="{Binding SettingsSection, Converter={StaticResource EqVis}, ConverterParameter=Installation}">
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <ui:SettingRow Title="Install right after adding" Description="When you add an app, download and install it immediately (you can untick this in the add dialog).">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.InstallAfterAdd}"/>
+                            </ui:SettingRow>
+
+                            <ui:SettingRow Title="Preferred architecture" Description="Which build to pick when a release offers several. Automatic matches your PC.">
+                                <ComboBox Width="140" ItemsSource="{x:Static ui:MainViewModel.ArchChoices}" SelectedItem="{Binding Settings.PreferredArch}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Prefer installers over portable zips" Description="Turn off to favor zip archives that are simply unpacked into the apps folder.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.PreferInstaller}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Silent installs" Description="Run installers without showing their windows. Not every installer supports this.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.SilentInstall}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Silent install arguments" Description="Passed to .exe installers in silent mode. Common values: /S, /VERYSILENT, /quiet." IsEnabled="{Binding Settings.SilentInstall}">
+                                <TextBox Width="200" Text="{Binding Settings.SilentArgs, UpdateSourceTrigger=LostFocus}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Back up an app before changing it" Description="Before ReleaseSync replaces or deletes a portable app's files, it saves a copy (the last 3 are kept per app; folders over 2 GB are skipped). If an update fails, the old files are put back automatically, and any backup can be restored from the app's details. Good: your app's settings and saves are never at risk. Cost: some disk space and a few seconds. Setup programs manage their own files, so this covers portable apps.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.BackupBeforeUpdate}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Create Start menu shortcuts" Description="For portable apps that ReleaseSync unpacks for you.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.CreateShortcuts}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Portable apps folder" Description="Where zip-based apps are unpacked.">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Width="320" Text="{Binding Settings.InstallRoot, UpdateSourceTrigger=LostFocus}"/>
+                                    <Button Content="Browse" Margin="8,0,0,0" Height="36" Padding="14,0" Click="Browse_Click" Tag="apps"/>
+                                    <Button Style="{StaticResource IconButton}" Content="&#xE8B7;" Margin="4,0,0,0" ToolTip="Open folder" Command="{Binding OpenFolderCommand}" CommandParameter="apps"/>
+                                </StackPanel>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Download folder" Description="Installers are downloaded here before running.">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Width="320" Text="{Binding Settings.DownloadFolder, UpdateSourceTrigger=LostFocus}"/>
+                                    <Button Content="Browse" Margin="8,0,0,0" Height="36" Padding="14,0" Click="Browse_Click" Tag="downloads"/>
+                                    <Button Style="{StaticResource IconButton}" Content="&#xE8B7;" Margin="4,0,0,0" ToolTip="Open folder" Command="{Binding OpenFolderCommand}" CommandParameter="downloads"/>
+                                </StackPanel>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Keep downloaded installers" Description="Don't delete setup files after installing.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.KeepDownloads}"/>
+                            </ui:SettingRow>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ===== Security ===== -->
+                <StackPanel Visibility="{Binding SettingsSection, Converter={StaticResource EqVis}, ConverterParameter=Security}">
+                    <Border Style="{StaticResource Card}" Padding="20,16" Margin="0,0,0,16" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource AccentSoftStrongBrush}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE72E;" FontSize="18" Foreground="{DynamicResource AccentTextOnSurface}" Margin="0,2,14,0" VerticalAlignment="Top"/>
+                            <TextBlock TextWrapping="Wrap" MaxWidth="700" Text="These checks run on every download, before it's installed. They lower the risk of installing something harmful, but no check can prove software is safe — so each one is a switch you control. Every row says what you gain and what it costs."/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <ui:SettingRow Title="Verify checksums and signatures" Description="Compares each file with the checksum the project publishes, and checks the installer's digital signature. Good: catches corrupted or tampered files, and unsigned installers ask you first. Cost: almost none.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.VerifyDownloads}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Scan with Windows Security" Description="Asks the antivirus built into Windows to scan the file before it runs; a detection stops the install. Good: free, works offline, catches known malware. Cost: a few extra seconds per download, and it's skipped if another antivirus has replaced Windows Security.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.ScanWithDefender}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Check build provenance (GitHub)" Description="For projects that publish it, confirms the file was built from the project's own source code. Good: spots files that didn't come from the real project. Cost: only a minority of projects publish this, so most downloads simply show nothing — that's normal, not a warning.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.CheckProvenance}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Look files up on VirusTotal" Description="Shows how many of about 70 antivirus engines flag the file. Good: a second opinion from many scanners. Cost: needs a free VirusTotal key; it sends only the file's fingerprint (never the file) to a third party; free keys allow about 4 lookups a minute; brand-new releases are often unknown to it. Off by default.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.UseVirusTotal}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="VirusTotal key" Description="Kept in Windows Credential Manager, never in ReleaseSync's files." IsEnabled="{Binding Settings.UseVirusTotal}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Grid>
+                                        <PasswordBox x:Name="VtBox" Width="230" PasswordChanged="Vt_Changed"/>
+                                        <TextBlock x:Name="VtHint" Text="Paste your API key" Foreground="{DynamicResource FaintBrush}" IsHitTestVisible="False" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <Button Style="{StaticResource PrimaryButton}" Content="Save" Margin="8,0,0,0" Height="36" Padding="16,0" Click="SaveVt_Click"/>
+                                    <Button Content="Get a free key" Margin="8,0,0,0" Height="36" Padding="14,0" Command="{Binding OpenUrlCommand}" CommandParameter="https://www.virustotal.com/gui/join-us"/>
+                                </StackPanel>
+                            </ui:SettingRow>
+                            <TextBlock Margin="0,8,0,4" Style="{StaticResource Dim}" Visibility="{Binding Settings.HasVirusTotalKey, Converter={StaticResource BoolVis}}" Text="A VirusTotal key is saved."/>
+                            <ui:SettingRow Title="Safety hints when adding" Description="Shows plain-language context — how old the project is, how widely used, who publishes it. Good: quick context before you add something unfamiliar. Cost: none, but a young or small project isn't automatically unsafe; they're hints, not verdicts.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.ShowSafetyHints}"/>
+                            </ui:SettingRow>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <!-- ===== Appearance ===== -->
+                <StackPanel Visibility="{Binding SettingsSection, Converter={StaticResource EqVis}, ConverterParameter=Appearance}">
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <ui:SettingRow Title="Theme" Description="Follow Windows or pick a look.">
+                                <ComboBox Width="160" ItemsSource="{x:Static ui:MainViewModel.ThemeChoices}" SelectedItem="{Binding Settings.Theme}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Accent color" Description="Used for buttons, highlights and progress.">
+                                <ItemsControl ItemsSource="{x:Static ui:MainViewModel.AccentColors}" Focusable="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="290"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Width="30" Height="30" Margin="3" Padding="0" Cursor="Hand" ToolTip="{Binding}"
+                                                    Command="{Binding SetAccentCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid>
+                                                            <Ellipse Fill="{Binding Converter={StaticResource Swatch}}"/>
+                                                            <Ellipse Stroke="{DynamicResource TextBrush}" StrokeThickness="2" Margin="-3">
+                                                                <Ellipse.Visibility>
+                                                                    <MultiBinding Converter="{StaticResource EqMultiVis}">
+                                                                        <Binding/>
+                                                                        <Binding Path="Settings.AccentHex" Source="{x:Static app:App.VM}"/>
+                                                                    </MultiBinding>
+                                                                </Ellipse.Visibility>
+                                                            </Ellipse>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Interface size" Description="Scale the whole app up or down. Ctrl + mouse wheel works anywhere.">
+                                <ComboBox Width="130" ItemsSource="{x:Static ui:MainViewModel.ScaleChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Settings.UiScale}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Density" Description="Compact fits roughly 50% more on screen — smaller icons, tighter spacing and narrower cards so more columns fit in Library, Discover and Try later. Nothing is hidden. Comfortable gives everything room to breathe.">
+                                <ComboBox Width="160" ItemsSource="{x:Static ui:MainViewModel.DensityChoices}" SelectedItem="{Binding Settings.Density}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Library view" Description="Cards show more detail; the list is denser.">
+                                <ComboBox Width="130" SelectedItem="{Binding Settings.ViewMode}">
+                                    <ComboBox.ItemsSource>
+                                        <x:Array Type="{x:Type sys:String}" xmlns:sys="clr-namespace:System;assembly=mscorlib"><sys:String>Grid</sys:String><sys:String>List</sys:String></x:Array>
+                                    </ComboBox.ItemsSource>
+                                </ComboBox>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Automatic groups" Description="Sort apps into groups by type (Media, Developer Tools…) for you. Turn off to use only your own groups — the automatic ones disappear, and come back when you turn it on again.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.AutoGroups}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Group apps in the library" Description="Organize the library into sections by group or type.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.GroupItems}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Reduce motion" Description="Turn off sliding panels and fades.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.ReduceMotion}"/>
+                            </ui:SettingRow>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ===== Data ===== -->
+                <StackPanel Visibility="{Binding SettingsSection, Converter={StaticResource EqVis}, ConverterParameter=Data}">
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <TextBlock Text="Scheduled backups to a folder you choose" Style="{StaticResource H3}" FontSize="15" Margin="0,14,0,2"/>
+                            <TextBlock Text="A full copy of your library and settings kept somewhere other than this PC — a NAS, a OneDrive or Dropbox folder, or an external drive — so a dead disk or a new PC never costs you your setup. Your GitHub token and VirusTotal key are never included; they stay in Windows Credential Manager." Style="{StaticResource Dim}" Margin="0,0,0,6"/>
+                            <ui:SettingRow Title="Back up automatically" Description="How often ReleaseSync saves a backup while it's running (and when its background check runs). If the location is offline, it tries again later.">
+                                <ComboBox Width="190" ItemsSource="{x:Static ui:MainViewModel.BackupIntervalChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackupIntervalHours}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Where to save backups" Description="Pick any folder you can write to. ReleaseSync adds files named ReleaseSync-library-… or ReleaseSync-full-… and never touches anything else in it.">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Width="260" Text="{Binding Settings.BackupFolder, UpdateSourceTrigger=LostFocus}" ui:Ext.Hint="No folder chosen"/>
+                                    <Button Content="Browse" Margin="8,0,0,0" Height="36" Padding="14,0" Command="{Binding ChooseBackupFolderCommand}"/>
+                                </StackPanel>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="What to include" Description="“Library and settings” is tiny and quick. Adding the portable apps' files also saves their own settings and saves, but can take a lot of space (any single app over 2 GB is skipped).">
+                                <ComboBox Width="330" ItemsSource="{x:Static ui:MainViewModel.BackupScopeChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackupIncludeApps}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="How many to keep" Description="Older backups beyond this are deleted automatically, so the folder doesn't grow forever.">
+                                <ComboBox Width="150" ItemsSource="{x:Static ui:MainViewModel.BackupKeepChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Settings.BackupKeep}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Back up now, or restore from a file" Description="“Restore from a backup file…” brings back a backup made earlier — including on a new PC. What you have now is saved first.">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource PrimaryButton}" Content="Back up now" Height="36" Padding="16,0" Command="{Binding BackupToFolderNowCommand}" IsEnabled="{Binding CanBackUpNow}"/>
+                                    <Button Content="Restore from a backup file…" Margin="8,0,0,0" Height="36" Padding="14,0" Command="{Binding RestoreFromFileCommand}"/>
+                                </StackPanel>
+                            </ui:SettingRow>
+                            <TextBlock Text="{Binding BackupSummary}" Style="{StaticResource Dim}" Margin="0,10,0,12"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <TextBlock Text="Safety copies on this PC" Style="{StaticResource H3}" FontSize="15" Margin="0,14,0,2"/>
+                            <TextBlock Text="ReleaseSync's own automatic undo. It quietly keeps recent copies of its data files next to them, so a damaged file or a bad import can be rolled back. Nothing to set up, and nothing leaves this PC — for a copy kept somewhere else, use Scheduled backups above." Style="{StaticResource Dim}" Margin="0,0,0,6"/>
+                            <ui:SettingRow Title="Keep automatic safety copies" Description="Dated copies of your library, groups, notes, try-later list and settings (the last 10, at most one every 12 hours). If a data file is ever damaged, ReleaseSync repairs it from the newest good copy instead of starting empty.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.AutoBackupData}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Make a copy now" Description="Handy right before a big import or clean-up.">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Copy now" Height="36" Padding="16,0" Command="{Binding BackupDataNowCommand}"/>
+                                    <Button Content="Open folder" Margin="8,0,0,0" Height="36" Padding="14,0" Command="{Binding OpenBackupsFolderCommand}" CommandParameter="data"/>
+                                </StackPanel>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Go back to an earlier copy" Description="Returns your library and settings to how they were at that time. What you have now is saved first, so you can undo this too.">
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox Width="250" ItemsSource="{Binding DataBackupList}" SelectedItem="{Binding SelectedDataBackup, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Label}"/></DataTemplate></ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Style="{StaticResource DangerButton}" Content="Restore…" Margin="8,0,0,0" Height="36" Padding="14,0" Command="{Binding RestoreDataCommand}" IsEnabled="{Binding HasDataBackups}"/>
+                                </StackPanel>
+                            </ui:SettingRow>
+                            <TextBlock Text="{Binding DataBackupSummary}" Style="{StaticResource Dim}" Margin="0,8,0,12"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <TextBlock Text="Other PCs and sharing" Style="{StaticResource H3}" FontSize="15" Margin="0,14,0,2"/>
+                            <TextBlock Text="These aren't backups. One keeps two of your PCs in step; the other hands your list of apps to somebody else." Style="{StaticResource Dim}" Margin="0,0,0,6"/>
+                            <ui:SettingRow Title="Sync across your PCs" Description="Pick a folder that OneDrive, Dropbox or any sync app shares between your PCs. Your apps, groups, favorites, notes and try-later list stay in step; what's installed stays per-PC.">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Width="260" Text="{Binding Settings.SyncFolder, UpdateSourceTrigger=LostFocus}" ui:Ext.Hint="No folder chosen"/>
+                                    <Button Content="Browse" Margin="8,0,0,0" Height="36" Padding="14,0" Click="BrowseSync_Click"/>
+                                    <Button Content="Sync now" Margin="8,0,0,0" Height="36" Padding="14,0" Command="{Binding SyncNowCommand}"/>
+                                </StackPanel>
+                            </ui:SettingRow>
+                            <TextBlock Text="{Binding SyncStatus}" Style="{StaticResource Dim}" Margin="0,8,0,4" Visibility="{Binding HasSyncStatus, Converter={StaticResource BoolVis}}"/>
+                            <ui:SettingRow Title="Share or import a list of apps" Description="Export just your list of apps (their links and groups) to give to someone, or import a list from a file or links. It leaves out your settings, notes and try-later list, so it's not a backup.">
+                                <Button Content="Import &amp; Export" Height="36" Padding="16,0" Command="{Binding NavigateCommand}" CommandParameter="Import"/>
+                            </ui:SettingRow>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Section}">
+                        <StackPanel>
+                            <ui:SettingRow Title="Data folder" Description="Where your library and settings live on this PC.">
+                                <Button Content="Open folder" Height="36" Padding="16,0" Command="{Binding OpenFolderCommand}" CommandParameter="data"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Clear update cache" Description="Forget cached GitHub responses so the next check refetches everything.">
+                                <Button Content="Clear cache" Height="36" Padding="16,0" Command="{Binding ClearCacheCommand}"/>
+                            </ui:SettingRow>
+                            <ui:SettingRow Title="Reset settings" Description="Restore every preference to its default. Your library and token stay.">
+                                <Button Style="{StaticResource DangerButton}" Content="Reset settings" Height="36" Padding="16,0" Command="{Binding ResetSettingsCommand}"/>
+                            </ui:SettingRow>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Section}" Padding="22,20">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="44" Height="44" CornerRadius="13">
+                                <Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#6C8CFF" Offset="0"/><GradientStop Color="#8A5CF6" Offset="1"/></LinearGradientBrush></Border.Background>
+                                <TextBlock Style="{StaticResource Icon}" Text="&#xE895;" Foreground="White" FontSize="20"/>
+                            </Border>
+                            <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding AppVersionLabel}" Style="{StaticResource H2}"/>
+                                <TextBlock Text="Track, install and update apps straight from GitHub releases." Style="{StaticResource Dim}"/>
+                                <TextBlock Text="An independent project — not affiliated with or endorsed by GitHub, GitLab, Codeberg, VirusTotal or Microsoft. It never hosts or redistributes software; every download comes straight from the publisher." Style="{StaticResource Faint}" TextWrapping="Wrap" MaxWidth="640" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
+

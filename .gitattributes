@@ -1,0 +1,4 @@
+# keep line endings tidy whichever machine commits
+* text=auto
+*.ico binary
+*.png binary

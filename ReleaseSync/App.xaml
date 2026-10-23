@@ -1,0 +1,37 @@
+<Application x:Class="ReleaseSync.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/UI/Theme.Dark.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/UI/Converters.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/UI/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="AccentBrush" Color="#6C8CFF"/>
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#8AA3FF"/>
+            <SolidColorBrush x:Key="AccentSoftBrush" Color="#2E6C8CFF"/>
+            <SolidColorBrush x:Key="AccentSoftStrongBrush" Color="#556C8CFF"/>
+            <SolidColorBrush x:Key="AccentTextBrush" Color="#FFFFFF"/>
+            <SolidColorBrush x:Key="AccentTextOnSurface" Color="#8AA3FF"/>
+            <Thickness x:Key="CardPad">18,16,18,16</Thickness>
+            <Thickness x:Key="PagePad">32,26,32,26</Thickness>
+            <Thickness x:Key="RowPad">16,12,16,12</Thickness>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="PanelGap">14</system:Double>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="AvatarSize">46</system:Double>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="RowAvatarSize">40</system:Double>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="GridMinWidth">300</system:Double>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="WideMinWidth">380</system:Double>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="CardTitleSize">15</system:Double>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="CardTextSize">12.5</system:Double>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="DescHeight">36</system:Double>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="BtnHeight">34</system:Double>
+            <Thickness x:Key="DescMargin">0,12,0,12</Thickness>
+            <Thickness x:Key="PillPad">9,3,9,3</Thickness>
+            <system:Double xmlns:system="clr-namespace:System;assembly=mscorlib" x:Key="PillFont">11</system:Double>
+            <Thickness x:Key="ActionMargin">0,14,0,0</Thickness>
+            <Thickness x:Key="StatMargin">0,12,0,0</Thickness>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

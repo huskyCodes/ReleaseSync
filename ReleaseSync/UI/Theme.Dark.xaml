@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="BgBrush" Color="#0E1116"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#141820"/>
+    <SolidColorBrush x:Key="CardBrush" Color="#1A1F28"/>
+    <SolidColorBrush x:Key="CardHoverBrush" Color="#212733"/>
+    <SolidColorBrush x:Key="LineBrush" Color="#272E3A"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#E9EDF3"/>
+    <SolidColorBrush x:Key="DimBrush" Color="#9BA5B4"/>
+    <SolidColorBrush x:Key="FaintBrush" Color="#6A7485"/>
+    <SolidColorBrush x:Key="InputBrush" Color="#10141A"/>
+    <SolidColorBrush x:Key="SoftBrush" Color="#15FFFFFF"/>
+    <SolidColorBrush x:Key="SoftHoverBrush" Color="#24FFFFFF"/>
+    <SolidColorBrush x:Key="HoverOverlayBrush" Color="#1AFFFFFF"/>
+    <SolidColorBrush x:Key="ScrimBrush" Color="#A6000000"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="#3DD68C"/>
+    <SolidColorBrush x:Key="SuccessSoftBrush" Color="#243DD68C"/>
+    <SolidColorBrush x:Key="WarnBrush" Color="#F5B94A"/>
+    <SolidColorBrush x:Key="WarnSoftBrush" Color="#26F5B94A"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="#F57878"/>
+    <SolidColorBrush x:Key="DangerSoftBrush" Color="#26F57878"/>
+</ResourceDictionary>

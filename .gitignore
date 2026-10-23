@@ -1,0 +1,41 @@
+# build output
+bin/
+obj/
+dist/
+publish/
+*.exe
+*.pdb
+*.zip
+*.msi
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.csproj.user
+*.DotSettings.user
+
+# ReleaseSync's own runtime data, in case a test run is ever pointed at the repo folder
+settings.json
+apps.json
+trylater.json
+discover.json
+stars.json
+command.txt
+error.log
+*.bad
+Backups/
+
+# secrets and local config — never commit these
+.env
+*.pfx
+*.snk
+secrets.*
+.claude/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

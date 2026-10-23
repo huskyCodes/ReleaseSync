@@ -1,0 +1,251 @@
+<UserControl x:Class="ReleaseSync.Views.DetailDrawer"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:ReleaseSync.UI"
+             xmlns:app="clr-namespace:ReleaseSync">
+    <UserControl.Resources>
+        <Style x:Key="KeyLabel" TargetType="TextBlock" BasedOn="{StaticResource Dim}"><Setter Property="VerticalAlignment" Value="Center"/></Style>
+        <Style x:Key="KeyValue" TargetType="TextBlock"><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/><Setter Property="HorizontalAlignment" Value="Right"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+    </UserControl.Resources>
+    <Grid DataContext="{Binding DrawerApp}">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+
+        <!-- header -->
+        <Grid Margin="24,22,16,16">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <ContentControl ContentTemplate="{StaticResource AvatarTemplate}" Content="{Binding}" Width="58" Height="58" VerticalAlignment="Top"/>
+            <StackPanel Grid.Column="1" Margin="16,0,8,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Title}" Style="{StaticResource H2}" FontSize="20" TextTrimming="CharacterEllipsis"/>
+                <Button Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Margin="0,3,0,0" Command="{Binding GitHubCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding FullName}" FontSize="12.5"/>
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE8A7;" FontSize="10" Margin="6,2,0,0"/>
+                    </StackPanel>
+                </Button>
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                    <Button Style="{StaticResource LinkButton}" Margin="0,0,16,0" Command="{Binding OwnerCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Icon}" Text="&#xE77B;" FontSize="11" Margin="0,1,6,0"/><TextBlock Text="More from this developer" FontSize="12.5"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource LinkButton}" Command="{Binding DetailsCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Icon}" Text="&#xE946;" FontSize="11" Margin="0,1,6,0"/><TextBlock Text="Details" FontSize="12.5"/></StackPanel>
+                    </Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <ContentControl ContentTemplate="{StaticResource StatusPillTemplate}" Content="{Binding}"/>
+                    <Border Background="{DynamicResource SoftBrush}" CornerRadius="10" Padding="9,3" Margin="8,0,0,0" VerticalAlignment="Center" Visibility="{Binding IsGitHub, Converter={StaticResource InvBoolVis}}">
+                        <TextBlock Text="{Binding SourceLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource DimBrush}"/>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="{Binding Stars, Converter={StaticResource NullVis}}">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE734;" FontSize="12" Foreground="{DynamicResource WarnBrush}" Margin="0,0,5,0"/>
+                        <TextBlock Text="{Binding StarsText}" FontSize="12" FontWeight="SemiBold"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+            <Button Grid.Column="2" Style="{StaticResource IconButton}" Content="&#xE711;" VerticalAlignment="Top" ToolTip="Close (Esc)" Command="{Binding CloseDrawerCommand, Source={x:Static app:App.VM}}"/>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24,0,24,28">
+                <!-- actions -->
+                <StackPanel Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}" Margin="0,0,0,18">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Content="Cancel" Height="30" MinHeight="0" Padding="12,0" Margin="12,0,0,0" Command="{Binding CancelCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    </Grid>
+                    <TextBlock Text="{Binding BusyText}" Style="{StaticResource Faint}" Margin="0,8,0,0"/>
+                </StackPanel>
+                <WrapPanel Margin="0,0,0,18" Visibility="{Binding IsBusy, Converter={StaticResource InvBoolVis}}">
+                    <Button Style="{StaticResource PrimaryButton}" Height="40" Padding="22,0" Margin="0,0,8,8" Visibility="{Binding ShowAction, Converter={StaticResource BoolVis}}" IsEnabled="{Binding CanInstall}"
+                            Command="{Binding InstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="14" Margin="0,0,9,0"/><TextBlock Text="{Binding ActionText}"/></StackPanel>
+                    </Button>
+                    <Button Height="40" Padding="18,0" Margin="0,0,8,8" Content="Skip this version" ToolTip="Skip this release"
+                            Visibility="{Binding HasUpdate, Converter={StaticResource BoolVis}}" Command="{Binding SkipCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Height="40" Padding="18,0" Margin="0,0,8,8" Content="Stop skipping" Visibility="{Binding IsSkipped, Converter={StaticResource BoolVis}}"
+                            Command="{Binding SkipCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Height="40" Padding="18,0" Margin="0,0,8,8" Content="Reinstall" Visibility="{Binding CanReinstall, Converter={StaticResource BoolVis}}"
+                            Command="{Binding ReinstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Height="40" Padding="18,0" Margin="0,0,8,8" Content="Launch" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}"
+                            Command="{Binding LaunchCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Height="40" Padding="18,0" Margin="0,0,8,8" Style="{StaticResource OutlineButton}" ToolTip="Check this app for updates"
+                            Command="{Binding CheckCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="13" Margin="0,0,8,0"/><TextBlock Text="Check now"/></StackPanel>
+                    </Button>
+                </WrapPanel>
+
+                <!-- a guessed link needs confirming -->
+                <Border Background="{DynamicResource WarnSoftBrush}" CornerRadius="10" Padding="14,12" Margin="0,0,0,18" Visibility="{Binding NeedsLinkConfirm, Converter={StaticResource BoolVis}}">
+                    <StackPanel>
+                        <TextBlock TextWrapping="Wrap" FontWeight="SemiBold" Text="Is this the right project?"/>
+                        <TextBlock TextWrapping="Wrap" Style="{StaticResource Dim}" Margin="0,4,0,10" Text="ReleaseSync matched this program to the repository above by its name only. Check it before updating — if it's wrong, an update could install something else."/>
+                        <WrapPanel>
+                            <Button Content="Yes, it's right" Height="34" Padding="14,0" Margin="0,0,8,0" Command="{Binding ConfirmLinkCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                            <Button Content="Change repository…" Height="34" Padding="14,0" Margin="0,0,8,0" Command="{Binding RelinkCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                            <Button Content="Find a better match" Height="34" Padding="14,0" Command="{Binding FindBetterCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- description + error -->
+                <TextBlock Text="{Binding Description}" Style="{StaticResource Dim}" FontSize="13" Margin="0,0,0,18" Visibility="{Binding HasDescription, Converter={StaticResource BoolVis}}"/>
+                <Border Background="{DynamicResource DangerSoftBrush}" CornerRadius="10" Padding="14,11" Margin="0,0,0,18" Visibility="{Binding HasError, Converter={StaticResource BoolVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7BA;" FontSize="14" Foreground="{DynamicResource DangerBrush}" Margin="0,2,12,0" VerticalAlignment="Top"/>
+                        <TextBlock Text="{Binding LastError}" TextWrapping="Wrap" MaxWidth="330"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- versions -->
+                <TextBlock Text="VERSION" Style="{StaticResource Label}" Margin="0,0,0,8"/>
+                <Border Style="{StaticResource Card}" Padding="16,6" Margin="0,0,0,22" Background="{DynamicResource CardBrush}">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="Installed" Style="{StaticResource KeyLabel}" Margin="0,9"/>
+                        <TextBlock Grid.Column="1" Text="{Binding InstalledText}" Style="{StaticResource KeyValue}"/>
+                        <TextBlock Grid.Row="1" Text="Latest release" Style="{StaticResource KeyLabel}" Margin="0,9"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestText}" Style="{StaticResource KeyValue}"/>
+                        <TextBlock Grid.Row="2" Text="Released" Style="{StaticResource KeyLabel}" Margin="0,9"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PublishedText}" Style="{StaticResource KeyValue}"/>
+                        <TextBlock Grid.Row="3" Text="Last checked" Style="{StaticResource KeyLabel}" Margin="0,9"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LastCheckedText}" Style="{StaticResource KeyValue}"/>
+                    </Grid>
+                </Border>
+
+                <!-- notes (every release since your version when you're behind) -->
+                <Grid Margin="0,0,0,8">
+                    <TextBlock Text="{Binding NotesHeader}" Style="{StaticResource Label}" VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource LinkButton}" HorizontalAlignment="Right" FontSize="12" Content="Full release page" Command="{Binding ReleasesCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                </Grid>
+                <Border Style="{StaticResource Card}" Padding="16,14" Margin="0,0,0,22" Background="{DynamicResource CardBrush}">
+                    <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                        <TextBlock Text="{Binding CumulativeNotes}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource DimBrush}" LineHeight="19"/>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- every release: pick a version to install, roll back to, or just download -->
+                <TextBlock Text="ALL VERSIONS" Style="{StaticResource Label}" Margin="0,0,0,8"/>
+                <Border Style="{StaticResource Card}" Padding="16,14" Margin="0,0,0,22" Background="{DynamicResource CardBrush}">
+                    <local:ReleasePickerPanel xmlns:local="clr-namespace:ReleaseSync.Views" DataContext="{Binding DrawerPicker, Source={x:Static app:App.VM}}"/>
+                </Border>
+
+                <!-- download -->
+                <TextBlock Text="DOWNLOAD" Style="{StaticResource Label}" Margin="0,0,0,8"/>
+                <ComboBox ItemsSource="{Binding AssetChoices}" SelectedItem="{Binding SelectedChoice, Mode=OneWay}" DisplayMemberPath="Label" SelectionChanged="Asset_Changed"/>
+                <TextBlock Margin="0,8,0,22" Style="{StaticResource Faint}" TextWrapping="Wrap">
+                    <Run Text="Will install: "/><Run Text="{Binding ChosenAssetText, Mode=OneWay}" FontWeight="SemiBold"/>
+                </TextBlock>
+
+                <!-- organization -->
+                <TextBlock Text="ORGANIZE" Style="{StaticResource Label}" Margin="0,0,0,8"/>
+                <Grid Margin="0,0,0,22">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <ComboBox ItemsSource="{Binding GroupOptions, Source={x:Static app:App.VM}}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding GroupKey}"/>
+                    <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Content="New group" Margin="8,0,0,0" Height="36" Padding="14,0"
+                            Command="{Binding NewGroupCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Grid.Column="2" Margin="4,0,0,0" Height="36" Width="36" Command="{Binding PinCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
+                                <Setter Property="Content" Value="&#xE734;"/>
+                                <Setter Property="ToolTip" Value="Add to favorites"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Pinned}" Value="True">
+                                        <Setter Property="Content" Value="&#xE735;"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource WarnBrush}"/>
+                                        <Setter Property="ToolTip" Value="Remove from favorites"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+
+                <!-- options -->
+                <TextBlock Text="OPTIONS" Style="{StaticResource Label}" Margin="0,0,0,2"/>
+                <ui:SettingRow Title="Include pre-releases" Description="Track beta and nightly builds too.">
+                    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding IncludePrereleases}" Click="Prerelease_Click"/>
+                </ui:SettingRow>
+                <ui:SettingRow Title="Ignore updates" Description="Keep this app at its current version.">
+                    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding IgnoreUpdates}"/>
+                </ui:SettingRow>
+                <ui:SettingRow Title="Update automatically" Description="Install new versions as soon as they appear.">
+                    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding AutoUpdate}"/>
+                </ui:SettingRow>
+                <ui:SettingRow Title="Install method" Description="How the download is installed.">
+                    <ComboBox Width="190" ItemsSource="{x:Static ui:MainViewModel.ModeChoices}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Mode}"/>
+                </ui:SettingRow>
+                <StackPanel Margin="0,14,0,0">
+                    <TextBlock Text="Install folder" FontWeight="SemiBold" FontSize="13.5"/>
+                    <TextBlock Text="Used the next time it's installed or updated. The copy that's installed now isn't moved." Style="{StaticResource Dim}" Margin="0,3,0,8"/>
+                    <TextBlock Text="{Binding InstallDirText}" TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,8"/>
+                    <WrapPanel Margin="0,0,0,18">
+                        <Button Height="34" Padding="14,0" Margin="0,0,8,0" Content="Choose a folder…" Command="{Binding ChooseInstallDirCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                        <Button Height="34" Padding="14,0" Style="{StaticResource OutlineButton}" Content="Use the default" Visibility="{Binding HasCustomInstallDir, Converter={StaticResource BoolVis}}"
+                                Command="{Binding ResetInstallDirCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    </WrapPanel>
+                    <StackPanel Visibility="{Binding HasBackups, Converter={StaticResource BoolVis}}" Margin="0,0,0,18">
+                        <TextBlock Text="Backups" FontWeight="SemiBold" FontSize="13.5"/>
+                        <TextBlock Text="Copies ReleaseSync made before it replaced or removed this app's files. Restoring puts the saved files back." Style="{StaticResource Dim}" Margin="0,3,0,8"/>
+                        <ItemsControl ItemsSource="{Binding Backups}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource Card}" CornerRadius="10" Padding="14,10" Margin="0,0,0,6" Background="{DynamicResource CardBrush}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12.5" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Faint}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Restore" Height="30" Padding="14,0" Command="{Binding RestoreBackupCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Style="{StaticResource LinkButton}" HorizontalAlignment="Left" Content="Open the backups folder" Margin="0,4,0,0" Command="{Binding OpenBackupsFolderCommand, Source={x:Static app:App.VM}}" CommandParameter="apps"/>
+                    </StackPanel>
+                    <TextBlock Text="Custom installer arguments" FontWeight="SemiBold" FontSize="13.5"/>
+                    <TextBlock Text="Overrides the silent arguments from Settings for this app." Style="{StaticResource Dim}" Margin="0,3,0,8"/>
+                    <TextBox Text="{Binding CustomArgs, UpdateSourceTrigger=LostFocus}" ui:Ext.Hint="e.g. /VERYSILENT /NORESTART"/>
+                </StackPanel>
+
+                <!-- notes and tags -->
+                <TextBlock Text="YOUR NOTES" Style="{StaticResource Label}" Margin="0,24,0,8"/>
+                <TextBox Text="{Binding Note, UpdateSourceTrigger=LostFocus}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="140" VerticalContentAlignment="Top"
+                         ui:Ext.Hint="Why you track it, how you use it, who recommended it…" VerticalScrollBarVisibility="Auto"/>
+                <TextBox Text="{Binding Tags, UpdateSourceTrigger=LostFocus}" Margin="0,8,0,0" ui:Ext.Hint="Tags, separated by commas  (e.g. work, emulator, favorite)"/>
+                <ItemsControl ItemsSource="{Binding TagList}" Margin="0,8,0,0" Focusable="False" Visibility="{Binding HasTags, Converter={StaticResource BoolVis}}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{DynamicResource AccentSoftBrush}" CornerRadius="9" Padding="10,3" Margin="0,0,6,6">
+                                <TextBlock Text="{Binding}" FontSize="11.5" Foreground="{DynamicResource AccentTextOnSurface}"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- danger -->
+                <StackPanel Margin="0,30,0,0">
+                    <Button Content="Mark as installed (current version)" Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Command="{Binding MarkInstalledCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Content="Wrong project? Change repository…" Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Command="{Binding RelinkCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Content="Find a better match" Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Command="{Binding FindBetterCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Content="Show installed files" Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Visibility="{Binding InstallPath, Converter={StaticResource NullVis}}"
+                            Command="{Binding OpenInstallDirCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Content="Uninstall from this PC" Height="38" Margin="0,0,8,8" HorizontalContentAlignment="Left" Padding="16,0" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}" IsEnabled="{Binding IsBusy, Converter={StaticResource Inv}}"
+                            Command="{Binding UninstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Command="{Binding HideCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource BaseButton}">
+                                <Setter Property="Content" Value="Hide from library"/>
+                                <Style.Triggers><DataTrigger Binding="{Binding Hidden}" Value="True"><Setter Property="Content" Value="Unhide"/></DataTrigger></Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Style="{StaticResource DangerButton}" Content="Stop tracking (keeps it installed)" Height="38" HorizontalContentAlignment="Left" Padding="16,0" Command="{Binding RemoveCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

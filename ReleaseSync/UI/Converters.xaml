@@ -1,0 +1,16 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ui="clr-namespace:ReleaseSync.UI">
+    <ui:BoolToVisibility x:Key="BoolVis"/>
+    <ui:BoolToVisibility x:Key="InvBoolVis" Invert="True"/>
+    <ui:NullToVisibility x:Key="NullVis"/>
+    <ui:NullToVisibility x:Key="InvNullVis" Invert="True"/>
+    <ui:EqualsConverter x:Key="Eq"/>
+    <ui:EqualsConverter x:Key="NotEq" Invert="True"/>
+    <ui:EqualsConverter x:Key="EqVis" ToVisibility="True"/>
+    <ui:EqualsConverter x:Key="NotEqVis" ToVisibility="True" Invert="True"/>
+    <ui:InvertBool x:Key="Inv"/>
+    <ui:EqualMultiVisibility x:Key="EqMultiVis"/>
+    <ui:PercentConverter x:Key="Percent"/>
+    <ui:AccentSwatchConverter x:Key="Swatch"/>
+</ResourceDictionary>
