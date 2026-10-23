@@ -1,7 +1,5 @@
 # ReleaseSync
 
-*Formerly called GitSync.*
-
 Track apps from GitHub, GitLab, Codeberg and self-hosted Forgejo/Gitea sites, install their Windows releases, and keep them up to date — from one tidy desktop app.
 
 ReleaseSync is a native Windows (WPF, .NET 8) program. Everything it knows lives on your PC.
@@ -21,7 +19,7 @@ ReleaseSync is a native Windows (WPF, .NET 8) program. Everything it knows lives
 
 ## Install
 
-Download `ReleaseSync.exe` from the [Releases](../../releases) page and run it. If you used it when it was called GitSync, your library, settings and saved token carry over automatically the first time you open it (the old folders are left alone). It needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
+Download `ReleaseSync.exe` from the [Releases](../../releases) page and run it. It needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0).
 
 ## Build from source
 
