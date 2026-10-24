@@ -90,6 +90,16 @@ final class DiscoverServiceTests: XCTestCase {
         XCTAssertTrue(queries.allSatisfy { $0.hasPrefix("repo:") })
     }
 
+    func testFeaturedForEverythingTakesAFewFromEachCategoryOnce() async throws {
+        let (w, asked) = web { _ in [self.repoJSON("a/b", stars: 5)] }
+        _ = try await service(w, clock: Clock(start)).candidates(.featured, DiscoverCatalog.find("all"), force: true)
+        let picks = asked.paths.compactMap { URLComponents(string: $0)?.queryItems?.first { $0.name == "q" }?.value }.flatMap { $0.split(separator: " ").map(String.init) }
+        XCTAssertEqual(picks.count, Set(picks).count, "each project once")
+        XCTAssertTrue(picks.allSatisfy { $0.hasPrefix("repo:") })
+        let expected = Set(DiscoverCatalog.categories.flatMap { $0.seeds.prefix(5) }.map { "repo:" + $0 })
+        XCTAssertEqual(Set(picks), expected)
+    }
+
     func testNoiseIsLeftOutAndDuplicatesCollapse() async throws {
         let (w, _) = web { _ in [self.repoJSON("x/awesome-mac", stars: 900), self.repoJSON("x/real-app", stars: 500), self.repoJSON("X/Real-App", stars: 500), self.repoJSON("x/old", stars: 800, archived: true),
                                  self.repoJSON("x/zero", stars: 0), self.repoJSON("x/links", stars: 700, desc: "A curated list of things"), self.repoJSON("x/another", stars: 100, desc: "A list of apps")] }

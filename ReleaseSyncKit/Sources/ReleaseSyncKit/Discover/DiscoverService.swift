@@ -146,7 +146,11 @@ public actor DiscoverService {
         let now = clock()
         var jobs: [(query: String, perPage: Int)] = []
         if mode == .featured {
-            let seeds = category.key == "all" ? Array(NSOrderedSet(array: DiscoverCatalog.categories.flatMap { $0.seeds.prefix(5) })) as! [String] : category.seeds
+            var seeds = category.seeds
+            if category.key == "all" {          // a few from every category, each project once
+                var seen = Set<String>(); seeds = []
+                for c in DiscoverCatalog.categories { for s in c.seeds.prefix(5) where seen.insert(s).inserted { seeds.append(s) } }
+            }
             for chunk in stride(from: 0, to: seeds.count, by: 6).map({ Array(seeds[$0..<min($0 + 6, seeds.count)]) }) {
                 jobs.append((chunk.map { "repo:" + $0 }.joined(separator: " "), 30))
             }

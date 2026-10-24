@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import ReleaseSyncKit
 
 /// How the person likes the pages laid out: grid or list, sorting, grouping, light or dark. These are ordinary preferences, kept in the
 /// app's preferences. (Secrets are never kept here: they live in the Keychain.) The names and defaults follow the Windows app's settings.
@@ -24,6 +25,16 @@ final class ViewPrefs {
     var tryGroup = true { didSet { save("TryGroup", tryGroup) } }
     var appearance = Appearance.system { didSet { save("Theme", appearance.rawValue) } }
 
+    var discoverMode = DiscoverMode.trending { didSet { save("DiscoverMode", discoverMode.rawValue) } }
+    var discoverCategory = "all" { didSet { save("DiscoverCategory", discoverCategory) } }
+    /// Compare rankings with last week's instead of yesterday's.
+    var discoverCompareWeek = false { didSet { save("DiscoverCompareWeek", discoverCompareWeek) } }
+    /// Hide projects with nothing for the Mac (each one checked once, about one request).
+    var discoverMacOnly = true { didSet { save("DiscoverMacOnly", discoverMacOnly) } }
+    /// Light mode asks GitHub for about a third as much.
+    var discoverLight = false { didSet { save("DiscoverLight", discoverLight) } }
+    var discoverIntroSeen = false { didSet { save("DiscoverIntroSeen", discoverIntroSeen) } }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         viewMode = Layout(rawValue: defaults.string(forKey: "ViewMode") ?? "") ?? .grid
@@ -34,6 +45,12 @@ final class ViewPrefs {
         trySort = defaults.string(forKey: "TrySort").flatMap { s in Self.trySorts.contains { $0.key == s } ? s : nil } ?? "recent"
         tryGroup = defaults.object(forKey: "TryGroup") as? Bool ?? true
         appearance = Appearance(rawValue: defaults.string(forKey: "Theme") ?? "") ?? .system
+        discoverMode = DiscoverMode(rawValue: defaults.string(forKey: "DiscoverMode") ?? "") ?? .trending
+        discoverCategory = defaults.string(forKey: "DiscoverCategory").flatMap { k in DiscoverCatalog.categories.contains { $0.key == k } ? k : nil } ?? "all"
+        discoverCompareWeek = defaults.object(forKey: "DiscoverCompareWeek") as? Bool ?? false
+        discoverMacOnly = defaults.object(forKey: "DiscoverMacOnly") as? Bool ?? true
+        discoverLight = defaults.object(forKey: "DiscoverLight") as? Bool ?? false
+        discoverIntroSeen = defaults.object(forKey: "DiscoverIntroSeen") as? Bool ?? false
         loading = false
     }
 

@@ -63,6 +63,7 @@ struct PageHost: View {
                 if model.phase == .loaded {
                     if page == .library { LibraryPage() } else { TryLaterPage() }
                 } else { StatusView() }
+            case .discover: DiscoverPage()
             case .settings: SettingsPage()
             default: ComingPage(page: page)
             }
@@ -300,7 +301,7 @@ struct RateCard: View {
     @Environment(Navigator.self) private var nav
 
     var body: some View {
-        let r = model.rate
+        let r = model.meter.status
         if r.remaining >= 0 {
             let level: Color = r.remaining == 0 ? Theme.danger : (r.remaining < max(100, r.limit / 10) ? Theme.warn : Theme.success)
             Button { nav.show(.settings) } label: {
@@ -321,7 +322,7 @@ struct RateCard: View {
     }
 
     private var hint: String? {
-        let r = model.rate
+        let r = model.meter.status
         if r.remaining == 0 { return "Checking resumes when it resets" + (r.reset.map { " at " + $0.formatted(date: .omitted, time: .shortened) } ?? "") + "." }
         if r.remaining < max(100, r.limit / 10) { return "Running low. Checks will pause before it runs out." }
         return nil

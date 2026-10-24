@@ -29,8 +29,8 @@ final class LibraryModel {
     private(set) var releases: [String: AppRelease] = [:]
     private(set) var isChecking = false
     private(set) var checkProgress: (done: Int, total: Int)?
-    /// GitHub's allowance for requests, as of the last answer.
-    private(set) var rate = RateStatus()
+    /// GitHub's allowance for requests, as of the last answer (shared with Discover).
+    let meter: RateMeter
     private(set) var lastCheck: Date?
     private let client: SourceClient
     private let releaseStore: ReleaseStore
@@ -44,7 +44,8 @@ final class LibraryModel {
     private var generation = 0
 
     init(secrets: SecretStore, makeTransport: @escaping @Sendable (String) -> SyncTransport = { GistTransport(token: $0) },
-         client: SourceClient = SourceClient(), blobs: BlobStore? = nil) {
+         client: SourceClient = SourceClient(), blobs: BlobStore? = nil, meter: RateMeter? = nil) {
+        self.meter = meter ?? RateMeter()
         self.secrets = secrets
         self.makeTransport = makeTransport
         self.client = client
@@ -52,13 +53,13 @@ final class LibraryModel {
     }
 
     /// A library to show without any account (made-up data).
-    init(showing doc: SyncDoc, releases: [String: AppRelease] = [:], secrets: SecretStore) {
+    init(showing doc: SyncDoc, releases: [String: AppRelease] = [:], secrets: SecretStore, meter: RateMeter? = nil) {
+        self.meter = meter ?? RateMeter(RateStatus(limit: 5000, remaining: 4962))
         self.secrets = secrets
         self.makeTransport = { _ in MemoryTransport() }
         self.client = SourceClient()
         self.releaseStore = ReleaseStore(client: client)
         self.releases = releases
-        self.rate = RateStatus(limit: 5000, remaining: 4962)
         self.doc = doc
         self.phase = .loaded
         self.lastFetched = Date()
@@ -66,7 +67,8 @@ final class LibraryModel {
     }
 
     /// A screen to look at without any account (`--status needsToken` and so on); nothing is fetched or read from the Keychain.
-    init(previewing phase: Phase, secrets: SecretStore) {
+    init(previewing phase: Phase, secrets: SecretStore, meter: RateMeter? = nil) {
+        self.meter = meter ?? RateMeter()
         self.secrets = secrets
         self.makeTransport = { _ in MemoryTransport() }
         self.client = SourceClient()
@@ -149,7 +151,7 @@ final class LibraryModel {
             Task { @MainActor in self?.checkProgress = (done, total) }
         }
         releases = await releaseStore.all()
-        rate = await client.rate
+        await meter.update(from: client)
         lastCheck = Date()
         return summary
     }

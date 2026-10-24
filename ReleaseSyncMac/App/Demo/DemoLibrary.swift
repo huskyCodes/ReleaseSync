@@ -94,5 +94,27 @@ enum DemoLibrary {
         // clip-shelf is left out on purpose: "not checked yet"
         return out
     }
+
+    /// Made-up projects for the Discover page.
+    static func discover() -> [DiscoverItem] {
+        let now = Timestamp.now()
+        func repo(_ full: String, stars: Int, _ description: String, _ language: String?) -> RepoInfo {
+            var r = RepoInfo(); r.fullName = full; r.name = String(full.split(separator: "/")[1]); r.ownerLogin = String(full.split(separator: "/")[0])
+            r.stars = stars; r.description = description; r.language = language; r.createdAt = now - Timestamp.days(200)
+            return r
+        }
+        let baseline = DiscoverService.baseline(ranks: ["demo-labs/rapid-sketch": [4, 7000], "demo-labs/menu-weather": [1, 11_800], "sample-co/clip-tamer": [2, 4200], "example-dev/quiet-mail": [5, 2000]], age: 20 * 3600)
+        let repos = [
+            repo("demo-labs/menu-weather", stars: 12_900, "A calm weather forecast that lives in your menu bar.", "Swift"),
+            repo("sample-co/clip-tamer", stars: 4_700, "Keeps a searchable history of everything you copy.", "Swift"),
+            repo("demo-labs/rapid-sketch", stars: 8_400, "Sketch ideas fast, with layers and a calm interface.", "Rust"),
+            repo("example-dev/tiny-recorder", stars: 1_950, "Record a window or the whole screen, and share a short clip.", "C++"),
+            repo("example-dev/quiet-mail", stars: 2_350, "A small mail app that stays out of your way.", "Kotlin"),
+            repo("fake-works/disk-doctor", stars: 980, "Find what is filling your disk and clean it up safely.", "Go"),
+        ]
+        var items = DiscoverService.order(repos, mode: .trending, baseline: baseline).enumerated().map { DiscoverService.annotate($1, rank: $0 + 1, baseline: baseline) }
+        for i in items.indices { items[i].hasMacBuild = i != 4 }
+        return items
+    }
 }
 #endif

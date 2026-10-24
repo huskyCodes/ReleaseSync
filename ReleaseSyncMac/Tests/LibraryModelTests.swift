@@ -198,7 +198,7 @@ final class LibraryModelTests: XCTestCase {
         XCTAssertEqual(m.releases["github:fake/one"]?.latestTag, "v3.0")
         XCTAssertEqual(m.releases["github:fake/one"]?.meta?.description, "Does it")
         XCTAssertNil(m.releases["github:fake/hidden"])
-        XCTAssertEqual(m.rate.remaining, 4900)
+        XCTAssertEqual(m.meter.status.remaining, 4900)
         XCTAssertFalse(m.isChecking); XCTAssertNil(m.checkProgress); XCTAssertNotNil(m.lastCheck)
         XCTAssertFalse(asked.paths.contains { $0.contains("hidden") })
     }
