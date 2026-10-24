@@ -445,6 +445,58 @@ public static class FixtureData
         }.Select(s => new { Text = s, Json = JsonSerializer.Serialize(s, Store.Options) }).ToList(),
     };
 
+    static object CategorizeVectors()
+    {
+        var cases = new List<(string Name, string? Description, string[]? Topics, string? Language)>
+        {
+            ("pixel-player", "A small, fast media player for video and audio.", new[] { "video", "audio" }, "C++"),
+            ("RetroLauncher", null, null, null),
+            ("tinyServer", "Serves files over HTTP.", null, "Go"),
+            ("quick-notes", "Take notes and keep a to-do list.", new[] { "notes", "markdown" }, null),
+            ("disk-peek", "See what is using your disk space.", new[] { "disk", "cleanup" }, "Rust"),
+            ("text-lens", "Copy text out of any picture on your screen.", new[] { "ocr", "utility" }, "Python"),
+            ("frame-cutter", "Cut and join video clips without re-encoding.", new[] { "video", "editor" }, null),
+            ("wave-mixer", null, new[] { "audio" }, null),
+            ("chord-finder", "Find guitar chords by ear.", new[] { "music" }, "C++"),
+            ("scan-sorter", "Sorts scanned pages into folders using simple rules.", new[] { "documents", "automation" }, "Go"),
+            ("ray-sketch", "A small drawing app with layers.", new[] { "drawing", "graphics" }, "Rust"),
+            ("port-checker", "Check which network ports are open.", null, null),
+            ("pdf-stitch", "Merge and split PDF files.", null, null),
+            ("clip-shelf", "A clipboard history manager.", null, null),
+            ("old-tool", null, null, null),
+            ("emu-frontend", "Front end for several emulators.", new[] { "emulator", "retro" }, "C#"),
+            ("vault-keeper", "A password manager with a local vault.", new[] { "password-manager", "security" }, "Rust"),
+            ("chat-bridge", "Bridges chat messages between services.", new[] { "chat", "matrix" }, "Go"),
+            ("llm-runner", "Run language models locally.", new[] { "llm", "machine-learning" }, "Python"),
+            ("code-lens", "A code editor with a terminal.", new[] { "text-editor", "terminal" }, "TypeScript"),
+            ("browser-lite", "A lightweight web browser.", new[] { "browser" }, "C++"),
+            ("img-resize", "Resize pictures in bulk.", new[] { "image", "photo" }, null),
+            ("ps2-tool", "Tools for PS2 game discs.", null, null),
+            ("7zip-fork", "An archive manager.", null, null),
+            ("3d-viewer", "View 3D models.", new[] { "3d", "render" }, null),
+            ("\u00DCn\u00EFcode-Tool", "A tool with accents in its name.", null, null),
+            ("", "", null, null),
+            ("x", null, null, null),
+            ("MixedCASEName2Go", "text", new[] { "a-b-c" }, null),
+            ("tie-breaker", "A game launcher and media player.", null, null),
+            ("download-manager", "Download manager and torrent client.", new[] { "torrent" }, null),
+        };
+        // every seed word as a name, as a topic and as a description, so each part of the scoring is exercised
+        foreach (var w in new[] { "emulator", "game", "video", "player", "photo", "design", "pdf", "notes", "password", "vpn", "browser", "torrent", "chat", "email", "ai", "llm", "system", "monitor",
+                                   "backup", "launcher", "developer", "git", "editor", "terminal", "tool", "utility", "ocr", "audio", "music", "stream", "web", "sync", "scan", "screen", "capture", "android", "usb", "retro" })
+        {
+            cases.Add((w + "-app", null, null, null));
+            cases.Add(("Sample", null, new[] { w }, null));
+            cases.Add(("Sample", "A project about " + w + " and nothing else.", null, null));
+            cases.Add(("Sample", "The " + w + " with a media player and a code editor.", new[] { w + "-tool" }, "C#"));
+        }
+        return new
+        {
+            Description = "The kind of project the engine puts each of these in (the library's automatic groups and the Try later types).",
+            Cases = cases.Select(c => new { c.Name, c.Description, c.Topics, c.Language, Category = Categorizer.Categorize(c.Name, c.Description, c.Topics, c.Language) }).ToList(),
+        };
+    }
+
     static object EncryptionDetection()
     {
         var env = CryptoCases()[0].Envelope;
@@ -491,6 +543,7 @@ public static class FixtureData
 
         files["timestamps.json"] = Text(TimestampVectors());
         files["escapes.json"] = Text(EscapeVectors());
+        files["categorize.json"] = Text(CategorizeVectors());
 
         var rounds = RoundCases().Select(r =>
         {
@@ -545,6 +598,7 @@ public static class FixtureData
         | `crypto/is-encrypted.json` | Texts and whether they count as an encrypted file. |
         | `timestamps.json` | How times are written, and how the different spellings of a time are read. |
         | `escapes.json` | How strings are escaped in JSON text. The tie-break in the merge depends on this being exact. |
+        | `categorize.json` | The kind of project (the automatic group) the engine puts each name, description, topics and language in. |
 
         ## Rules for comparing
 

@@ -17,6 +17,7 @@ Everything here is made up: fake owners and repositories, fake devices, a fake p
 | `crypto/is-encrypted.json` | Texts and whether they count as an encrypted file. |
 | `timestamps.json` | How times are written, and how the different spellings of a time are read. |
 | `escapes.json` | How strings are escaped in JSON text. The tie-break in the merge depends on this being exact. |
+| `categorize.json` | The kind of project (the automatic group) the engine puts each name, description, topics and language in. |
 
 ## Rules for comparing
 
