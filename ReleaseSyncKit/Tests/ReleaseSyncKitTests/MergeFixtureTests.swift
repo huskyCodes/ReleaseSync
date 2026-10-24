@@ -4,7 +4,7 @@ import XCTest
 final class MergeFixtureTests: XCTestCase {
     func testMergeGivesWhatTheEngineGave() throws {
         let cases = try Fixtures.folders("merge")
-        XCTAssertGreaterThanOrEqual(cases.count, 13)
+        XCTAssertGreaterThanOrEqual(cases.count, 14)
         for name in cases {
             let a = try Fixtures.doc("merge/\(name)/a.json"), b = try Fixtures.doc("merge/\(name)/b.json")
             let expected = try Fixtures.doc("merge/\(name)/expected.json")

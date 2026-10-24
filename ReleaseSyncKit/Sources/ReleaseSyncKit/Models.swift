@@ -143,6 +143,40 @@ public struct TryLaterItem: Equatable, Sendable {
     var tieBreakText: String { JSONWriter.write(json) }
 }
 
+/// One program a device says it has installed (a device's own report about itself).
+public struct SyncInstall: Equatable, Sendable {
+    /// The tracked app's key, e.g. `github:owner/repo`.
+    public var key = ""
+    public var version = ""
+    public var installedAt: Timestamp?
+    /// The newest version that device has seen for it.
+    public var latest: String?
+
+    public init(key: String, version: String, installedAt: Timestamp? = nil, latest: String? = nil) {
+        self.key = key; self.version = version; self.installedAt = installedAt; self.latest = latest
+    }
+
+    init(json v: JSONValue) throws {
+        key = try v.string("Key") ?? ""
+        version = try v.string("Version") ?? ""
+        installedAt = try v.timestamp("InstalledAt")
+        latest = try v.string("Latest")
+    }
+
+    var json: JSONValue {
+        var m = [JSONMember("Key", .string(key)), JSONMember("Version", .string(version))]
+        if let installedAt { m.append(JSONMember("InstalledAt", installedAt.json)) }
+        if let latest { m.append(JSONMember("Latest", .string(latest))) }
+        return .object(m)
+    }
+
+    /// An update is waiting on that device: it knows of a newer version than the one it has.
+    public var hasUpdate: Bool {
+        guard let latest, !latest.isEmpty, !version.isEmpty else { return false }
+        return VersionUtil.isNewer(latest, than: version)
+    }
+}
+
 /// One of the person's devices, as the others see it.
 public struct SyncDevice: Equatable, Sendable {
     public var id = ""
@@ -151,10 +185,15 @@ public struct SyncDevice: Equatable, Sendable {
     public var platform = "Windows"
     public var appVersion = ""
     public var lastSeen = Timestamp.zero
+    /// Whether the device says it is running ReleaseSync right now (nil from devices that predate format 3). See `isOnline(at:)`.
+    public var online: Bool?
+    /// What the device says it has installed (nil from devices that predate format 3 or don't report it).
+    public var installed: [SyncInstall]?
 
     public init() {}
-    public init(id: String, name: String, platform: String, appVersion: String, lastSeen: Timestamp = .zero) {
+    public init(id: String, name: String, platform: String, appVersion: String, lastSeen: Timestamp = .zero, online: Bool? = nil, installed: [SyncInstall]? = nil) {
         self.id = id; self.name = name; self.platform = platform; self.appVersion = appVersion; self.lastSeen = lastSeen
+        self.online = online; self.installed = installed
     }
 
     init(json v: JSONValue) throws {
@@ -163,11 +202,16 @@ public struct SyncDevice: Equatable, Sendable {
         platform = try v.string("Platform") ?? "Windows"
         appVersion = try v.string("AppVersion") ?? ""
         lastSeen = try v.timestamp("LastSeen") ?? .zero
+        online = try v.bool("Online")
+        installed = try v.array("Installed")?.map { try SyncInstall(json: $0) }
     }
 
     var json: JSONValue {
-        .object([JSONMember("Id", .string(id)), JSONMember("Name", .string(name)), JSONMember("Platform", .string(platform)),
-                 JSONMember("AppVersion", .string(appVersion)), JSONMember("LastSeen", lastSeen.json)])
+        var m = [JSONMember("Id", .string(id)), JSONMember("Name", .string(name)), JSONMember("Platform", .string(platform)),
+                 JSONMember("AppVersion", .string(appVersion)), JSONMember("LastSeen", lastSeen.json)]
+        if let online { m.append(JSONMember("Online", .bool(online))) }
+        if let installed { m.append(JSONMember("Installed", .array(installed.map { $0.json }))) }
+        return .object(m)
     }
 
     var tieBreakText: String { JSONWriter.write(json) }
@@ -176,7 +220,7 @@ public struct SyncDevice: Equatable, Sendable {
 /// The whole library document that is kept in sync.
 public struct SyncDoc: Equatable, Sendable {
     /// The newest format this code understands. A file with a higher `version` is refused.
-    public static let supportedVersion = 2
+    public static let supportedVersion = 3
 
     public var version = SyncDoc.supportedVersion
     public var updatedAt = Timestamp.zero

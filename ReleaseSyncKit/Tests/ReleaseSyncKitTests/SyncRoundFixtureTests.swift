@@ -4,7 +4,7 @@ import XCTest
 final class SyncRoundFixtureTests: XCTestCase {
     func testEverySyncRoundGivesWhatTheEngineGave() async throws {
         let cases = try Fixtures.json("sync-round.json").list("Cases")
-        XCTAssertEqual(cases.count, 15)
+        XCTAssertEqual(cases.count, 21)
         for c in cases {
             let input = try XCTUnwrap(c.member("Input")), expected = try XCTUnwrap(c.member("Expected"))
             let name = try XCTUnwrap(input.str("Name"))
