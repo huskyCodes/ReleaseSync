@@ -35,6 +35,11 @@ Backups/
 /secrets.*
 .claude/
 
+# Swift package manager / Xcode
+.build/
+.swiftpm/
+xcuserdata/
+
 # OS
 Thumbs.db
 Desktop.ini
