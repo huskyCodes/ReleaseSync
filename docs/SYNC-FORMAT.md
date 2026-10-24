@@ -206,6 +206,8 @@ Note that deleting a group here does not touch apps; the deleting device already
 - `CustomGroups` sorted by name, ordinal ignoring case.
 - `GroupStamps`, `Tombstones` and `Devices` are objects; their order in the file carries no meaning.
 
+**Repeatable, with one limit.** A tombstone is forgotten after 90 days. A device that was offline longer and still holds a deleted item brings it back when it next syncs, because nothing remembers the deletion any more.
+
 **Two known asymmetries** (neither changes what the user sees; both are in the C# reference):
 1. `GroupStamps` keys keep the spelling from whichever input was merged first. `Merge(a,b)` may write `"Games"` where `Merge(b,a)` writes `"games"`. The values are the same. `Signature` (below) lower-cases these keys, so devices do not treat it as a change. A symmetry test should compare `GroupStamps` with lower-cased keys.
 2. `WrittenBy` is taken from `a` when both `UpdatedAt` are equal. The sync service overwrites it afterwards, so it never reaches the file from a merge.
@@ -220,6 +222,10 @@ Note that deleting a group here does not touch apps; the deleting device already
 - `GroupStamps` with names lower-cased, times in UTC;
 - `Tombstones` as given, times in UTC;
 - `Devices`: for each id, only `Id`, `Name`, `Platform`, `AppVersion`.
+
+### Known defect: notes on Try later items
+
+When the C# engine reads a `TryLaterItem` that has a `Note`, the `Note` setter also sets `ModifiedAt` to the current time, replacing the value in the file (the properties are read in file order, `ModifiedAt` first, then `Note`). In the C# engine an item with a note therefore always looks freshly edited after it is read, wins over other devices' copies in the merge, and writes the new time back. The format as described above (stamp = later of `SavedAt` and `ModifiedAt`) is what other implementations should follow; the golden fixtures avoid notes on Try later items so they do not depend on this. It does not affect `SyncApp.Note`.
 
 ## 7. A sync round
 
