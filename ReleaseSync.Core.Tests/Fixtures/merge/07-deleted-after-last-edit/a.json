@@ -1,0 +1,57 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:30:00Z",
+  "WrittenBy": "Example PC",
+  "Apps": [
+    {
+      "Key": "github:fake/gone-later",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "gone-later",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:10:00Z"
+    },
+    {
+      "Key": "github:fake/gone-same-time",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "gone-same-time",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:10:00Z",
+      "ModifiedAt": "2026-01-01T12:10:00Z"
+    },
+    {
+      "Key": "github:fake/kept-untouched",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "kept-untouched",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:10:00Z"
+    }
+  ],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {},
+  "Devices": {}
+}

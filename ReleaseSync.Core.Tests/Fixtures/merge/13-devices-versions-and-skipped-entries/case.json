@@ -1,0 +1,4 @@
+{
+  "Description": "Devices are matched by Id and the later LastSeen wins (even by one tick). Devices without an Id and apps without a Key are dropped. Version is the higher of the two. WrittenBy comes from the side with the later UpdatedAt.",
+  "Now": "2026-01-01T13:00:00Z"
+}

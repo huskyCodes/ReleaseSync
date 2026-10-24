@@ -1,0 +1,24 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:30:00Z",
+  "WrittenBy": "Example PC",
+  "Apps": [],
+  "TryLater": [],
+  "CustomGroups": [
+    "Games",
+    "Tools",
+    "My Games ",
+    "Retro",
+    "Old",
+    "Edge"
+  ],
+  "GroupStamps": {
+    "Games": "2026-01-01T12:01:00Z",
+    "Tools": "2026-01-01T12:01:00Z",
+    "My Games ": "2026-01-01T12:01:00Z",
+    "Retro": "2026-01-01T12:20:00Z",
+    "Edge": "2026-01-01T12:07:00Z"
+  },
+  "Tombstones": {},
+  "Devices": {}
+}

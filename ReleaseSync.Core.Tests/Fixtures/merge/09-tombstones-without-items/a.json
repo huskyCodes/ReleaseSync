@@ -1,0 +1,23 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:30:00Z",
+  "WrittenBy": "Example PC",
+  "Apps": [],
+  "TryLater": [
+    {
+      "Owner": "fake",
+      "Repo": "both-lists",
+      "Source": "github",
+      "Platform": "Windows",
+      "Stars": 0,
+      "SavedAt": "2026-01-01T12:01:00Z"
+    }
+  ],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {
+    "github:fake/never-seen": "2026-01-01T12:03:00Z",
+    "github:fake/both-lists": "2026-01-01T12:40:00Z"
+  },
+  "Devices": {}
+}

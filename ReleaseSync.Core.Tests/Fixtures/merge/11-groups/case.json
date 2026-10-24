@@ -1,0 +1,4 @@
+{
+  "Description": "Group names are compared ignoring case; the greater spelling is kept. Blank names are dropped. A group tombstone is \u0027group:\u0027 plus the trimmed lower-case name and removes the group unless the group was created after the deletion.",
+  "Now": "2026-01-01T13:00:00Z"
+}

@@ -1,0 +1,8 @@
+{
+  "Description": "A plain ASCII passphrase.",
+  "Passphrase": "fake passphrase for tests",
+  "WrongPassphrases": [
+    "Fake passphrase for tests",
+    "fake passphrase for tests "
+  ]
+}

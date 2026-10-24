@@ -1,0 +1,15 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:30:00Z",
+  "WrittenBy": "Example PC",
+  "Apps": [],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {
+    "github:fake/edited-after": "2026-01-01T12:05:00Z",
+    "github:fake/readded-after": "2026-01-01T12:20:00Z",
+    "github:fake/added-after-modified": "2026-01-01T12:20:00Z"
+  },
+  "Devices": {}
+}

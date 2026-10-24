@@ -1,0 +1,29 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:31:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [
+    {
+      "Key": "github:fake/other",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "other",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:01:00Z"
+    }
+  ],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {
+    "later:github:fake/other": "2026-01-01T12:41:00Z"
+  },
+  "Devices": {}
+}

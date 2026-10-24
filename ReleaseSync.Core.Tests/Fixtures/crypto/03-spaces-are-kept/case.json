@@ -1,0 +1,7 @@
+{
+  "Description": "Leading and trailing spaces are part of the passphrase; they are not trimmed.",
+  "Passphrase": "  spaced out  ",
+  "WrongPassphrases": [
+    "spaced out"
+  ]
+}

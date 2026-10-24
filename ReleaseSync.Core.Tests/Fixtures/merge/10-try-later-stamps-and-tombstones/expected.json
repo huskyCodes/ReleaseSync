@@ -1,0 +1,44 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T13:00:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [],
+  "TryLater": [
+    {
+      "Owner": "fake",
+      "Repo": "modified-later",
+      "Source": "github",
+      "Platform": "Windows",
+      "Description": "edited on a",
+      "Stars": 0,
+      "SavedAt": "2026-01-01T12:01:00Z",
+      "ModifiedAt": "2026-01-01T12:10:00Z"
+    },
+    {
+      "Owner": "fake",
+      "Repo": "resaved",
+      "Source": "github",
+      "Platform": "Windows",
+      "Stars": 0,
+      "SavedAt": "2026-01-01T12:30:00Z"
+    },
+    {
+      "Owner": "fake",
+      "Repo": "saved-again",
+      "Source": "github",
+      "Platform": "Windows",
+      "Description": "saved again on a",
+      "Stars": 0,
+      "SavedAt": "2026-01-01T12:20:00Z",
+      "ModifiedAt": "2026-01-01T12:05:00Z"
+    }
+  ],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {
+    "later:github:fake-owner/deleted-equal": "2026-01-01T12:10:00Z",
+    "later:forgejo:git.example.test:example/tool": "2026-01-01T12:11:00Z",
+    "later:github:fake/nothing-here": "2026-01-01T12:12:00Z"
+  },
+  "Devices": {}
+}

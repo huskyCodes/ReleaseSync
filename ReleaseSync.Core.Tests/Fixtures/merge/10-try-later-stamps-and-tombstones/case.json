@@ -1,0 +1,4 @@
+{
+  "Description": "A Try later item\u0027s stamp is the later of SavedAt and ModifiedAt. Tombstone keys are \u0027later:\u0027 plus the lower-case key. Delete wins at an equal time; a newer save wins over the delete.",
+  "Now": "2026-01-01T13:00:00Z"
+}

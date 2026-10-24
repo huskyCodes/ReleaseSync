@@ -1,0 +1,36 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:00:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [
+    {
+      "Key": "github:fake/locked-app",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "locked-app",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "Note": "caf\u00E9 \u2713",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:01:00Z"
+    }
+  ],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {},
+  "Devices": {
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+      "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "Name": "Example Mac",
+      "Platform": "Mac",
+      "AppVersion": "0.1",
+      "LastSeen": "2026-01-01T12:01:00Z"
+    }
+  }
+}

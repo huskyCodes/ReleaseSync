@@ -1,0 +1,61 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:31:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [
+    {
+      "Key": "github:fake/one-tick",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "one-tick",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "Note": "from b",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:05:00Z"
+    },
+    {
+      "Key": "github:fake/b-is-newer",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "b-is-newer",
+      "Group": "Tools",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Portable",
+      "Note": "new note",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:06:00Z"
+    },
+    {
+      "Key": "github:fake/fractions",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "fractions",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "DisplayName": "One tick older",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00.1234567Z",
+      "ModifiedAt": "2026-01-01T12:06:00.1234566Z"
+    }
+  ],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {},
+  "Devices": {}
+}

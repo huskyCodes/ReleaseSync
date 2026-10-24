@@ -1,0 +1,57 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:31:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [
+    {
+      "Key": "github:fake/edited-after",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "edited-after",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:10:00Z"
+    },
+    {
+      "Key": "github:fake/readded-after",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "readded-after",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:30:00Z",
+      "ModifiedAt": "2026-01-01T12:30:00Z"
+    },
+    {
+      "Key": "github:fake/added-after-modified",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "added-after-modified",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:30:00Z",
+      "ModifiedAt": "2026-01-01T12:10:00Z"
+    }
+  ],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {},
+  "Devices": {}
+}

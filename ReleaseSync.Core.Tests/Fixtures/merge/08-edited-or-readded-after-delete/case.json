@@ -1,0 +1,4 @@
+{
+  "Description": "An edit or a re-add newer than the tombstone keeps the app and drops the tombstone. If either AddedAt or ModifiedAt is newer than the tombstone, the app stays.",
+  "Now": "2026-01-01T13:00:00Z"
+}

@@ -1,0 +1,121 @@
+{
+  "Description": "Each Text, written as a JSON string by the engine, gives exactly this Json (quotes included). Only the escaping matters; the file itself is written with the same escapes.",
+  "Strings": [
+    {
+      "Text": "",
+      "Json": "\u0022\u0022"
+    },
+    {
+      "Text": "plain",
+      "Json": "\u0022plain\u0022"
+    },
+    {
+      "Text": "caf\u00E9",
+      "Json": "\u0022caf\\u00E9\u0022"
+    },
+    {
+      "Text": "\u65E5\u672C\u8A9E",
+      "Json": "\u0022\\u65E5\\u672C\\u8A9E\u0022"
+    },
+    {
+      "Text": "\uD83D\uDE00",
+      "Json": "\u0022\\uD83D\\uDE00\u0022"
+    },
+    {
+      "Text": "a\u003Cb\u003Ec",
+      "Json": "\u0022a\\u003Cb\\u003Ec\u0022"
+    },
+    {
+      "Text": "x\u0026y",
+      "Json": "\u0022x\\u0026y\u0022"
+    },
+    {
+      "Text": "it\u0027s",
+      "Json": "\u0022it\\u0027s\u0022"
+    },
+    {
+      "Text": "1\u002B1",
+      "Json": "\u00221\\u002B1\u0022"
+    },
+    {
+      "Text": "say \u0022hi\u0022",
+      "Json": "\u0022say \\u0022hi\\u0022\u0022"
+    },
+    {
+      "Text": "back\\slash",
+      "Json": "\u0022back\\\\slash\u0022"
+    },
+    {
+      "Text": "a/b",
+      "Json": "\u0022a/b\u0022"
+    },
+    {
+      "Text": "line1\nline2",
+      "Json": "\u0022line1\\nline2\u0022"
+    },
+    {
+      "Text": "tab\there",
+      "Json": "\u0022tab\\there\u0022"
+    },
+    {
+      "Text": "cr\rhere",
+      "Json": "\u0022cr\\rhere\u0022"
+    },
+    {
+      "Text": "\u0001ctrl",
+      "Json": "\u0022\\u0001ctrl\u0022"
+    },
+    {
+      "Text": "\u007Fdel",
+      "Json": "\u0022\\u007Fdel\u0022"
+    },
+    {
+      "Text": "\u2028sep",
+      "Json": "\u0022\\u2028sep\u0022"
+    },
+    {
+      "Text": "\u00A0nbsp",
+      "Json": "\u0022\\u00A0nbsp\u0022"
+    },
+    {
+      "Text": "e\u0301 combining",
+      "Json": "\u0022e\\u0301 combining\u0022"
+    },
+    {
+      "Text": "~tilde",
+      "Json": "\u0022~tilde\u0022"
+    },
+    {
+      "Text": "\u0060tick\u0060",
+      "Json": "\u0022\\u0060tick\\u0060\u0022"
+    },
+    {
+      "Text": "=eq",
+      "Json": "\u0022=eq\u0022"
+    },
+    {
+      "Text": "%pct",
+      "Json": "\u0022%pct\u0022"
+    },
+    {
+      "Text": "#hash",
+      "Json": "\u0022#hash\u0022"
+    },
+    {
+      "Text": "@at",
+      "Json": "\u0022@at\u0022"
+    },
+    {
+      "Text": "[br]",
+      "Json": "\u0022[br]\u0022"
+    },
+    {
+      "Text": "{br}",
+      "Json": "\u0022{br}\u0022"
+    },
+    {
+      "Text": "\u00E9\u00E8\u00EA",
+      "Json": "\u0022\\u00E9\\u00E8\\u00EA\u0022"
+    }
+  ]
+}

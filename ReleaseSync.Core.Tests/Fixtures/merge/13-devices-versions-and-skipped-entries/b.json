@@ -1,0 +1,26 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:20:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {},
+  "Devices": {
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+      "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "Name": "Example PC (old name)",
+      "Platform": "Windows",
+      "AppVersion": "0.0",
+      "LastSeen": "2026-01-01T12:05:00Z"
+    },
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+      "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "Name": "Example Mac",
+      "Platform": "Mac",
+      "AppVersion": "0.1",
+      "LastSeen": "2026-01-01T12:09:00Z"
+    }
+  }
+}

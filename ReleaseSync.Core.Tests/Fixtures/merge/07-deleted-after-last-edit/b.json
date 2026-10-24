@@ -1,0 +1,14 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:31:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {
+    "github:fake/gone-later": "2026-01-01T12:20:00Z",
+    "github:fake/gone-same-time": "2026-01-01T12:10:00Z"
+  },
+  "Devices": {}
+}

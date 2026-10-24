@@ -1,0 +1,18 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-04-11T11:55:00Z",
+  "WrittenBy": "Example PC",
+  "Apps": [],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {
+    "github:fake/age-89-days": "2026-01-12T12:00:00Z",
+    "github:fake/age-exactly-90-days": "2026-01-11T12:00:00Z",
+    "github:fake/age-90-days-and-1-tick": "2026-01-11T11:59:59.9999999Z",
+    "later:github:fake/age-120-days": "2025-12-12T12:00:00Z",
+    "group:old-group": "2025-09-23T12:00:00Z",
+    "github:fake/old-delete": "2026-01-01T12:00:00Z"
+  },
+  "Devices": {}
+}

@@ -1,0 +1,4 @@
+{
+  "Description": "For the same app the later ModifiedAt wins, even by one tick (100 ns). In \u0027fake/one-tick\u0027 the loser would win a content tie-break, so a reader that rounds times gets it wrong.",
+  "Now": "2026-01-01T13:00:00Z"
+}

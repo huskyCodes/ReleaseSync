@@ -1,0 +1,2048 @@
+{
+  "Description": "One sync round (SyncService.RunAsync): the library on this device (Local), what is stored (Remote as a document, or RemoteText when it is not one), the passphrase, and the time. Expected says what the round reports, and the merged document it would apply or write. A round that fails writes nothing.",
+  "Cases": [
+    {
+      "Input": {
+        "Name": "01-first-sync",
+        "Description": "Nothing stored yet: this device writes its library.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        }
+      },
+      "Expected": {
+        "FirstSync": true,
+        "Changed": false,
+        "Pushed": true,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "02-nothing-new",
+        "Description": "The file already says the same and this device checked in recently: nothing changes and nothing is written.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "Remote": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T13:40:00Z",
+          "WrittenBy": "Example PC",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T13:00:00Z"
+            }
+          }
+        }
+      },
+      "Expected": {
+        "FirstSync": false,
+        "Changed": false,
+        "Pushed": false,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "03-heartbeat",
+        "Description": "Nothing changed, but this device last checked in more than 6 hours ago, so it writes to refresh that.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "Remote": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T13:40:00Z",
+          "WrittenBy": "Example PC",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T07:00:00Z"
+            }
+          }
+        }
+      },
+      "Expected": {
+        "FirstSync": false,
+        "Changed": false,
+        "Pushed": true,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "04-heartbeat-boundary",
+        "Description": "Exactly 6 hours is not \u0027more than 6 hours\u0027: nothing is written.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "Remote": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T13:40:00Z",
+          "WrittenBy": "Example PC",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T08:00:00Z"
+            }
+          }
+        }
+      },
+      "Expected": {
+        "FirstSync": false,
+        "Changed": false,
+        "Pushed": false,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "05-file-has-more",
+        "Description": "The file has an app this device lacks: the library should be updated (Changed), and nothing needs writing.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "Remote": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T13:40:00Z",
+          "WrittenBy": "Example PC",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            },
+            {
+              "Key": "github:fake/from-the-pc",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "from-the-pc",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:50:00Z",
+              "ModifiedAt": "2026-01-01T12:50:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T13:00:00Z"
+            }
+          }
+        }
+      },
+      "Expected": {
+        "FirstSync": false,
+        "Changed": true,
+        "Pushed": false,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/from-the-pc",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "from-the-pc",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:50:00Z",
+              "ModifiedAt": "2026-01-01T12:50:00Z"
+            },
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "06-this-device-has-more",
+        "Description": "This device has an app the file lacks: it is written.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            },
+            {
+              "Key": "github:fake/from-the-mac",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "from-the-mac",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T13:00:00Z",
+              "ModifiedAt": "2026-01-01T13:00:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "Remote": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T13:40:00Z",
+          "WrittenBy": "Example PC",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T13:00:00Z"
+            }
+          }
+        }
+      },
+      "Expected": {
+        "FirstSync": false,
+        "Changed": false,
+        "Pushed": true,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/from-the-mac",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "from-the-mac",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T13:00:00Z",
+              "ModifiedAt": "2026-01-01T13:00:00Z"
+            },
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "07-both-have-more",
+        "Description": "Each side has something new: the library should be updated and the file written.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            },
+            {
+              "Key": "github:fake/from-the-mac",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "from-the-mac",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T13:00:00Z",
+              "ModifiedAt": "2026-01-01T13:00:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "Remote": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T13:40:00Z",
+          "WrittenBy": "Example PC",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            },
+            {
+              "Key": "github:fake/from-the-pc",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "from-the-pc",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:50:00Z",
+              "ModifiedAt": "2026-01-01T12:50:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T13:00:00Z"
+            }
+          }
+        }
+      },
+      "Expected": {
+        "FirstSync": false,
+        "Changed": true,
+        "Pushed": true,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/from-the-mac",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "from-the-mac",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T13:00:00Z",
+              "ModifiedAt": "2026-01-01T13:00:00Z"
+            },
+            {
+              "Key": "github:fake/from-the-pc",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "from-the-pc",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:50:00Z",
+              "ModifiedAt": "2026-01-01T12:50:00Z"
+            },
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "08-this-device-not-listed",
+        "Description": "The file does not list this device yet: it is written so the device shows up.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "Remote": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T13:40:00Z",
+          "WrittenBy": "Example PC",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        }
+      },
+      "Expected": {
+        "FirstSync": false,
+        "Changed": false,
+        "Pushed": true,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "09-turn-on-passphrase",
+        "Description": "A passphrase is set but the file is not locked: it is written locked.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "Remote": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T13:40:00Z",
+          "WrittenBy": "Example PC",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T13:00:00Z"
+            }
+          }
+        },
+        "Passphrase": "fake passphrase for tests"
+      },
+      "Expected": {
+        "FirstSync": false,
+        "Changed": false,
+        "Pushed": true,
+        "WrittenEncrypted": true,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "10-turn-off-passphrase",
+        "Description": "The file is locked but no passphrase is set on this device: the sync stops.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "RemoteText": "{\n  \u0022releasesync-enc\u0022: 1,\n  \u0022Kdf\u0022: \u0022pbkdf2-sha256\u0022,\n  \u0022Iter\u0022: 200000,\n  \u0022Salt\u0022: \u0022JTA7RlFcZ3J9iJOeqbS/yg==\u0022,\n  \u0022Nonce\u0022: \u0022SlVga3aBjJeirbjD\u0022,\n  \u0022Tag\u0022: \u0022JaXyOfrWlAAqbI3Aj/QRoA==\u0022,\n  \u0022Data\u0022: \u0022R2gQ2f/u/27LpqN2cT\\u002BNyuUBGvzFEvIpcGl5pbj91H4W5LVhIqZxmKWnk35TeMWFIu2z9xvR1lSZxK3sR0fRLV46BT44fPVeBKOnt8G5Q8FOrWGZyfXPBuc2VzvA4OS28gGatd6QbtbRpmnRbtAMxyHIiW9CtYEPGZ18jsegUxkllvWSPR4fCsIMhQjA3cBwRzdxToJsAM2jFq09ztNhbr8MbAeTTTbt3ABsU8VdH/lqHHIUzoWpS0o7sCrjF\\u002Bi762l8/R3Hw/I6dM8x6zQtAOd7anLnXJq8WWnbnDhxet3Ub5sKtmPImivEb2OkwPsoGWCyMFC4ZwhCZKLuNE52lTQG5KQjuMUhM8TqYPbk/thvZrixVLZHW1/awfF7H7ri4hB28J66ECnAAxoq\\u002BOnnGmttpyO79jzZ2gljPm1OIJCXOYWxVORmYdxBHXIN4sOYfDuy0KSbrYhEb1VfEa2zmeigQw1v59fzncbXi15y7uRNOT6kKMSXKV8PDbZYXcJZSJZDKzoyyq6ZIkvIfc4sZhF4\\u002B2RFn28u7pqRKMH6UtEJUODlBQfJgXDhR5x44cmo60lqhGVuAGGQDF6Rx5XaDNPGI1KyPzTLsnpfs0mQkFCipM151Qa9HFIOvjS2Ad6sHzGyGibysdrD24N/LXoC8rtXcRPOP0GftWePtAQ9nCefwSlylpNZRO8xX\\u002BECq4KW2CA6YxjzGZT6fbyG9wKrBC2It\\u002BtkzfNhpdyApQajQzQMMxYmkbJ4rzDIkWwcKH\\u002B7F8\\u002BMnZLguT8d8YPrUrirhGe1TAD1EjWBBGl6gKD2yNLvMMNcgZ9tsTy1pT\\u002BhNHlcJV236Spr6h1oZUfjRQtQ3Bs2yZdB2CYXjv/W3sIMhxQmLf/DlgIf9vVYkdylO/U99bP50YysWJUZc6uXxSmKKNgdj\\u002BDXvJzHP92onfflQaDUwHq3/p/SiBbxnplQGbGpGlLx3BV2Zn\\u002BIQUw1nmaeuxcP4Q2iIYfhT/ucH5TP\\u002Bg3dxp7M/4W6QTkAGrLt9LzDvqEFB/dz2/2zFXVmWjpg0Gt7KHQ7qxPSlCqVETrtHLJhydwXhWmF8gIdg0HR6F5Kbtvmp/wnBaBR6DQS8QBSrW7sJI/m79Ldymvr4Ky1DTHYycpF/oL0okds1S29nKTXVHRXYssDsxpP467D0jnGW6iONWvOixIEtnvm/9Jze3Iz8SARBNySPKPgGXKYaCvbq/9iVu\\u002BDZ0/kNkcz3aICSQjqCauJOlab74BNnldfnpI3nynniAFBVBwxtg9/AtuChJfR6KybO1GidtdCUBGhfRmOakXFWBL10TL\\u002BKwUZDCrewtR4Z\\u002BcIuozS9H2DICijN1ueDYNJaM0H3WIEfaCDlUXbvMq2XZhZIsf9MQnJlXqwSv2WmWF4igvN3LX12JIlVGnpJH8WMqdbORhBmXde4twj1gnkaugQuAixDC5kLebBZzcusYj3\\u002BO0yUBqHEA6pZYM9yU\\u002B\\u002Bm27Yo3IA6CZHSk0zLU\\u002BijMf7UP4bKhx\\u002BUneShbiaph4N\\u002Bpts0QFfbcVD5ST6usTg3weLLaL\\u002Bg6Ap/aEyejuRWYYOOOmPtKD2PcgYt73NPpFnmcvgt/mXbJQF707Fp/xpt6gy65LByXq6xRu5rLZsOgm2iKopO/Bv\u0022\n}"
+      },
+      "Expected": {
+        "Error": "SyncPassphraseException",
+        "Message": "This sync file is locked. Enter the passphrase you set up on your other device."
+      }
+    },
+    {
+      "Input": {
+        "Name": "11-locked-and-opened",
+        "Description": "The file is locked and the passphrase opens it. Nothing else changed, so it is not rewritten.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "RemoteText": "{\n  \u0022releasesync-enc\u0022: 1,\n  \u0022Kdf\u0022: \u0022pbkdf2-sha256\u0022,\n  \u0022Iter\u0022: 200000,\n  \u0022Salt\u0022: \u0022JTA7RlFcZ3J9iJOeqbS/yg==\u0022,\n  \u0022Nonce\u0022: \u0022SlVga3aBjJeirbjD\u0022,\n  \u0022Tag\u0022: \u0022JaXyOfrWlAAqbI3Aj/QRoA==\u0022,\n  \u0022Data\u0022: \u0022R2gQ2f/u/27LpqN2cT\\u002BNyuUBGvzFEvIpcGl5pbj91H4W5LVhIqZxmKWnk35TeMWFIu2z9xvR1lSZxK3sR0fRLV46BT44fPVeBKOnt8G5Q8FOrWGZyfXPBuc2VzvA4OS28gGatd6QbtbRpmnRbtAMxyHIiW9CtYEPGZ18jsegUxkllvWSPR4fCsIMhQjA3cBwRzdxToJsAM2jFq09ztNhbr8MbAeTTTbt3ABsU8VdH/lqHHIUzoWpS0o7sCrjF\\u002Bi762l8/R3Hw/I6dM8x6zQtAOd7anLnXJq8WWnbnDhxet3Ub5sKtmPImivEb2OkwPsoGWCyMFC4ZwhCZKLuNE52lTQG5KQjuMUhM8TqYPbk/thvZrixVLZHW1/awfF7H7ri4hB28J66ECnAAxoq\\u002BOnnGmttpyO79jzZ2gljPm1OIJCXOYWxVORmYdxBHXIN4sOYfDuy0KSbrYhEb1VfEa2zmeigQw1v59fzncbXi15y7uRNOT6kKMSXKV8PDbZYXcJZSJZDKzoyyq6ZIkvIfc4sZhF4\\u002B2RFn28u7pqRKMH6UtEJUODlBQfJgXDhR5x44cmo60lqhGVuAGGQDF6Rx5XaDNPGI1KyPzTLsnpfs0mQkFCipM151Qa9HFIOvjS2Ad6sHzGyGibysdrD24N/LXoC8rtXcRPOP0GftWePtAQ9nCefwSlylpNZRO8xX\\u002BECq4KW2CA6YxjzGZT6fbyG9wKrBC2It\\u002BtkzfNhpdyApQajQzQMMxYmkbJ4rzDIkWwcKH\\u002B7F8\\u002BMnZLguT8d8YPrUrirhGe1TAD1EjWBBGl6gKD2yNLvMMNcgZ9tsTy1pT\\u002BhNHlcJV236Spr6h1oZUfjRQtQ3Bs2yZdB2CYXjv/W3sIMhxQmLf/DlgIf9vVYkdylO/U99bP50YysWJUZc6uXxSmKKNgdj\\u002BDXvJzHP92onfflQaDUwHq3/p/SiBbxnplQGbGpGlLx3BV2Zn\\u002BIQUw1nmaeuxcP4Q2iIYfhT/ucH5TP\\u002Bg3dxp7M/4W6QTkAGrLt9LzDvqEFB/dz2/2zFXVmWjpg0Gt7KHQ7qxPSlCqVETrtHLJhydwXhWmF8gIdg0HR6F5Kbtvmp/wnBaBR6DQS8QBSrW7sJI/m79Ldymvr4Ky1DTHYycpF/oL0okds1S29nKTXVHRXYssDsxpP467D0jnGW6iONWvOixIEtnvm/9Jze3Iz8SARBNySPKPgGXKYaCvbq/9iVu\\u002BDZ0/kNkcz3aICSQjqCauJOlab74BNnldfnpI3nynniAFBVBwxtg9/AtuChJfR6KybO1GidtdCUBGhfRmOakXFWBL10TL\\u002BKwUZDCrewtR4Z\\u002BcIuozS9H2DICijN1ueDYNJaM0H3WIEfaCDlUXbvMq2XZhZIsf9MQnJlXqwSv2WmWF4igvN3LX12JIlVGnpJH8WMqdbORhBmXde4twj1gnkaugQuAixDC5kLebBZzcusYj3\\u002BO0yUBqHEA6pZYM9yU\\u002B\\u002Bm27Yo3IA6CZHSk0zLU\\u002BijMf7UP4bKhx\\u002BUneShbiaph4N\\u002Bpts0QFfbcVD5ST6usTg3weLLaL\\u002Bg6Ap/aEyejuRWYYOOOmPtKD2PcgYt73NPpFnmcvgt/mXbJQF707Fp/xpt6gy65LByXq6xRu5rLZsOgm2iKopO/Bv\u0022\n}",
+        "Passphrase": "fake passphrase for tests"
+      },
+      "Expected": {
+        "FirstSync": false,
+        "Changed": false,
+        "Pushed": false,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "Input": {
+        "Name": "12-wrong-passphrase",
+        "Description": "The passphrase does not open the file: the sync stops and nothing is written.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "RemoteText": "{\n  \u0022releasesync-enc\u0022: 1,\n  \u0022Kdf\u0022: \u0022pbkdf2-sha256\u0022,\n  \u0022Iter\u0022: 200000,\n  \u0022Salt\u0022: \u0022JTA7RlFcZ3J9iJOeqbS/yg==\u0022,\n  \u0022Nonce\u0022: \u0022SlVga3aBjJeirbjD\u0022,\n  \u0022Tag\u0022: \u0022JaXyOfrWlAAqbI3Aj/QRoA==\u0022,\n  \u0022Data\u0022: \u0022R2gQ2f/u/27LpqN2cT\\u002BNyuUBGvzFEvIpcGl5pbj91H4W5LVhIqZxmKWnk35TeMWFIu2z9xvR1lSZxK3sR0fRLV46BT44fPVeBKOnt8G5Q8FOrWGZyfXPBuc2VzvA4OS28gGatd6QbtbRpmnRbtAMxyHIiW9CtYEPGZ18jsegUxkllvWSPR4fCsIMhQjA3cBwRzdxToJsAM2jFq09ztNhbr8MbAeTTTbt3ABsU8VdH/lqHHIUzoWpS0o7sCrjF\\u002Bi762l8/R3Hw/I6dM8x6zQtAOd7anLnXJq8WWnbnDhxet3Ub5sKtmPImivEb2OkwPsoGWCyMFC4ZwhCZKLuNE52lTQG5KQjuMUhM8TqYPbk/thvZrixVLZHW1/awfF7H7ri4hB28J66ECnAAxoq\\u002BOnnGmttpyO79jzZ2gljPm1OIJCXOYWxVORmYdxBHXIN4sOYfDuy0KSbrYhEb1VfEa2zmeigQw1v59fzncbXi15y7uRNOT6kKMSXKV8PDbZYXcJZSJZDKzoyyq6ZIkvIfc4sZhF4\\u002B2RFn28u7pqRKMH6UtEJUODlBQfJgXDhR5x44cmo60lqhGVuAGGQDF6Rx5XaDNPGI1KyPzTLsnpfs0mQkFCipM151Qa9HFIOvjS2Ad6sHzGyGibysdrD24N/LXoC8rtXcRPOP0GftWePtAQ9nCefwSlylpNZRO8xX\\u002BECq4KW2CA6YxjzGZT6fbyG9wKrBC2It\\u002BtkzfNhpdyApQajQzQMMxYmkbJ4rzDIkWwcKH\\u002B7F8\\u002BMnZLguT8d8YPrUrirhGe1TAD1EjWBBGl6gKD2yNLvMMNcgZ9tsTy1pT\\u002BhNHlcJV236Spr6h1oZUfjRQtQ3Bs2yZdB2CYXjv/W3sIMhxQmLf/DlgIf9vVYkdylO/U99bP50YysWJUZc6uXxSmKKNgdj\\u002BDXvJzHP92onfflQaDUwHq3/p/SiBbxnplQGbGpGlLx3BV2Zn\\u002BIQUw1nmaeuxcP4Q2iIYfhT/ucH5TP\\u002Bg3dxp7M/4W6QTkAGrLt9LzDvqEFB/dz2/2zFXVmWjpg0Gt7KHQ7qxPSlCqVETrtHLJhydwXhWmF8gIdg0HR6F5Kbtvmp/wnBaBR6DQS8QBSrW7sJI/m79Ldymvr4Ky1DTHYycpF/oL0okds1S29nKTXVHRXYssDsxpP467D0jnGW6iONWvOixIEtnvm/9Jze3Iz8SARBNySPKPgGXKYaCvbq/9iVu\\u002BDZ0/kNkcz3aICSQjqCauJOlab74BNnldfnpI3nynniAFBVBwxtg9/AtuChJfR6KybO1GidtdCUBGhfRmOakXFWBL10TL\\u002BKwUZDCrewtR4Z\\u002BcIuozS9H2DICijN1ueDYNJaM0H3WIEfaCDlUXbvMq2XZhZIsf9MQnJlXqwSv2WmWF4igvN3LX12JIlVGnpJH8WMqdbORhBmXde4twj1gnkaugQuAixDC5kLebBZzcusYj3\\u002BO0yUBqHEA6pZYM9yU\\u002B\\u002Bm27Yo3IA6CZHSk0zLU\\u002BijMf7UP4bKhx\\u002BUneShbiaph4N\\u002Bpts0QFfbcVD5ST6usTg3weLLaL\\u002Bg6Ap/aEyejuRWYYOOOmPtKD2PcgYt73NPpFnmcvgt/mXbJQF707Fp/xpt6gy65LByXq6xRu5rLZsOgm2iKopO/Bv\u0022\n}",
+        "Passphrase": "wrong passphrase"
+      },
+      "Expected": {
+        "Error": "SyncPassphraseException",
+        "Message": "That passphrase doesn\u0027t open the sync file."
+      }
+    },
+    {
+      "Input": {
+        "Name": "13-newer-format",
+        "Description": "The file was made by a newer version of ReleaseSync: the sync stops.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "RemoteText": "{\n  \u0022Version\u0022: 3,\n  \u0022UpdatedAt\u0022: \u00222026-01-01T12:00:00Z\u0022,\n  \u0022WrittenBy\u0022: \u0022Future\u0022,\n  \u0022Apps\u0022: [],\n  \u0022TryLater\u0022: [],\n  \u0022CustomGroups\u0022: [],\n  \u0022GroupStamps\u0022: {},\n  \u0022Tombstones\u0022: {},\n  \u0022Devices\u0022: {}\n}\n"
+      },
+      "Expected": {
+        "Error": "SyncException",
+        "Message": "The sync file was made by a newer version of ReleaseSync. Update ReleaseSync and try again."
+      }
+    },
+    {
+      "Input": {
+        "Name": "14-unreadable-file",
+        "Description": "The file is not valid JSON: the sync stops and nothing is written.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "RemoteText": "this is not a library"
+      },
+      "Expected": {
+        "Error": "SyncException",
+        "Message": "The sync file isn\u0027t readable, so nothing was changed."
+      }
+    },
+    {
+      "Input": {
+        "Name": "15-blank-file",
+        "Description": "A blank file counts as nothing stored.",
+        "Now": "2026-01-01T14:00:00Z",
+        "Self": {
+          "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "Name": "Example Mac",
+          "Platform": "Mac",
+          "AppVersion": "0.1",
+          "LastSeen": "2026-01-01T12:00:00Z"
+        },
+        "Local": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T12:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            }
+          }
+        },
+        "RemoteText": "  \n"
+      },
+      "Expected": {
+        "FirstSync": true,
+        "Changed": false,
+        "Pushed": true,
+        "WrittenEncrypted": false,
+        "Doc": {
+          "Version": 2,
+          "UpdatedAt": "2026-01-01T14:00:00Z",
+          "WrittenBy": "Example Mac",
+          "Apps": [
+            {
+              "Key": "github:fake/shared-app",
+              "Source": "github",
+              "Owner": "fake",
+              "Repo": "shared-app",
+              "Pinned": false,
+              "Hidden": false,
+              "IncludePrereleases": false,
+              "IgnoreUpdates": false,
+              "AutoUpdate": false,
+              "Mode": "Auto",
+              "TrustUnsigned": false,
+              "AddedAt": "2026-01-01T12:00:00Z",
+              "ModifiedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "TryLater": [
+            {
+              "Owner": "fake",
+              "Repo": "shared-later",
+              "Source": "github",
+              "Platform": "Windows",
+              "Stars": 0,
+              "SavedAt": "2026-01-01T12:01:00Z"
+            }
+          ],
+          "CustomGroups": [],
+          "GroupStamps": {},
+          "Tombstones": {},
+          "Devices": {
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+              "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "Name": "Example PC",
+              "Platform": "Windows",
+              "AppVersion": "1.9.1",
+              "LastSeen": "2026-01-01T13:40:00Z"
+            },
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+              "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "Name": "Example Mac",
+              "Platform": "Mac",
+              "AppVersion": "0.1",
+              "LastSeen": "2026-01-01T14:00:00Z"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

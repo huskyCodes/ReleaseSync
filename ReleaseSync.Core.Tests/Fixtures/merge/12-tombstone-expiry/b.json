@@ -1,0 +1,27 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-04-11T11:56:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [
+    {
+      "Key": "github:fake/old-delete",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "old-delete",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2025-11-12T12:00:00Z",
+      "ModifiedAt": "2025-11-12T12:00:00Z"
+    }
+  ],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {},
+  "Devices": {}
+}

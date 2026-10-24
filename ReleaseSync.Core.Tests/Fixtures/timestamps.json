@@ -1,0 +1,111 @@
+{
+  "Description": "Write: an instant (whole Unix seconds \u002B 100 ns ticks) becomes this text. Read: this text means this instant, as the merge compares it; a time with no zone is taken as UTC, a time with an offset is converted. Always write UTC with a Z.",
+  "Write": [
+    {
+      "UnixSeconds": 1767268800,
+      "Ticks": 0,
+      "Text": "2026-01-01T12:00:00Z"
+    },
+    {
+      "UnixSeconds": 1767268800,
+      "Ticks": 1,
+      "Text": "2026-01-01T12:00:00.0000001Z"
+    },
+    {
+      "UnixSeconds": 1767268800,
+      "Ticks": 10,
+      "Text": "2026-01-01T12:00:00.000001Z"
+    },
+    {
+      "UnixSeconds": 1767268800,
+      "Ticks": 1000000,
+      "Text": "2026-01-01T12:00:00.1Z"
+    },
+    {
+      "UnixSeconds": 1767268800,
+      "Ticks": 15000,
+      "Text": "2026-01-01T12:00:00.0015Z"
+    },
+    {
+      "UnixSeconds": 1767268800,
+      "Ticks": 1234567,
+      "Text": "2026-01-01T12:00:00.1234567Z"
+    },
+    {
+      "UnixSeconds": 1767268800,
+      "Ticks": 9999999,
+      "Text": "2026-01-01T12:00:00.9999999Z"
+    },
+    {
+      "UnixSeconds": 0,
+      "Ticks": 0,
+      "Text": "1970-01-01T00:00:00Z"
+    },
+    {
+      "UnixSeconds": 951868799,
+      "Ticks": 0,
+      "Text": "2000-02-29T23:59:59Z"
+    },
+    {
+      "UnixSeconds": 4102444799,
+      "Ticks": 9999999,
+      "Text": "2099-12-31T23:59:59.9999999Z"
+    }
+  ],
+  "Read": [
+    {
+      "Text": "2026-01-01T12:00:00Z",
+      "UnixSeconds": 1767268800,
+      "Ticks": 0,
+      "Canonical": "2026-01-01T12:00:00Z"
+    },
+    {
+      "Text": "2026-01-01T12:00:00.1Z",
+      "UnixSeconds": 1767268800,
+      "Ticks": 1000000,
+      "Canonical": "2026-01-01T12:00:00.1Z"
+    },
+    {
+      "Text": "2026-01-01T12:00:00.1234567Z",
+      "UnixSeconds": 1767268800,
+      "Ticks": 1234567,
+      "Canonical": "2026-01-01T12:00:00.1234567Z"
+    },
+    {
+      "Text": "2026-01-01T12:00:00.0000001Z",
+      "UnixSeconds": 1767268800,
+      "Ticks": 1,
+      "Canonical": "2026-01-01T12:00:00.0000001Z"
+    },
+    {
+      "Text": "2026-01-01T14:00:00\u002B02:00",
+      "UnixSeconds": 1767268800,
+      "Ticks": 0,
+      "Canonical": "2026-01-01T12:00:00Z"
+    },
+    {
+      "Text": "2026-01-01T07:00:00-05:00",
+      "UnixSeconds": 1767268800,
+      "Ticks": 0,
+      "Canonical": "2026-01-01T12:00:00Z"
+    },
+    {
+      "Text": "2026-01-01T17:30:00.5\u002B05:30",
+      "UnixSeconds": 1767268800,
+      "Ticks": 5000000,
+      "Canonical": "2026-01-01T12:00:00.5Z"
+    },
+    {
+      "Text": "2026-01-01T12:00:00",
+      "UnixSeconds": 1767268800,
+      "Ticks": 0,
+      "Canonical": "2026-01-01T12:00:00Z"
+    },
+    {
+      "Text": "2026-01-01T12:00:00.25",
+      "UnixSeconds": 1767268800,
+      "Ticks": 2500000,
+      "Canonical": "2026-01-01T12:00:00.25Z"
+    }
+  ]
+}

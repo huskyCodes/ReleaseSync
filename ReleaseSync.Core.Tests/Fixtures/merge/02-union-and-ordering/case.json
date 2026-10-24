@@ -1,0 +1,4 @@
+{
+  "Description": "Everything from both sides is kept. Apps and Try later items are sorted by key in plain character order (a-b, a.b, a1, a_b, ab), custom groups ignoring case. The key is lower-case even when Owner is not.",
+  "Now": "2026-01-01T12:10:00Z"
+}

@@ -1,0 +1,7 @@
+{
+  "Description": "Non-ASCII passphrase; the same text written with combining marks is a different passphrase.",
+  "Passphrase": "p\u00E4ssw\u00F6rd \u2713 (fake)",
+  "WrongPassphrases": [
+    "pa\u0308sswo\u0308rd \u2713 (fake)"
+  ]
+}

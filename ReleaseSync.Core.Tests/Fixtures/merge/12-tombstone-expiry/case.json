@@ -1,0 +1,4 @@
+{
+  "Description": "Tombstones older than 90 days are forgotten at the end of the merge; one exactly 90 days old is kept. A deletion still applies in the same merge even if its tombstone is then forgotten. Merging the result with an old copy that still has the item brings it back, so this case is not repeatable.",
+  "Now": "2026-04-11T12:00:00Z"
+}

@@ -1,0 +1,4 @@
+{
+  "Description": "A tombstone for something neither side has is kept (until it is 90 days old). An app tombstone does not remove a Try later item for the same repository, and the other way round.",
+  "Now": "2026-01-01T13:00:00Z"
+}

@@ -1,0 +1,95 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T12:02:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [
+    {
+      "Key": "github:fake/a.b",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "a.b",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:02:00Z"
+    },
+    {
+      "Key": "github:fake/a1",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "a1",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:02:00Z"
+    },
+    {
+      "Key": "codeberg:sample/site-app",
+      "Source": "codeberg",
+      "Owner": "sample",
+      "Repo": "site-app",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:02:00Z"
+    },
+    {
+      "Key": "forgejo:git.example.test:sample/forge-app",
+      "Source": "forgejo:git.example.test",
+      "Owner": "sample",
+      "Repo": "forge-app",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:02:00Z"
+    }
+  ],
+  "TryLater": [
+    {
+      "Owner": "fake",
+      "Repo": "a-first",
+      "Source": "github",
+      "Platform": "Windows",
+      "Stars": 0,
+      "SavedAt": "2026-01-01T12:02:00Z"
+    }
+  ],
+  "CustomGroups": [
+    "Mango",
+    "Banana"
+  ],
+  "GroupStamps": {
+    "Mango": "2026-01-01T12:00:00Z",
+    "Banana": "2026-01-01T12:00:00Z"
+  },
+  "Tombstones": {},
+  "Devices": {
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+      "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "Name": "Example Mac",
+      "Platform": "Mac",
+      "AppVersion": "0.1",
+      "LastSeen": "2026-01-01T12:02:00Z"
+    }
+  }
+}

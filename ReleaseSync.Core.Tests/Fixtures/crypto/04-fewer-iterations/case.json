@@ -1,0 +1,5 @@
+{
+  "Description": "An envelope that says Iter 1000 is read with 1000 iterations (the lowest accepted).",
+  "Passphrase": "fake passphrase for tests",
+  "WrongPassphrases": []
+}

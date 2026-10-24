@@ -1,0 +1,49 @@
+{
+  "Version": 1,
+  "UpdatedAt": "2026-01-01T12:40:00Z",
+  "WrittenBy": "Example PC",
+  "Apps": [
+    {
+      "Key": "",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "no-key",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:00:00Z"
+    }
+  ],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {},
+  "Devices": {
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+      "Id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "Name": "Example PC",
+      "Platform": "Windows",
+      "AppVersion": "1.9.1",
+      "LastSeen": "2026-01-01T12:05:00.0000001Z"
+    },
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": {
+      "Id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "Name": "Example Mac (old name)",
+      "Platform": "Mac",
+      "AppVersion": "0.0",
+      "LastSeen": "2026-01-01T12:05:00Z"
+    },
+    "nameless": {
+      "Id": "",
+      "Name": "No id",
+      "Platform": "Windows",
+      "AppVersion": "0.1",
+      "LastSeen": "2026-01-01T12:05:00Z"
+    }
+  }
+}
