@@ -598,6 +598,39 @@ public static class FixtureData
         };
     }
 
+    static object DiscoverRankingVectors()
+    {
+        RepoInfo Repo(string full, int stars) => new() { FullName = full, Name = full.Split('/')[1], Stars = stars };
+        // every project is in the earlier ranking, so nothing depends on today's date
+        var items = new List<RepoInfo> { Repo("fake/alpha", 5000), Repo("fake/bravo", 4200), Repo("fake/charlie", 900), Repo("fake/delta", 120_000), Repo("fake/echo", 3000), Repo("fake/foxtrot", 880), Repo("fake/golf", 50) };
+        var snap = new Snapshot { At = DateTime.UtcNow };
+        snap.Ranks["fake/alpha"] = new[] { 1, 4900 }; snap.Ranks["fake/bravo"] = new[] { 4, 3000 }; snap.Ranks["fake/charlie"] = new[] { 2, 880 }; snap.Ranks["fake/delta"] = new[] { 3, 119_900 };
+        snap.Ranks["fake/echo"] = new[] { 7, 3000 }; snap.Ranks["fake/foxtrot"] = new[] { 5, 900 }; snap.Ranks["fake/golf"] = new[] { 6, 10 };
+        var cases = new[] { ("yesterday", TimeSpan.FromHours(20)), ("three days", TimeSpan.FromDays(3)), ("a week", TimeSpan.FromDays(7)), ("a month", TimeSpan.FromDays(30)) };
+        return new
+        {
+            Description = "Discover's ranking. Items are listed as (name, stars). Baseline is an earlier ranking: name -> [rank, stars], taken Age ago. For each mode, Order is the order the engine puts the items in, and Notes is what it shows beside each project (movement and star gain) when it is at that place in the list.",
+            Items = items.Select(i => new { i.FullName, i.Stars }).ToList(),
+            Baseline = snap.Ranks.ToDictionary(k => k.Key, k => k.Value),
+            Cases = cases.Select(c =>
+            {
+                var baseline = new DiscoverService.Baseline(snap, c.Item2);
+                return new
+                {
+                    Name = c.Item1, AgeHours = c.Item2.TotalHours,
+                    Modes = new[] { "Trending", "Popular", "New", "Updated", "Featured" }.Select(mode =>
+                    {
+                        var ordered = DiscoverService.Order(items.Select(i => Repo(i.FullName, i.Stars)).ToList(), mode, baseline);
+                        var notes = ordered.Select((r, n) => { DiscoverService.Annotate(r, n + 1, baseline); return new { r.FullName, r.Rank, r.MoveKind, r.MoveText, r.GainText, r.GainShort }; }).ToList();
+                        return new { Mode = mode, Order = ordered.Select(r => r.FullName).ToList(), Notes = notes };
+                    }).ToList(),
+                };
+            }).ToList(),
+            WithoutBaseline = Repo("fake/none", 10) is var r0 && Annotated(r0) is var a0 ? new { a0.MoveKind, a0.MoveText, a0.GainText } : null,
+        };
+        static RepoInfo Annotated(RepoInfo r) { DiscoverService.Annotate(r, 3, null); return r; }
+    }
+
     static object EncryptionDetection()
     {
         var env = CryptoCases()[0].Envelope;
@@ -650,6 +683,7 @@ public static class FixtureData
         files["releases/format.json"] = Text(FormatVectors());
         files["releases/repo-refs.json"] = Text(RepoRefVectors());
         files["releases/parsing.json"] = Text(ReleaseParsingVectors());
+        files["discover/ranking.json"] = Text(DiscoverRankingVectors());
 
         var rounds = RoundCases().Select(r =>
         {
@@ -705,6 +739,7 @@ public static class FixtureData
         | `timestamps.json` | How times are written, and how the different spellings of a time are read. |
         | `escapes.json` | How strings are escaped in JSON text. The tie-break in the merge depends on this being exact. |
         | `releases/` | Release data: version comparison, release-notes cleanup, counts and sizes, project links, and how GitHub's JSON for a project and its releases is read. |
+        | `discover/` | Discover: how the engine orders projects and shows their movement since an earlier ranking. |
         | `categorize.json` | The kind of project (the automatic group) the engine puts each name, description, topics and language in. |
 
         ## Rules for comparing

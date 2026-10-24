@@ -28,9 +28,17 @@ public actor SourceClient {
     private let send: HTTPSend
     public private(set) var rate = RateStatus()
 
-    public init(token: String? = nil, send: @escaping HTTPSend = HTTP.live) {
+    private let now: @Sendable () -> Date
+    private let sleep: @Sendable (TimeInterval) async throws -> Void
+    private var searchTokens = -1.0
+    private var searchStamp = Date.distantPast
+
+    public init(token: String? = nil, send: @escaping HTTPSend = HTTP.live,
+                now: @escaping @Sendable () -> Date = { Date() }, sleep: @escaping @Sendable (TimeInterval) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }) {
         self.token = (token?.isEmpty ?? true) ? nil : token
         self.send = send
+        self.now = now
+        self.sleep = sleep
     }
 
     public func setToken(_ token: String?) { self.token = (token?.isEmpty ?? true) ? nil : token }
@@ -81,6 +89,39 @@ public actor SourceClient {
         case .gitlab: return try await gitlabReleases(host, owner, repo, etag)
         case .forgejo: return try await forgejoReleases(host, owner, repo, etag)
         }
+    }
+
+    // MARK: searching
+
+    // GitHub allows about 30 searches a minute with a token and 10 without. A small bucket lets a whole tab (a handful of searches) go out at
+    // once, then paces the rest so nothing is refused. (The same numbers as the Windows app.)
+    private var searchCapacity: Double { token != nil ? 16 : 6 }
+    private var searchRefillPerSecond: Double { token != nil ? 0.45 : 0.15 }
+
+    private func refillSearch() {
+        let t = now()
+        if searchTokens < 0 { searchTokens = searchCapacity; searchStamp = t; return }
+        searchTokens = min(searchCapacity, searchTokens + max(0, t.timeIntervalSince(searchStamp)) * searchRefillPerSecond)
+        searchStamp = t
+    }
+
+    /// How many searches could go out right now without waiting. Background work uses this to stay out of the way.
+    public var searchesAvailable: Double { refillSearch(); return searchTokens }
+
+    private func takeSearch() async throws {
+        while true {
+            refillSearch()
+            if searchTokens >= 1 { searchTokens -= 1; return }
+            try await sleep(max(0.05, min((1 - searchTokens) / searchRefillPerSecond, 5)))      // never a busy loop
+        }
+    }
+
+    /// A plain list of repositories for a GitHub search, ordered by `sort` (stars, updated…), most first.
+    public func search(_ query: String, sort: String, perPage: Int) async throws -> [RepoInfo] {
+        try await takeSearch()
+        let reply = try await githubGet("search/repositories?q=\(Self.escaped(query))&per_page=\(perPage)&sort=\(sort)&order=desc", what: "That search")
+        guard case .array(let items)? = try json(reply).member("items") else { return [] }
+        return items.map(RepoInfo.init(github:))
     }
 
     // MARK: requests

@@ -18,6 +18,7 @@ Everything here is made up: fake owners and repositories, fake devices, a fake p
 | `timestamps.json` | How times are written, and how the different spellings of a time are read. |
 | `escapes.json` | How strings are escaped in JSON text. The tie-break in the merge depends on this being exact. |
 | `releases/` | Release data: version comparison, release-notes cleanup, counts and sizes, project links, and how GitHub's JSON for a project and its releases is read. |
+| `discover/` | Discover: how the engine orders projects and shows their movement since an earlier ranking. |
 | `categorize.json` | The kind of project (the automatic group) the engine puts each name, description, topics and language in. |
 
 ## Rules for comparing

@@ -1,0 +1,1494 @@
+{
+  "Description": "Discover\u0027s ranking. Items are listed as (name, stars). Baseline is an earlier ranking: name -\u003E [rank, stars], taken Age ago. For each mode, Order is the order the engine puts the items in, and Notes is what it shows beside each project (movement and star gain) when it is at that place in the list.",
+  "Items": [
+    {
+      "FullName": "fake/alpha",
+      "Stars": 5000
+    },
+    {
+      "FullName": "fake/bravo",
+      "Stars": 4200
+    },
+    {
+      "FullName": "fake/charlie",
+      "Stars": 900
+    },
+    {
+      "FullName": "fake/delta",
+      "Stars": 120000
+    },
+    {
+      "FullName": "fake/echo",
+      "Stars": 3000
+    },
+    {
+      "FullName": "fake/foxtrot",
+      "Stars": 880
+    },
+    {
+      "FullName": "fake/golf",
+      "Stars": 50
+    }
+  ],
+  "Baseline": {
+    "fake/alpha": [
+      1,
+      4900
+    ],
+    "fake/bravo": [
+      4,
+      3000
+    ],
+    "fake/charlie": [
+      2,
+      880
+    ],
+    "fake/delta": [
+      3,
+      119900
+    ],
+    "fake/echo": [
+      7,
+      3000
+    ],
+    "fake/foxtrot": [
+      5,
+      900
+    ],
+    "fake/golf": [
+      6,
+      10
+    ]
+  },
+  "Cases": [
+    {
+      "Name": "yesterday",
+      "AgeHours": 20,
+      "Modes": [
+        {
+          "Mode": "Trending",
+          "Order": [
+            "fake/bravo",
+            "fake/delta",
+            "fake/alpha",
+            "fake/golf",
+            "fake/charlie",
+            "fake/echo",
+            "fake/foxtrot"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/bravo",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "\u002B1.2k stars since yesterday",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/delta",
+              "Rank": 2,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 3,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 2",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B40 stars since yesterday",
+              "GainShort": "\u002B40 \u2605"
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars since yesterday",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 6,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 2",
+              "GainText": "",
+              "GainShort": ""
+            }
+          ]
+        },
+        {
+          "Mode": "Popular",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars since yesterday",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars since yesterday",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars since yesterday",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "New",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars since yesterday",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars since yesterday",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars since yesterday",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "Updated",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars since yesterday",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars since yesterday",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars since yesterday",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "Featured",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars since yesterday",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars since yesterday",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars since yesterday",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars since yesterday",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "three days",
+      "AgeHours": 72,
+      "Modes": [
+        {
+          "Mode": "Trending",
+          "Order": [
+            "fake/bravo",
+            "fake/delta",
+            "fake/alpha",
+            "fake/golf",
+            "fake/charlie",
+            "fake/echo",
+            "fake/foxtrot"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/bravo",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "\u002B1.2k stars in 3 days",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/delta",
+              "Rank": 2,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 3,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 2",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B40 stars in 3 days",
+              "GainShort": "\u002B40 \u2605"
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars in 3 days",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 6,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 2",
+              "GainText": "",
+              "GainShort": ""
+            }
+          ]
+        },
+        {
+          "Mode": "Popular",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars in 3 days",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars in 3 days",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars in 3 days",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "New",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars in 3 days",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars in 3 days",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars in 3 days",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "Updated",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars in 3 days",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars in 3 days",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars in 3 days",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "Featured",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars in 3 days",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars in 3 days",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars in 3 days",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars in 3 days",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "a week",
+      "AgeHours": 168,
+      "Modes": [
+        {
+          "Mode": "Trending",
+          "Order": [
+            "fake/bravo",
+            "fake/delta",
+            "fake/alpha",
+            "fake/golf",
+            "fake/charlie",
+            "fake/echo",
+            "fake/foxtrot"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/bravo",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/delta",
+              "Rank": 2,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 3,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 6,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 2",
+              "GainText": "",
+              "GainShort": ""
+            }
+          ]
+        },
+        {
+          "Mode": "Popular",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "New",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "Updated",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "Featured",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Name": "a month",
+      "AgeHours": 720,
+      "Modes": [
+        {
+          "Mode": "Trending",
+          "Order": [
+            "fake/bravo",
+            "fake/delta",
+            "fake/alpha",
+            "fake/golf",
+            "fake/charlie",
+            "fake/echo",
+            "fake/foxtrot"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/bravo",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/delta",
+              "Rank": 2,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 3,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 6,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 2",
+              "GainText": "",
+              "GainShort": ""
+            }
+          ]
+        },
+        {
+          "Mode": "Popular",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "New",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "Updated",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        },
+        {
+          "Mode": "Featured",
+          "Order": [
+            "fake/delta",
+            "fake/alpha",
+            "fake/bravo",
+            "fake/echo",
+            "fake/charlie",
+            "fake/foxtrot",
+            "fake/golf"
+          ],
+          "Notes": [
+            {
+              "FullName": "fake/delta",
+              "Rank": 1,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 2",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/alpha",
+              "Rank": 2,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B100 stars this week",
+              "GainShort": "\u002B100 \u2605"
+            },
+            {
+              "FullName": "fake/bravo",
+              "Rank": 3,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 1",
+              "GainText": "\u002B1.2k stars this week",
+              "GainShort": "\u002B1.2k \u2605"
+            },
+            {
+              "FullName": "fake/echo",
+              "Rank": 4,
+              "MoveKind": "up",
+              "MoveText": "\u25B2 3",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/charlie",
+              "Rank": 5,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 3",
+              "GainText": "\u002B20 stars this week",
+              "GainShort": "\u002B20 \u2605"
+            },
+            {
+              "FullName": "fake/foxtrot",
+              "Rank": 6,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "",
+              "GainShort": ""
+            },
+            {
+              "FullName": "fake/golf",
+              "Rank": 7,
+              "MoveKind": "down",
+              "MoveText": "\u25BC 1",
+              "GainText": "\u002B40 stars this week",
+              "GainShort": "\u002B40 \u2605"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "WithoutBaseline": {
+    "MoveKind": "",
+    "MoveText": "",
+    "GainText": ""
+  }
+}
