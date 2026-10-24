@@ -9,6 +9,8 @@ enum SecretTarget {
 }
 
 protocol SecretStore: Sendable {
+    /// Whether something is saved, without reading it (so macOS has nothing to ask permission for).
+    func exists(_ target: String) throws -> Bool
     func read(_ target: String) throws -> String?
     func write(_ target: String, _ secret: String) throws
     func delete(_ target: String) throws
@@ -16,7 +18,14 @@ protocol SecretStore: Sendable {
 
 struct KeychainError: Error, LocalizedError, Equatable {
     let status: OSStatus
+
+    /// macOS said no: the person declined the question, or this build isn't on the item's list of apps that may use it.
+    var isAccessDenied: Bool { [errSecUserCanceled, errSecAuthFailed, errSecInteractionNotAllowed, errSecNoAccessForItem].contains(status) }
+
     var errorDescription: String? {
+        if isAccessDenied {
+            return "macOS didn't let ReleaseSync use what it saved. When it asks, choose “Always Allow”. If it keeps asking, open Keychain Access, delete the old “ReleaseSync/…” items and save them again in Settings."
+        }
         let text = SecCopyErrorMessageString(status, nil) as String? ?? "error \(status)"
         return "The Keychain said: \(text)"
     }
@@ -32,6 +41,16 @@ struct KeychainSecretStore: SecretStore {
         [kSecClass as String: kSecClassGenericPassword,
          kSecAttrService as String: prefix + target,
          kSecAttrAccount as String: KeychainSecretStore.account]
+    }
+
+    func exists(_ target: String) throws -> Bool {
+        var q = query(target)
+        q[kSecReturnAttributes as String] = true      // the attributes only: no password, so no permission question
+        q[kSecMatchLimit as String] = kSecMatchLimitOne
+        let status = SecItemCopyMatching(q as CFDictionary, nil)
+        if status == errSecItemNotFound { return false }
+        guard status == errSecSuccess else { throw KeychainError(status: status) }
+        return true
     }
 
     func read(_ target: String) throws -> String? {
@@ -67,6 +86,7 @@ struct KeychainSecretStore: SecretStore {
 final class InMemorySecrets: SecretStore, @unchecked Sendable {
     private let lock = NSLock()
     private var items: [String: String] = [:]
+    func exists(_ target: String) throws -> Bool { lock.lock(); defer { lock.unlock() }; return items[target] != nil }
     func read(_ target: String) throws -> String? { lock.lock(); defer { lock.unlock() }; return items[target] }
     func write(_ target: String, _ secret: String) throws { lock.lock(); items[target] = secret; lock.unlock() }
     func delete(_ target: String) throws { lock.lock(); items[target] = nil; lock.unlock() }

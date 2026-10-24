@@ -1,3 +1,4 @@
+import AppKit
 import ReleaseSyncKit
 import SwiftUI
 
@@ -251,6 +252,13 @@ struct StatusView: View {
             EmptyMessage(symbol: "tray", title: "No library found", message: "Your GitHub account doesn't have a ReleaseSync library yet. Turn on sync in ReleaseSync on your other device first, then check again.", brand: true) {
                 Button { Task { await model.refresh() } } label: { Label("Check again", systemImage: "arrow.clockwise") }
                     .buttonStyle(PrimaryButtonStyle(height: 40))
+            }
+        case .keychainBlocked(let message):
+            EmptyMessage(symbol: "lock.trianglebadge.exclamationmark", title: "ReleaseSync can't use your saved details", message: message) {
+                HStack {
+                    Button("Try again") { Task { await model.refresh() } }.buttonStyle(PrimaryButtonStyle(height: 40))
+                    Button("Open Keychain Access") { NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Keychain Access.app")) }.buttonStyle(OutlineButtonStyle(height: 40))
+                }
             }
         case .failed(let message):
             EmptyMessage(symbol: "exclamationmark.triangle", title: "Couldn't open your library", message: message) {

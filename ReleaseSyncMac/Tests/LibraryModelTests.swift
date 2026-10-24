@@ -1,11 +1,20 @@
 import ReleaseSyncKit
+import Security
 import XCTest
 @testable import ReleaseSync
 
 final class MemorySecrets: SecretStore, @unchecked Sendable {
     private let lock = NSLock()
     private var items: [String: String] = [:]
-    func read(_ target: String) throws -> String? { lock.lock(); defer { lock.unlock() }; return items[target] }
+    private(set) var reads: [String] = []
+    var denyReads = false
+    func exists(_ target: String) throws -> Bool { lock.lock(); defer { lock.unlock() }; return items[target] != nil }
+    func read(_ target: String) throws -> String? {
+        lock.lock(); defer { lock.unlock() }
+        reads.append(target)
+        if denyReads { throw KeychainError(status: errSecAuthFailed) }
+        return items[target]
+    }
     func write(_ target: String, _ secret: String) throws { lock.lock(); items[target] = secret; lock.unlock() }
     func delete(_ target: String) throws { lock.lock(); items[target] = nil; lock.unlock() }
 }
@@ -122,5 +131,41 @@ final class LibraryModelTests: XCTestCase {
         let m = model(secrets: secrets, transport: SpyTransport(text: doc.text()))
         await m.refresh()
         XCTAssertEqual(m.devices.map(\.name), ["Example PC", "Old"])
+    }
+
+    func testTheKeychainIsAskedOncePerItemNotOnEverySync() async throws {
+        let secrets = MemorySecrets(); try secrets.write(SecretTarget.gitHubToken, "fake-token"); try secrets.write(SecretTarget.syncPassphrase, "fake passphrase for tests")
+        let m = model(secrets: secrets, transport: SpyTransport(text: Self.library().text()))
+        await m.refresh(); await m.refresh(); await m.refresh()
+        XCTAssertEqual(secrets.reads, [SecretTarget.gitHubToken], "the token once, and the passphrase not at all because the library isn't locked")
+    }
+
+    func testThePassphraseIsOnlyReadWhenTheLibraryIsLocked() async throws {
+        let pass = "fake passphrase for tests"
+        let secrets = MemorySecrets(); try secrets.write(SecretTarget.gitHubToken, "fake-token"); try secrets.write(SecretTarget.syncPassphrase, pass)
+        let m = model(secrets: secrets, transport: SpyTransport(text: try SyncCrypto.encrypt(Self.library().text(), passphrase: pass)))
+        await m.refresh()
+        XCTAssertEqual(m.phase, .loaded, "found the saved passphrase and opened the library in one go")
+        await m.refresh()
+        XCTAssertEqual(secrets.reads, [SecretTarget.gitHubToken, SecretTarget.syncPassphrase], "each read once")
+    }
+
+    func testDecliningTheKeychainQuestionGivesAClearScreenNotALoop() async throws {
+        let secrets = MemorySecrets(); try secrets.write(SecretTarget.gitHubToken, "fake-token"); secrets.denyReads = true
+        let m = model(secrets: secrets, transport: SpyTransport(text: Self.library().text()))
+        await m.refresh()
+        guard case .keychainBlocked(let message) = m.phase else { return XCTFail("\(m.phase)") }
+        XCTAssertTrue(message.contains("Always Allow"))
+        secrets.denyReads = false
+        await m.refresh()
+        XCTAssertEqual(m.phase, .loaded, "asking again works once access is allowed")
+    }
+
+    func testCheckingWhatIsSavedNeverReadsIt() async throws {
+        let secrets = MemorySecrets(); try secrets.write(SecretTarget.gitHubToken, "fake-token")
+        let m = model(secrets: secrets, transport: SpyTransport(text: nil))
+        let saved = await m.hasSecret(SecretTarget.gitHubToken), notSaved = await m.hasSecret(SecretTarget.syncPassphrase)
+        XCTAssertTrue(saved); XCTAssertFalse(notSaved)
+        XCTAssertTrue(secrets.reads.isEmpty)
     }
 }

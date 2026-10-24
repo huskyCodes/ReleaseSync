@@ -43,13 +43,15 @@ targets:
     sources: [Tests]
     dependencies:
       - target: ReleaseSync
+    # signed the same way as the app, or the app (hardened runtime) refuses to load the tests
+    configFiles:
+      Debug: Config/ReleaseSync.xcconfig
+      Release: Config/ReleaseSync.xcconfig
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.huskycodes.ReleaseSync.Tests
         SWIFT_VERSION: "5.0"
         GENERATE_INFOPLIST_FILE: YES
-        CODE_SIGN_IDENTITY: "-"
-        CODE_SIGN_STYLE: Manual
 schemes:
   ReleaseSync:
     build:
