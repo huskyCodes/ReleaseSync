@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -266,6 +267,8 @@ public sealed class InstallService
                     return;
                 }
 
+                var shipped = InstallManifest.ListDirectory(root);        // remembered below, so removing the app later deletes only these files
+
                 if (Directory.Exists(target) && Directory.EnumerateFileSystemEntries(target).Any())
                 {
                     // an update: copy the new files over the old ones and leave everything else alone (saves, settings and other data inside the folder survive)
@@ -285,6 +288,7 @@ public sealed class InstallService
                     Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                     Directory.Move(root, target);
                 }
+                InstallManifest.Save(app.Id, target, shipped);
                 var exe = FindMainExe(target, app.Repo);
                 app.InstallPath = exe;
                 if (exe != null && s.CreateShortcuts) CreateShortcut(app, exe);
@@ -383,20 +387,50 @@ public sealed class InstallService
         catch { }
     }
 
-    /// <summary>Deletes portable files and shortcut that ReleaseSync created.</summary>
-    public static void RemoveFiles(TrackedApp app)
+    /// <summary>
+    /// The files this app's release put into the folder the user chose for it, or null when that can't be known. Comes from the list made at install time;
+    /// for an app installed before that list existed, from the downloaded archive if it is still on disk.
+    /// </summary>
+    public static List<string>? OwnedFiles(TrackedApp app)
     {
+        var target = PortableTarget(app);
+        if (InstallManifest.Load(app.Id, target) is { } known) return known;
+        try
+        {
+            var name = app.InstalledAssetName;
+            if (string.IsNullOrEmpty(name) || !name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(app.InstalledVersion)) return null;
+            var zip = Path.Combine(AppSettingsProvider.Current.DownloadFolder, Fmt.SafeName(app.Owner.Replace('/', '-') + "-" + app.Repo), Fmt.SafeName(app.InstalledVersion), Fmt.SafeName(name));
+            return File.Exists(zip) ? InstallManifest.ListZip(zip) : null;
+        }
+        catch { return null; }
+    }
+
+    /// <summary>
+    /// Deletes the portable files and shortcut that ReleaseSync created. In ReleaseSync's own apps folder that is the app's whole folder; in a folder the user chose,
+    /// only the files the release installed (the user's own files, saves and settings in there stay). Returns null when nothing was deleted because the files couldn't be identified.
+    /// </summary>
+    public static InstallManifest.RemoveResult? RemoveFiles(TrackedApp app)
+    {
+        InstallManifest.RemoveResult? result = null;
         try
         {
             var target = PortableTarget(app);
-            if (Directory.Exists(target) && (!app.HasCustomInstallDir || IsSafeToDelete(target)))
+            if (Directory.Exists(target))
             {
-                AppBackups.Create(app, target, "removal");           // kept, so deleting an app never destroys its settings for good
-                Directory.Delete(target, true);
+                if (!app.HasCustomInstallDir)
+                {
+                    AppBackups.Create(app, target, "removal");           // kept, so deleting an app never destroys its settings for good
+                    Directory.Delete(target, true);
+                    result = new InstallManifest.RemoveResult(0, 0, 0);
+                }
+                else if (IsSafeToDelete(target) && OwnedFiles(app) is { } files) result = InstallManifest.RemoveListed(target, files);
             }
+            else result = new InstallManifest.RemoveResult(0, 0, 0);
+            if (result != null) InstallManifest.Forget(app.Id);
             var lnk = ShortcutPath(app);
             if (File.Exists(lnk)) File.Delete(lnk);
         }
         catch { }
+        return result;
     }
 }

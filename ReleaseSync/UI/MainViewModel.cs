@@ -1577,8 +1577,14 @@ public sealed partial class MainViewModel : Observable
     }
 
     // ===================== remove =====================
+    /// <summary>Unpacked by ReleaseSync (no Windows uninstaller), either into its apps folder or into a folder the user chose for it.</summary>
     bool IsPortableInstall(TrackedApp app) =>
-        string.IsNullOrEmpty(app.UninstallKey) && !string.IsNullOrEmpty(app.InstallPath) && app.InstallPath!.StartsWith(Settings.InstallRoot, StringComparison.OrdinalIgnoreCase);
+        string.IsNullOrEmpty(app.UninstallKey) && !string.IsNullOrEmpty(app.InstallPath)
+        && (app.InstallPath!.StartsWith(Settings.InstallRoot, StringComparison.OrdinalIgnoreCase)
+            || (app.HasCustomInstallDir && app.InstallPath.StartsWith(app.CustomInstallDir!.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>In ReleaseSync's own folder the whole folder can go; in a folder the user chose, only when the list of files the release installed is known.</summary>
+    bool CanDeleteFiles(TrackedApp app) => IsPortableInstall(app) && (!app.HasCustomInstallDir || InstallService.OwnedFiles(app) != null);
 
     void RemoveFromLibrary(TrackedApp app, bool deleteFiles)
     {
@@ -1594,8 +1600,8 @@ public sealed partial class MainViewModel : Observable
 
     void AskRemove(TrackedApp app)
     {
-        bool hasFiles = IsPortableInstall(app);
-        var (entry, exact) = app.IsInstalled && !hasFiles ? UninstallService.Resolve(app) : (null, false);
+        bool hasFiles = CanDeleteFiles(app);
+        var (entry, exact) = app.IsInstalled && !IsPortableInstall(app) ? UninstallService.Resolve(app) : (null, false);
         bool canUninstall = entry != null;
         if (!Settings.ConfirmRemove && !hasFiles && !canUninstall) { RemoveFromLibrary(app, false); return; }
 
@@ -1609,7 +1615,7 @@ public sealed partial class MainViewModel : Observable
             Title = $"Stop tracking {app.Title}?", Message = message,
             OkText = "Stop tracking", IsDanger = false,
             ShowCheck = hasFiles || canUninstall,
-            CheckText = hasFiles ? "Also delete the files ReleaseSync installed" : $"Also uninstall “{entry?.DisplayName}” from this PC",
+            CheckText = hasFiles ? (app.HasCustomInstallDir ? "Also delete the files ReleaseSync installed (other files in that folder stay)" : "Also delete the files ReleaseSync installed") : $"Also uninstall “{entry?.DisplayName}” from this PC",
             Checked = false,
             OnOk = p =>
             {
@@ -1626,17 +1632,30 @@ public sealed partial class MainViewModel : Observable
         if (!app.IsInstalled && string.IsNullOrEmpty(app.InstallPath) && string.IsNullOrEmpty(app.UninstallKey)) { Toast($"{app.Title} isn't installed", "info"); return; }
         if (IsPortableInstall(app))
         {
+            bool inOwnFolder = !app.HasCustomInstallDir;
+            bool known = inOwnFolder || InstallService.OwnedFiles(app) != null;
+            // installed into a folder of the user's choosing before the list of files was kept: the release it came from can be fetched again to read the list
+            var again = known ? null : app.Releases.FirstOrDefault(r => r.Tag == app.InstalledVersion)?.Assets.FirstOrDefault(a => a.Name == app.InstalledAssetName && a.Kind == AssetKind.Zip);
+            if (again != null)
+            {
+                var tag = app.InstalledVersion!;
+                Prompt = new PromptVM
+                {
+                    Title = $"Uninstall {app.Title}?",
+                    Message = $"{app.Title} is in {app.CustomInstallDir}, a folder you chose, and that folder may hold your own files. To delete only what ReleaseSync installed, it needs to download {again.Name} ({again.SizeText}) again to read which files belong to it. Everything else in the folder stays. The app stays in your library so you can reinstall it later.",
+                    OkText = "Download and uninstall", IsDanger = true,
+                    OnOk = pp => { _ = UninstallAfterLearningFilesAsync(app, tag, again); return null; }
+                };
+                return;
+            }
             Prompt = new PromptVM
             {
-                Title = $"Uninstall {app.Title}?", Message = "This deletes the unpacked app files and its Start menu shortcut. It stays in your library so you can reinstall it later.",
-                OkText = "Uninstall", IsDanger = true,
-                OnOk = _ =>
-                {
-                    InstallService.RemoveFiles(app);
-                    app.InstalledVersion = null; app.InstallPath = null; app.NotifiedVersion = null;
-                    AddLog($"Uninstalled {app.Title}", "success"); Toast($"{app.Title} was uninstalled", "success");
-                    return null;
-                }
+                Title = known ? $"Uninstall {app.Title}?" : $"Mark {app.Title} as uninstalled?",
+                Message = inOwnFolder ? "This deletes the unpacked app files and its Start menu shortcut. It stays in your library so you can reinstall it later."
+                    : known ? $"This deletes only the files ReleaseSync installed in {app.CustomInstallDir} and its Start menu shortcut. Anything else in that folder stays. The app stays in your library so you can reinstall it later."
+                    : $"ReleaseSync doesn't have a list of the files it put in {app.CustomInstallDir}, and that folder may hold your own files, so it won't delete anything. This only marks the app as not installed; you can delete its files yourself.",
+                OkText = known ? "Uninstall" : "Mark as uninstalled", IsDanger = known,
+                OnOk = _ => { FinishPortableUninstall(app, known ? InstallService.RemoveFiles(app) : null, known, inOwnFolder); return null; }
             };
             return;
         }
@@ -1654,6 +1673,32 @@ public sealed partial class MainViewModel : Observable
             OkText = "Uninstall", IsDanger = true,
             OnOk = pp => { _ = RunUninstallAsync(app, entry, thenRemove: false); return null; }
         };
+    }
+
+    void FinishPortableUninstall(TrackedApp app, InstallManifest.RemoveResult? removed, bool known, bool inOwnFolder)
+    {
+        app.InstalledVersion = null; app.InstallPath = null; app.NotifiedVersion = null;
+        if (!known) { AddLog($"Marked {app.Title} as uninstalled (files left in place)", "info"); Toast($"{app.Title} is marked as uninstalled. Its files were left in place.", "info"); }
+        else if (removed is { LeftBehind: > 0 } r && !inOwnFolder) { AddLog($"Uninstalled {app.Title} ({r.Removed} files removed, {r.LeftBehind} other files left)", "success"); Toast($"{app.Title} was uninstalled. {r.LeftBehind} other file{(r.LeftBehind == 1 ? "" : "s")} in that folder stayed.", "success"); }
+        else { AddLog($"Uninstalled {app.Title}", "success"); Toast($"{app.Title} was uninstalled", "success"); }
+        if (removed is { Failed: > 0 } f) Toast($"{f.Failed} file{(f.Failed == 1 ? "" : "s")} couldn't be deleted. Close the app and try again.", "warn");
+        app.NotifyAll(); ScheduleSaveApps(); ScheduleRefresh();
+    }
+
+    async Task UninstallAfterLearningFilesAsync(TrackedApp app, string tag, AssetInfo asset)
+    {
+        if (app.IsBusy) return;
+        app.Progress = 0; app.BusyText = "Checking which files it installed…"; app.IsBusy = true;
+        AddLog($"Reading the file list of {asset.Name} to uninstall {app.Title}", "info");
+        try
+        {
+            var zip = await Installer.DownloadAsync(app, tag, asset, new Progress<InstallProgress>(p => { app.Progress = p.Percent; app.BusyText = p.Text; }), CancellationToken.None);
+            var files = await Task.Run(() => InstallManifest.ListZip(zip));
+            InstallManifest.Save(app.Id, InstallService.PortableTarget(app), files);
+            FinishPortableUninstall(app, InstallService.RemoveFiles(app), true, false);
+        }
+        catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast("Couldn't read the file list, so nothing was deleted: " + ex.Message, "error"); }
+        finally { app.IsBusy = false; app.BusyText = ""; app.NotifyAll(); }
     }
 
     async Task RunUninstallAsync(TrackedApp app, UninstallEntry entry, bool thenRemove)
