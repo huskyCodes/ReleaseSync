@@ -25,6 +25,17 @@ final class LibraryModel {
     /// Showing made-up data (a debug launch option); nothing is fetched.
     private(set) var isDemo = false
 
+    // release data: what the sites say about each tracked app (latest version, notes, downloads), kept encrypted between runs
+    private(set) var releases: [String: AppRelease] = [:]
+    private(set) var isChecking = false
+    private(set) var checkProgress: (done: Int, total: Int)?
+    /// GitHub's allowance for requests, as of the last answer.
+    private(set) var rate = RateStatus()
+    private(set) var lastCheck: Date?
+    private let client: SourceClient
+    private let releaseStore: ReleaseStore
+    private var cacheLoaded = false
+
     private let secrets: SecretStore
     /// What has been read from the Keychain this time the app is open ("nothing saved" is remembered too), so macOS is asked once per item, not on every sync.
     private var cache: [String: String?] = [:]
@@ -32,15 +43,22 @@ final class LibraryModel {
     /// Counts refreshes, so the answer to an older one never overwrites a newer one.
     private var generation = 0
 
-    init(secrets: SecretStore, makeTransport: @escaping @Sendable (String) -> SyncTransport = { GistTransport(token: $0) }) {
+    init(secrets: SecretStore, makeTransport: @escaping @Sendable (String) -> SyncTransport = { GistTransport(token: $0) },
+         client: SourceClient = SourceClient(), blobs: BlobStore? = nil) {
         self.secrets = secrets
         self.makeTransport = makeTransport
+        self.client = client
+        self.releaseStore = ReleaseStore(client: client, blobs: blobs)
     }
 
     /// A library to show without any account (made-up data).
-    init(showing doc: SyncDoc, secrets: SecretStore) {
+    init(showing doc: SyncDoc, releases: [String: AppRelease] = [:], secrets: SecretStore) {
         self.secrets = secrets
         self.makeTransport = { _ in MemoryTransport() }
+        self.client = SourceClient()
+        self.releaseStore = ReleaseStore(client: client)
+        self.releases = releases
+        self.rate = RateStatus(limit: 5000, remaining: 4962)
         self.doc = doc
         self.phase = .loaded
         self.lastFetched = Date()
@@ -51,6 +69,8 @@ final class LibraryModel {
     init(previewing phase: Phase, secrets: SecretStore) {
         self.secrets = secrets
         self.makeTransport = { _ in MemoryTransport() }
+        self.client = SourceClient()
+        self.releaseStore = ReleaseStore(client: client)
         self.phase = phase
         self.isDemo = true
     }
@@ -75,6 +95,7 @@ final class LibraryModel {
                 doc = nil; phase = .needsToken
                 return
             }
+            await client.setToken(token)
             phase = .loading
             // the passphrase is looked up only when the library turns out to be locked: most people never get that second question from macOS
             var passphrase = cache[SecretTarget.syncPassphrase] ?? nil
@@ -102,6 +123,35 @@ final class LibraryModel {
             if let keychain = error as? KeychainError, keychain.isAccessDenied { phase = .keychainBlocked(keychain.localizedDescription) }
             else { phase = .failed(error.localizedDescription) }
         }
+    }
+
+    // MARK: release data
+
+    /// Shows what was remembered from earlier runs straight away.
+    func loadCachedReleases() async {
+        guard !isDemo, !cacheLoaded else { return }
+        cacheLoaded = true
+        await releaseStore.load()
+        releases = await releaseStore.all()
+    }
+
+    /// Looks for new releases of the apps in the library. Quick when nothing has changed: GitHub answers "not modified" and that costs
+    /// nothing against its allowance. `manual` (the person pressed the button) looks at every app; otherwise recently checked ones are left alone.
+    @discardableResult
+    func checkForUpdates(manual: Bool) async -> CheckSummary? {
+        guard !isDemo, doc != nil, !isChecking else { return nil }
+        await loadCachedReleases()
+        let targets = apps.filter { !$0.hidden }.map { CheckTarget(key: $0.key, source: $0.source, owner: $0.owner, repo: $0.repo, includePrereleases: $0.includePrereleases) }
+        isChecking = true
+        checkProgress = (0, targets.count)
+        defer { isChecking = false; checkProgress = nil }
+        let summary = await releaseStore.check(targets, manual: manual) { [weak self] done, total in
+            Task { @MainActor in self?.checkProgress = (done, total) }
+        }
+        releases = await releaseStore.all()
+        rate = await client.rate
+        lastCheck = Date()
+        return summary
     }
 
     private func attempt(token: String, passphrase: String?) async -> Result<(doc: SyncDoc?, locked: Bool), Error> {

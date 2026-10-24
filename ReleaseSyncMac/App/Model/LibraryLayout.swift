@@ -7,7 +7,7 @@ import ReleaseSyncKit
 enum LibraryLayout {
     static let ungrouped = "Ungrouped"
 
-    enum Status: Hashable { case all, favorites, hidden }
+    enum Status: Hashable { case all, favorites, noMacBuild, hidden }
 
     struct Section: Identifiable, Equatable {
         var id: String { title }
@@ -27,25 +27,30 @@ enum LibraryLayout {
         var chips: [GroupChip] = []
         /// The person's own groups that have nothing in them yet (shown so they don't seem to vanish).
         var emptyGroups: [String] = []
-        var total = 0, favorites = 0, hidden = 0
+        var total = 0, favorites = 0, hidden = 0, noMacBuild = 0
     }
 
     /// The group an app is shown under: its own group, else (when automatic groups are on) its type, else "Ungrouped".
-    static func displayGroup(_ app: SyncApp, autoGroups: Bool) -> String {
+    /// With the project's details (description, topics, language) the automatic type is worked out the same way the Windows app does it;
+    /// until they are known it goes by the name alone.
+    static func displayGroup(_ app: SyncApp, autoGroups: Bool, info: AppRelease? = nil) -> String {
         if !isBlankText(app.group) { return app.group! }
-        return autoGroups ? Categorizer.categorize(name: app.repo) : ungrouped
+        guard autoGroups else { return ungrouped }
+        return Categorizer.categorize(name: app.repo, description: info?.meta?.description, topics: info?.meta?.topics, language: info?.meta?.language)
     }
 
-    static func layout(apps: [SyncApp], customGroups: [String], status: Status, groupFilter: String?, query: String, sort: String, groupItems: Bool, autoGroups: Bool) -> Result {
+    static func layout(apps: [SyncApp], customGroups: [String], releases: [String: AppRelease] = [:], status: Status, groupFilter: String?, query: String, sort: String, groupItems: Bool, autoGroups: Bool) -> Result {
+        func noMac(_ a: SyncApp) -> Bool { ReleaseFacts(a, releases[a.key]).hasMacBuild == false }
         var r = Result()
         r.total = apps.filter { !$0.hidden }.count
         r.favorites = apps.filter { !$0.hidden && $0.pinned }.count
         r.hidden = apps.filter(\.hidden).count
+        r.noMacBuild = apps.filter { !$0.hidden && noMac($0) }.count
 
         // group chips count what the status filter shows
         let inScope = apps.filter { $0.hidden == (status == .hidden) }
         var counts: [String: Int] = [:]
-        for a in inScope { counts[displayGroup(a, autoGroups: autoGroups), default: 0] += 1 }
+        for a in inScope { counts[displayGroup(a, autoGroups: autoGroups, info: releases[a.key]), default: 0] += 1 }
         for g in customGroups where counts.first(where: { $0.key.caseInsensitiveCompare(g) == .orderedSame }) == nil { counts[g] = 0 }
         let isCustom = { (name: String) in customGroups.contains { $0.caseInsensitiveCompare(name) == .orderedSame } }
         r.chips = counts
@@ -59,20 +64,25 @@ enum LibraryLayout {
 
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let shown = inScope.filter { a in
-            if let groupFilter, displayGroup(a, autoGroups: autoGroups) != groupFilter { return false }
+            if let groupFilter, displayGroup(a, autoGroups: autoGroups, info: releases[a.key]) != groupFilter { return false }
             if status == .favorites && !a.pinned { return false }
-            return matches(a, q, autoGroups)
+            if status == .noMacBuild && !noMac(a) { return false }
+            return matches(a, q, autoGroups, releases[a.key])
         }
 
         func ordered(_ list: [SyncApp]) -> [SyncApp] {
             list.sorted { a, b in
                 if a.pinned != b.pinned { return a.pinned }
                 if sort == "Recently added", a.addedAt != b.addedAt { return a.addedAt > b.addedAt }
+                if sort == "Recently updated" {
+                    let (x, y) = (releases[a.key]?.latestPublished?.ticks ?? 0, releases[b.key]?.latestPublished?.ticks ?? 0)
+                    if x != y { return x > y }
+                }
                 return a.title.localizedCaseInsensitiveCompare(b.title) == .orderedAscending
             }
         }
         if groupItems {
-            let groups = Dictionary(grouping: shown) { displayGroup($0, autoGroups: autoGroups) }
+            let groups = Dictionary(grouping: shown) { displayGroup($0, autoGroups: autoGroups, info: releases[$0.key]) }
             r.sections = groups.map { Section(title: $0.key, apps: ordered($0.value)) }
                 .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
         } else if !shown.isEmpty {
@@ -84,9 +94,9 @@ enum LibraryLayout {
         return r
     }
 
-    static func matches(_ app: SyncApp, _ query: String, _ autoGroups: Bool) -> Bool {
+    static func matches(_ app: SyncApp, _ query: String, _ autoGroups: Bool, _ info: AppRelease? = nil) -> Bool {
         guard !query.isEmpty else { return true }
-        return [app.title, app.fullName, displayGroup(app, autoGroups: autoGroups), app.note, app.tags].contains { $0?.localizedStandardContains(query) == true }
+        return [app.title, app.fullName, displayGroup(app, autoGroups: autoGroups, info: info), app.note, app.tags, info?.meta?.description].contains { $0?.localizedStandardContains(query) == true }
     }
 
     // MARK: Try later

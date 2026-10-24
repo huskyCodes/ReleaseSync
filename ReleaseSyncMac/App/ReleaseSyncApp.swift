@@ -11,11 +11,13 @@ struct ReleaseSyncApp: App {
     init() {
         // under tests the app is only a host: it must not read the real Keychain (macOS may ask permission and wait for an answer)
         let underTest = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-        var model = underTest ? LibraryModel(previewing: .needsToken, secrets: InMemorySecrets()) : LibraryModel(secrets: KeychainSecretStore())
+        let keychain = KeychainSecretStore()
+        var model = underTest ? LibraryModel(previewing: .needsToken, secrets: InMemorySecrets())
+                              : LibraryModel(secrets: keychain, blobs: EncryptedFileBlobStore(url: EncryptedFileBlobStore.defaultURL("releases.cache"), secrets: keychain))
         var nav = Navigator()
         #if DEBUG
         // `--demo` shows a made-up library, so the app can be tried and photographed without an account; `--page <name>` opens a page
-        if CommandLine.arguments.contains("--demo") { model = LibraryModel(showing: DemoLibrary.make(), secrets: KeychainSecretStore()) }
+        if CommandLine.arguments.contains("--demo") { model = LibraryModel(showing: DemoLibrary.make(), releases: DemoLibrary.releases(), secrets: InMemorySecrets()) }
         if let i = CommandLine.arguments.firstIndex(of: "--status"), i + 1 < CommandLine.arguments.count {
             let phases: [String: LibraryModel.Phase] = ["needsToken": .needsToken, "needsPassphrase": .needsPassphrase(wrong: false), "wrongPassphrase": .needsPassphrase(wrong: true),
                                                          "noLibrary": .noLibrary, "failed": .failed("GitHub didn't accept your token. Add a fresh one in Settings."), "loading": .loading]
@@ -45,7 +47,7 @@ struct ReleaseSyncApp: App {
                 Button("Settings…") { nav.show(.settings) }.keyboardShortcut(",", modifiers: .command)
             }
             CommandMenu("Library") {
-                Button("Sync Now") { Task { await syncNow(model, toasts) } }.keyboardShortcut("r", modifiers: .command).disabled(model.isBusy)
+                Button("Check for Updates") { Task { await checkNow(model, toasts) } }.keyboardShortcut("r", modifiers: .command).disabled(model.isBusy || model.isChecking)
                 Divider()
                 ForEach(Page.primary) { page in
                     Button(page.title) { nav.show(page) }.keyboardShortcut(KeyEquivalent(Character(String((Page.primary.firstIndex(of: page) ?? 0) + 1))), modifiers: .command)

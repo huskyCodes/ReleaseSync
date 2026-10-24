@@ -11,7 +11,7 @@ struct LibraryPage: View {
     @State private var folded = Set<String>()
 
     private var result: LibraryLayout.Result {
-        LibraryLayout.layout(apps: model.apps, customGroups: model.customGroups, status: status, groupFilter: groupFilter, query: query,
+        LibraryLayout.layout(apps: model.apps, customGroups: model.customGroups, releases: model.releases, status: status, groupFilter: groupFilter, query: query,
                              sort: prefs.sort, groupItems: prefs.groupItems, autoGroups: prefs.autoGroups)
     }
 
@@ -46,7 +46,9 @@ struct LibraryPage: View {
         if status == .hidden { return "\(r.hidden) hidden \(r.hidden == 1 ? "app" : "apps")  ·  not shown in your library" }
         var s = "\(r.total) \(r.total == 1 ? "app" : "apps")"
         if r.hidden > 0 { s += "  ·  \(r.hidden) hidden" }
-        if let last = model.lastFetched { s += "  ·  synced " + RelativeDateTimeFormatter.short.localizedString(for: last, relativeTo: Date()) }
+        if model.isChecking, let p = model.checkProgress { s += "  ·  checking \(p.done) of \(p.total)…" }
+        else if let last = model.lastCheck { s += "  ·  checked " + RelativeDateTimeFormatter.short.localizedString(for: last, relativeTo: Date()) }
+        else if let last = model.lastFetched { s += "  ·  synced " + RelativeDateTimeFormatter.short.localizedString(for: last, relativeTo: Date()) }
         return s
     }
 
@@ -75,6 +77,7 @@ struct LibraryPage: View {
         HStack(spacing: 8) {
             Chip(title: "All", count: r.total, selected: status == .all) { status = .all }
             Chip(title: "★ Favorites", count: r.favorites, selected: status == .favorites) { status = .favorites }
+            if r.noMacBuild > 0 { Chip(title: "No Mac build", count: r.noMacBuild, selected: status == .noMacBuild) { status = .noMacBuild } }
             if r.hidden > 0 { Chip(title: "Hidden", count: r.hidden, selected: status == .hidden) { status = .hidden } }
         }
     }

@@ -168,4 +168,80 @@ final class LibraryModelTests: XCTestCase {
         XCTAssertTrue(saved); XCTAssertFalse(notSaved)
         XCTAssertTrue(secrets.reads.isEmpty)
     }
+
+    // MARK: release data
+
+    func checkingModel(secrets: MemorySecrets, doc: SyncDoc, blobs: BlobStore? = nil, send: @escaping HTTPSend) -> LibraryModel {
+        LibraryModel(secrets: secrets, makeTransport: { _ in SpyTransport(text: doc.text()) }, client: SourceClient(send: send), blobs: blobs)
+    }
+
+    static func twoApps() -> SyncDoc {
+        var d = Self.library()
+        var hidden = SyncApp(); hidden.key = "github:fake/hidden"; hidden.owner = "fake"; hidden.repo = "hidden"; hidden.hidden = true
+        d.apps.append(hidden)
+        return d
+    }
+
+    func testCheckingFillsInReleaseDataLeavesHiddenAppsAlone() async throws {
+        let secrets = MemorySecrets(); try secrets.write(SecretTarget.gitHubToken, "fake-token")
+        let asked = Asked()
+        let m = checkingModel(secrets: secrets, doc: Self.twoApps()) { r in
+            asked.add(r.url!.path)
+            let rel = #"[{"tag_name":"v3.0","name":"Three","body":"Hi","prerelease":false,"draft":false,"published_at":"2026-01-01T00:00:00Z","assets":[{"name":"T.dmg","size":5,"browser_download_url":"https://e.test/T.dmg","download_count":1}]}]"#
+            let body = r.url!.path.hasSuffix("/releases") ? rel : #"{"full_name":"fake/one","name":"one","description":"Does it","stargazers_count":9}"#
+            return reply(200, body, headers: ["x-ratelimit-remaining": "4900", "x-ratelimit-limit": "5000", "etag": "\"x\""])
+        }
+        await m.refresh()
+        XCTAssertEqual(m.phase, .loaded)
+        let summary = await m.checkForUpdates(manual: true)
+        XCTAssertEqual(summary?.checked, 1, "the hidden app wasn't looked at")
+        XCTAssertEqual(m.releases["github:fake/one"]?.latestTag, "v3.0")
+        XCTAssertEqual(m.releases["github:fake/one"]?.meta?.description, "Does it")
+        XCTAssertNil(m.releases["github:fake/hidden"])
+        XCTAssertEqual(m.rate.remaining, 4900)
+        XCTAssertFalse(m.isChecking); XCTAssertNil(m.checkProgress); XCTAssertNotNil(m.lastCheck)
+        XCTAssertFalse(asked.paths.contains { $0.contains("hidden") })
+    }
+
+    func testNothingIsCheckedWithoutALibraryOrInDemoMode() async throws {
+        let calls = Asked()
+        let m = LibraryModel(secrets: MemorySecrets(), client: SourceClient(send: { calls.add($0.url!.path); return reply(200, "[]") }))
+        let none = await m.checkForUpdates(manual: true)
+        XCTAssertNil(none)
+        let demo = LibraryModel(showing: Self.library(), secrets: InMemorySecrets())
+        let alsoNone = await demo.checkForUpdates(manual: true)
+        XCTAssertNil(alsoNone)
+        XCTAssertTrue(calls.paths.isEmpty)
+    }
+
+    func testWhatWasRememberedShowsStraightAway() async throws {
+        var e = AppRelease(); e.latestTag = "v9.9"; e.lastChecked = .now()
+        let blobs = MemoryBlobStore(data: try JSONEncoder().encode(["github:fake/one": e]))
+        let m = LibraryModel(secrets: MemorySecrets(), client: SourceClient(send: { _ in XCTFail("no request needed"); return reply(500) }), blobs: blobs)
+        await m.loadCachedReleases()
+        XCTAssertEqual(m.releases["github:fake/one"]?.latestTag, "v9.9")
+    }
+
+    func testReleaseDataIsKeptForNextTime() async throws {
+        let secrets = MemorySecrets(); try secrets.write(SecretTarget.gitHubToken, "fake-token")
+        let blobs = MemoryBlobStore()
+        let m = checkingModel(secrets: secrets, doc: Self.library(), blobs: blobs) { r in
+            reply(200, r.url!.path.hasSuffix("/releases") ? #"[{"tag_name":"v1.2","prerelease":false,"draft":false,"published_at":"2026-01-01T00:00:00Z","assets":[]}]"# : "{}", headers: ["x-ratelimit-remaining": "4000"])
+        }
+        await m.refresh(); await m.checkForUpdates(manual: true)
+        let saved = await blobs.saves
+        XCTAssertEqual(saved, 1)
+        let again = LibraryModel(secrets: MemorySecrets(), blobs: blobs)
+        await again.loadCachedReleases()
+        XCTAssertEqual(again.releases["github:fake/one"]?.latestTag, "v1.2")
+    }
 }
+
+final class Asked: @unchecked Sendable {
+    private let lock = NSLock(); private var list: [String] = []
+    func add(_ p: String) { lock.lock(); list.append(p); lock.unlock() }
+    var paths: [String] { lock.lock(); defer { lock.unlock() }; return list }
+}
+
+
+func reply(_ status: Int = 200, _ json: String = "{}", headers: [String: String] = [:]) -> HTTPReply { HTTPReply(status: status, headers: headers, body: Data(json.utf8)) }

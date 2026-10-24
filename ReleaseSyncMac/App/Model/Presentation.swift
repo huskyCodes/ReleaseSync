@@ -75,8 +75,8 @@ private extension RelativeDateTimeFormatter {
 }
 
 extension Int {
-    /// 1200 becomes "1.2K".
-    var compact: String { formatted(.number.notation(.compactName)) }
+    /// 1200 becomes "1.2k", the same as on Windows.
+    var compact: String { Fmt.count(self) }
 }
 
 extension SyncDevice {

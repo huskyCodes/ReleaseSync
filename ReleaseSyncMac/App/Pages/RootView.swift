@@ -37,7 +37,11 @@ struct RootView: View {
             .navigationSubtitle(nav.page.title)
         }
         .background(escapeToClose)
-        .task { await model.refresh() }
+        .task {
+            await model.loadCachedReleases()
+            await model.refresh()
+            await model.checkForUpdates(manual: false)
+        }
         .onChange(of: model.doc?.apps.map(\.key)) { _, keys in if let d = nav.drawerApp, keys?.contains(d.key) != true { nav.closeDrawer() } }
         .frame(minWidth: 820, minHeight: 520)
     }
@@ -87,6 +91,7 @@ struct Sidebar: View {
                 NavButton(page: item, selected: nav.page == item, badge: badge(item)) { nav.show(item) }
             }
             Spacer(minLength: 12)
+            RateCard()
             NavButton(page: .settings, selected: nav.page == .settings, badge: 0) { nav.show(.settings) }
         }
         .padding(.horizontal, 12).padding(.bottom, 12)
@@ -137,6 +142,12 @@ struct TopBar: View {
     @Environment(LibraryModel.self) private var model
     @Environment(Toasts.self) private var toasts
 
+    private var buttonText: String {
+        if model.isBusy { return "Syncing…" }
+        if model.isChecking, let p = model.checkProgress { return "Checking \(p.done)/\(p.total)" }
+        return "Check for updates"
+    }
+
     var body: some View {
         HStack(spacing: 14) {
             // the search-and-add box: the Windows app finds projects on GitHub from here; that is coming to the Mac
@@ -153,27 +164,37 @@ struct TopBar: View {
 
             Spacer(minLength: 0)
 
-            Button { Task { await syncNow(model, toasts) } } label: {
+            Button { Task { await checkNow(model, toasts) } } label: {
                 HStack(spacing: 8) {
-                    if model.isBusy { ProgressView().controlSize(.small) } else { Image(systemName: "arrow.clockwise").font(.system(size: 13, weight: .medium)) }
-                    Text(model.isBusy ? "Checking…" : "Sync now")
+                    if model.isBusy || model.isChecking { ProgressView().controlSize(.small) } else { Image(systemName: "arrow.clockwise").font(.system(size: 13, weight: .medium)) }
+                    Text(buttonText)
                 }
             }
             .buttonStyle(OutlineButtonStyle(height: 44))
-            .disabled(model.isBusy)
-            .help("Check your library for changes (⌘R)")
+            .disabled(model.isBusy || model.isChecking)
+            .help("Check your library and your apps for changes (⌘R)")
         }
         .padding(.horizontal, 28).padding(.top, 16).padding(.bottom, 6)
     }
 }
 
+/// The top bar's button: brings the library up to date, then looks for new releases of its apps, and says how it went.
+@MainActor
+func checkNow(_ model: LibraryModel, _ toasts: Toasts) async {
+    await syncNow(model, toasts, quiet: true)
+    guard model.phase == .loaded, let summary = await model.checkForUpdates(manual: true) else { return }
+    if summary.stoppedEarly, let why = summary.firstError { toasts.show(why, .warn) }
+    else if summary.failed > 0 { toasts.show("Checked \(summary.checked) apps. \(summary.failed) couldn't be checked: \(summary.firstError ?? "")", .warn) }
+    else { toasts.show(summary.checked == 1 ? "Checked 1 app" : "Checked \(summary.checked) apps", .success) }
+}
+
 /// Checks the library for changes and says how it went.
 @MainActor
-func syncNow(_ model: LibraryModel, _ toasts: Toasts) async {
+func syncNow(_ model: LibraryModel, _ toasts: Toasts, quiet: Bool = false) async {
     let had = model.doc != nil
     await model.refresh()
     switch model.phase {
-    case .loaded: if had { toasts.show("Your library is up to date", .success) }
+    case .loaded: if had && !quiet { toasts.show("Your library is up to date", .success) }
     case .failed(let message): toasts.show(message, .error)
     default: break
     }
@@ -271,3 +292,38 @@ struct StatusView: View {
     }
 }
 
+
+
+/// How many requests GitHub will still answer this hour (the Windows app has the same card). Checking is polite, so it rarely moves.
+struct RateCard: View {
+    @Environment(LibraryModel.self) private var model
+    @Environment(Navigator.self) private var nav
+
+    var body: some View {
+        let r = model.rate
+        if r.remaining >= 0 {
+            let level: Color = r.remaining == 0 ? Theme.danger : (r.remaining < max(100, r.limit / 10) ? Theme.warn : Theme.success)
+            Button { nav.show(.settings) } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 8) {
+                        Circle().fill(level).frame(width: 8, height: 8)
+                        Text("\(r.remaining.formatted()) of \(r.limit.formatted()) requests left").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.text).lineLimit(1)
+                    }
+                    if let hint { Text(hint).font(.faint).foregroundStyle(Theme.faint).padding(.leading, 16).fixedSize(horizontal: false, vertical: true) }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .card(radius: 11, padding: EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 8)
+            .help("GitHub's allowance for this hour. Unchanged apps cost nothing to check.")
+        }
+    }
+
+    private var hint: String? {
+        let r = model.rate
+        if r.remaining == 0 { return "Checking resumes when it resets" + (r.reset.map { " at " + $0.formatted(date: .omitted, time: .shortened) } ?? "") + "." }
+        if r.remaining < max(100, r.limit / 10) { return "Running low. Checks will pause before it runs out." }
+        return nil
+    }
+}

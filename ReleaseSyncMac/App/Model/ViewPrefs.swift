@@ -9,7 +9,7 @@ final class ViewPrefs {
     enum Layout: String { case grid = "Grid", list = "List" }
     enum Appearance: String, CaseIterable { case system = "System", dark = "Dark", light = "Light" }
 
-    static let librarySorts = ["Name", "Recently added"]
+    static let librarySorts = ["Name", "Recently updated", "Recently added"]
     static let trySorts: [(name: String, key: String)] = [("Recently saved", "recent"), ("Oldest first", "oldest"), ("Name A–Z", "name"), ("Most stars", "stars"), ("Type", "type")]
 
     private let defaults: UserDefaults

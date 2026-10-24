@@ -85,6 +85,33 @@ final class LibraryLayoutTests: XCTestCase {
         XCTAssertTrue(found("nothing like this").isEmpty)
     }
 
+    func testNoMacBuildFilterSortByReleaseDateAndSearchingDescriptions() {
+        func info(_ tag: String, days: Int64, assets: [String], description: String? = nil) -> AppRelease {
+            var e = AppRelease(); e.latestTag = tag; e.latestPublished = Timestamp.now() - Timestamp.days(days); e.lastChecked = .now()
+            e.assets = assets.map { AssetInfo(name: $0, url: "https://e.test/" + $0) }
+            if let description { var m = RepoMeta(); m.description = description; e.meta = m }
+            return e
+        }
+        let apps = [app("a"), app("b"), app("c")]
+        let rel = ["github:fake/a": info("1", days: 30, assets: ["A.dmg"]), "github:fake/b": info("2", days: 2, assets: ["B-setup.exe"], description: "Edits spreadsheets"), "github:fake/c": info("3", days: 10, assets: ["C.pkg"])]
+        func run(status: LibraryLayout.Status = .all, query: String = "", sort: String = "Name") -> LibraryLayout.Result {
+            LibraryLayout.layout(apps: apps, customGroups: [], releases: rel, status: status, groupFilter: nil, query: query, sort: sort, groupItems: false, autoGroups: true)
+        }
+        XCTAssertEqual(run().noMacBuild, 1)
+        XCTAssertEqual(repos(run(status: .noMacBuild)).flatMap { $0 }, ["b"])
+        XCTAssertEqual(repos(run(sort: "Recently updated")), [["b", "c", "a"]])
+        XCTAssertEqual(repos(run(query: "spreadsheets")).flatMap { $0 }, ["b"], "the project's description is searched too")
+        XCTAssertEqual(run(status: .noMacBuild).sections.count, 1)
+    }
+
+    func testAutomaticGroupsUseTheDescriptionOnceKnown() {
+        var e = AppRelease(); var m = RepoMeta(); m.description = "A video player for movies and music"; e.meta = m
+        let r = LibraryLayout.layout(apps: [app("mystery")], customGroups: [], releases: ["github:fake/mystery": e], status: .all, groupFilter: nil, query: "", sort: "Name", groupItems: true, autoGroups: true)
+        XCTAssertEqual(r.sections.map(\.title), ["Media & Entertainment"])
+        let without = LibraryLayout.layout(apps: [app("mystery")], customGroups: [], status: .all, groupFilter: nil, query: "", sort: "Name", groupItems: true, autoGroups: true)
+        XCTAssertEqual(without.sections.map(\.title), ["Other"])
+    }
+
     func testTitlesPreferTheDisplayName() {
         XCTAssertEqual(app("repo", name: "Nice Name").title, "Nice Name")
         XCTAssertEqual(app("repo", name: "  ").title, "repo")
@@ -147,7 +174,7 @@ final class ViewPrefsTests: XCTestCase {
         let name = "ReleaseSyncTests-" + UUID().uuidString
         let defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }
-        defaults.set("Sideways", forKey: "ViewMode"); defaults.set("Recently updated", forKey: "SortMode"); defaults.set("whatever", forKey: "TrySort")
+        defaults.set("Sideways", forKey: "ViewMode"); defaults.set("Status", forKey: "SortMode"); defaults.set("whatever", forKey: "TrySort")
         let p = ViewPrefs(defaults: defaults)
         XCTAssertEqual(p.viewMode, .grid); XCTAssertEqual(p.sort, "Name"); XCTAssertEqual(p.trySort, "recent")
     }

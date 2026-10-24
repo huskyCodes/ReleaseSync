@@ -56,5 +56,43 @@ enum DemoLibrary {
         ]
         return doc
     }
+
+    /// Made-up release information for the made-up apps: some with Mac downloads, some Windows-only, one never checked, a couple with problems.
+    static func releases() -> [String: AppRelease] {
+        let now = Timestamp.now()
+        func ago(days: Int64) -> Timestamp { now - Timestamp.days(days) }
+        func asset(_ name: String, mb: Int64) -> AssetInfo { AssetInfo(name: name, url: "https://example.test/download/" + name, size: mb * 1_048_576, downloads: 100) }
+        func entry(_ tag: String, days: Int64, notes: String, assets: [AssetInfo], desc: String, stars: Int, history: [(String, Int64, Bool)] = [], pre: Bool = false, language: String? = nil, topics: [String] = []) -> AppRelease {
+            var e = AppRelease()
+            e.latestTag = tag; e.latestName = "Version " + tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV")); e.latestNotes = notes
+            e.latestPublished = ago(days: days); e.latestPrerelease = pre; e.releaseUrl = "https://example.test/releases/" + tag; e.assets = assets
+            e.lastChecked = now - Timestamp.hours(1) / 6
+            var meta = RepoMeta(); meta.description = desc; meta.stars = stars; meta.fetched = now; meta.language = language; meta.topics = topics; e.meta = meta
+            var list: [ReleaseSummary] = []
+            var top = ReleaseSummary(); top.tag = tag; top.name = e.latestName; top.notes = notes; top.published = ago(days: days); top.prerelease = pre; top.url = e.releaseUrl; top.assets = assets
+            list.append(top)
+            for (t, d, p) in history { var s = ReleaseSummary(); s.tag = t; s.published = ago(days: d); s.prerelease = p; s.url = "https://example.test/releases/" + t; list.append(s) }
+            e.releases = list
+            return e
+        }
+        let notes = "## What's new\n- Faster start-up and a calmer interface\n- **Fixed** a crash when opening large files\n- Updated the translations\n\n## Known issues\n- Dark mode icons are being redrawn"
+        var out: [String: AppRelease] = [:]
+        out["github:example-org/pixel-player"] = entry("v2.4.1", days: 3, notes: notes, assets: [asset("PixelPlayer-2.4.1-universal.dmg", mb: 48), asset("PixelPlayer-2.4.1-setup.exe", mb: 41)], desc: "A small, fast media player for video and audio.", stars: 12_400, history: [("v2.4.0", 20, false), ("v2.3.2", 51, false), ("v2.4.2-beta.1", 1, true)], language: "C++", topics: ["video", "audio"])
+        out["github:example-org/quick-notes"] = entry("v1.9.0", days: 9, notes: notes, assets: [asset("QuickNotes-1.9.0-macos-arm64.zip", mb: 22), asset("QuickNotes-1.9.0-windows-x64.zip", mb: 25)], desc: "Take notes and keep a to-do list without leaving the keyboard.", stars: 3_150, history: [("v1.8.0", 40, false)])
+        out["github:sample-dev/retro-launcher"] = entry("v1.8.0", days: 30, notes: "Adds controller profiles.", assets: [asset("RetroLauncher-1.8.0-win64.zip", mb: 60), asset("RetroLauncher-1.8.0-linux-x86_64.AppImage", mb: 62)], desc: "A front end for browsing and starting your game collection.", stars: 860)
+        out["codeberg:sample-dev/tile-puzzle"] = entry("0.7.2", days: 70, notes: "Small fixes.", assets: [asset("tile-puzzle-0.7.2-macos-universal.zip", mb: 9)], desc: "A relaxing tile puzzle with hand-made levels.", stars: 95)
+        out["github:demo-studio/frame-cutter"] = entry("v3.0.0-rc2", days: 2, notes: "Release candidate.", assets: [asset("FrameCutter-3.0.0-rc2.dmg", mb: 75)], desc: "Cut and join video clips without re-encoding.", stars: 5_900, history: [("v2.9.4", 25, false)], pre: true)
+        out["github:demo-studio/wave-mixer"] = entry("v0.12.0", days: 120, notes: "Adds a new equalizer.", assets: [asset("WaveMixer-0.12.0.pkg", mb: 33)], desc: "A multi-track audio mixer for quick recordings.", stars: 1_020)
+        out["github:fake-labs/disk-peek"] = entry("v4.1.0", days: 14, notes: notes, assets: [asset("DiskPeek-4.1.0-setup.exe", mb: 12), asset("DiskPeek-4.1.0-portable.zip", mb: 11)], desc: "See what is using your disk space, folder by folder.", stars: 22_800)
+        var empty = AppRelease(); empty.lastChecked = now - Timestamp.hours(1) / 6; empty.lastError = "No releases have been published for this repository."
+        var m = RepoMeta(); m.description = "Check which network ports are open."; m.stars = 40; m.fetched = now; empty.meta = m
+        out["github:example-org/port-checker"] = empty
+        var broken = AppRelease(); broken.lastChecked = now - Timestamp.hours(1) / 6; broken.lastError = "git.example.test returned an error (503)."
+        out["forgejo:git.example.test:sample-dev/tiny-server"] = broken
+        out["github:demo-studio/old-tool"] = entry("v1.0.4", days: 400, notes: "Final release.", assets: [asset("OldTool-1.0.4.dmg", mb: 5)], desc: "Replaced by something newer.", stars: 12)
+        out["gitlab:fake-labs/pdf-stitch"] = entry("v2.2.0", days: 6, notes: notes, assets: [asset("pdf-stitch-2.2.0-macos.dmg", mb: 18)], desc: "Merge and split PDF files from the command line or a small window.", stars: 410)
+        // clip-shelf is left out on purpose: "not checked yet"
+        return out
+    }
 }
 #endif

@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // MARK: surfaces
@@ -30,19 +31,64 @@ struct ClickableCard<Content: View>: View {
     }
 }
 
-/// The first letter of a name on a soft accent tile (the Windows app's fallback when there is no picture).
+/// Small pictures for projects, fetched on demand. They are kept in memory only (nothing is written to disk, so no list of the projects you
+/// follow is left behind), a few at a time, and only from sites that ReleaseSync already talks to.
+@MainActor
+final class AvatarCache {
+    static let shared = AvatarCache()
+    private let cache = NSCache<NSURL, NSImage>()
+    private var inflight: [URL: Task<NSImage?, Never>] = [:]
+    private let session: URLSession = {
+        let c = URLSessionConfiguration.ephemeral
+        c.httpMaximumConnectionsPerHost = 4; c.timeoutIntervalForRequest = 15; c.waitsForConnectivity = false
+        return URLSession(configuration: c)
+    }()
+
+    static func isAllowed(_ url: URL) -> Bool {
+        guard url.scheme == "https", let host = url.host?.lowercased() else { return false }
+        return ["github.com", "githubusercontent.com", "gitlab.com", "codeberg.org", "gravatar.com", "gitlab.io"].contains { host == $0 || host.hasSuffix("." + $0) }
+    }
+
+    func image(for url: URL) async -> NSImage? {
+        guard Self.isAllowed(url) else { return nil }
+        if let hit = cache.object(forKey: url as NSURL) { return hit }
+        if let running = inflight[url] { return await running.value }
+        let task = Task { [session] () -> NSImage? in
+            guard let (data, response) = try? await session.data(from: url), (response as? HTTPURLResponse)?.statusCode == 200, data.count < 2_000_000 else { return nil }
+            return NSImage(data: data)
+        }
+        inflight[url] = task
+        let image = await task.value
+        inflight[url] = nil
+        if let image { cache.setObject(image, forKey: url as NSURL) }
+        return image
+    }
+}
+
+/// The project's picture on a soft tile, or the first letter of its name until (or unless) there is one.
 struct Avatar: View {
     let name: String
     var size: CGFloat = Theme.avatar
+    var url: URL?
+    @State private var picture: NSImage?
 
     var body: some View {
-        Text(String(name.first.map { Character($0.uppercased()) } ?? "?"))
-            .font(.system(size: size * 0.43, weight: .bold))
-            .foregroundStyle(Theme.accentText)
-            .frame(width: size, height: size)
-            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
-            .accessibilityHidden(true)
+        ZStack {
+            Text(String(name.first.map { Character($0.uppercased()) } ?? "?"))
+                .font(.system(size: size * 0.43, weight: .bold))
+                .foregroundStyle(Theme.accentText)
+            if let picture { Image(nsImage: picture).resizable().scaledToFill().transition(.opacity) }
+        }
+        .frame(width: size, height: size)
+        .background(Theme.accentSoft)
+        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
+        .task(id: url) {
+            guard let url else { picture = nil; return }
+            let image = await AvatarCache.shared.image(for: url)
+            withAnimation(.easeOut(duration: 0.15)) { picture = image }
+        }
+        .accessibilityHidden(true)
     }
 }
 
