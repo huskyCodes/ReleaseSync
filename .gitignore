@@ -40,6 +40,11 @@ Backups/
 .swiftpm/
 xcuserdata/
 
+# Mac app: the Xcode project is generated from ReleaseSyncMac/project.yml; signing settings stay local
+*.xcodeproj/
+DerivedData/
+Local.xcconfig
+
 # OS
 Thumbs.db
 Desktop.ini

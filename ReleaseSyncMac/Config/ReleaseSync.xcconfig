@@ -1,0 +1,10 @@
+// Defaults that let anyone build and run the app on their own Mac without an Apple account:
+// signed "ad hoc", for this Mac only. Keychain items belong to that signature, so a rebuilt copy may ask once more for permission.
+PRODUCT_BUNDLE_IDENTIFIER = io.github.huskycodes.ReleaseSync
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+
+// Your own signing settings (team, identity, bundle identifier) go in Config/Local.xcconfig, which is kept out of git.
+// Start from Config/Local.xcconfig.example.
+#include? "Local.xcconfig"

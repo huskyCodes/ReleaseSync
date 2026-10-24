@@ -1,0 +1,5 @@
+// Copy this file to Local.xcconfig (same folder) and fill it in. Local.xcconfig is not committed.
+CODE_SIGN_STYLE = Automatic
+CODE_SIGN_IDENTITY = Apple Development
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+// PRODUCT_BUNDLE_IDENTIFIER = com.example.ReleaseSync

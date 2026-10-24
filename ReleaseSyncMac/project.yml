@@ -1,0 +1,65 @@
+# The Mac app. Generate the Xcode project with:  xcodegen generate
+# (the generated ReleaseSync.xcodeproj is not kept in git)
+name: ReleaseSync
+options:
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+packages:
+  ReleaseSyncKit:
+    path: ../ReleaseSyncKit
+targets:
+  ReleaseSync:
+    type: application
+    platform: macOS
+    sources: [App]
+    dependencies:
+      - package: ReleaseSyncKit
+    configFiles:
+      Debug: Config/ReleaseSync.xcconfig
+      Release: Config/ReleaseSync.xcconfig
+    settings:
+      configs:
+        Release:
+          # a release build carries no debugging entitlement (get-task-allow), so it has no entitlements at all
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+      base:
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        PRODUCT_NAME: ReleaseSync
+        SWIFT_VERSION: "5.0"
+        # hardened runtime, with no exceptions
+        ENABLE_HARDENED_RUNTIME: YES
+        # no App Sandbox: installing apps later needs to write to /Applications and run installers
+        ENABLE_APP_SANDBOX: NO
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: ReleaseSync
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        INFOPLIST_KEY_NSHumanReadableCopyright: "MIT licensed. Not affiliated with GitHub, GitLab, Codeberg or Apple."
+  ReleaseSyncTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [Tests]
+    dependencies:
+      - target: ReleaseSync
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.huskycodes.ReleaseSync.Tests
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+schemes:
+  ReleaseSync:
+    build:
+      targets:
+        ReleaseSync: all
+        ReleaseSyncTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [ReleaseSyncTests]
+    archive:
+      config: Release
