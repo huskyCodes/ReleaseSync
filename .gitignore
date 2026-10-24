@@ -32,7 +32,7 @@ Backups/
 .env
 *.pfx
 *.snk
-secrets.*
+/secrets.*
 .claude/
 
 # OS
