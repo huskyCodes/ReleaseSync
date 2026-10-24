@@ -1588,7 +1588,7 @@ public sealed partial class MainViewModel : Observable
 
     void RemoveFromLibrary(TrackedApp app, bool deleteFiles)
     {
-        if (deleteFiles) InstallService.RemoveFiles(app);
+        if (deleteFiles) { InstallService.RemoveFiles(app); InstallService.ClearDownloads(app); }
         Settings.Tombstones[app.Key] = DateTime.UtcNow;          // so a synced PC doesn't bring it back
         ScheduleSaveSettings();
         Apps.Remove(app);
@@ -1678,6 +1678,7 @@ public sealed partial class MainViewModel : Observable
     void FinishPortableUninstall(TrackedApp app, InstallManifest.RemoveResult? removed, bool known, bool inOwnFolder)
     {
         app.InstalledVersion = null; app.InstallPath = null; app.NotifiedVersion = null;
+        if (known) InstallService.ClearDownloads(app);
         if (!known) { AddLog($"Marked {app.Title} as uninstalled (files left in place)", "info"); Toast($"{app.Title} is marked as uninstalled. Its files were left in place.", "info"); }
         else if (removed is { LeftBehind: > 0 } r && !inOwnFolder) { AddLog($"Uninstalled {app.Title} ({r.Removed} files removed, {r.LeftBehind} other files left)", "success"); Toast($"{app.Title} was uninstalled. {r.LeftBehind} other file{(r.LeftBehind == 1 ? "" : "s")} in that folder stayed.", "success"); }
         else { AddLog($"Uninstalled {app.Title}", "success"); Toast($"{app.Title} was uninstalled", "success"); }
@@ -1721,6 +1722,7 @@ public sealed partial class MainViewModel : Observable
             if (ok)
             {
                 app.InstalledVersion = null; app.InstallPath = null; app.UninstallKey = null; app.NotifiedVersion = null;
+                InstallService.ClearDownloads(app);
                 AddLog($"Uninstalled {app.Title}", "success");
                 if (thenRemove) RemoveFromLibrary(app, false);
                 else Toast($"{app.Title} was uninstalled", "success");

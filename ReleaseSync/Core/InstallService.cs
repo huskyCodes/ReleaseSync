@@ -387,6 +387,18 @@ public sealed class InstallService
         catch { }
     }
 
+    /// <summary>Deletes every downloaded installer or archive kept for this app, so uninstalling leaves nothing behind. Adding the app again downloads what it needs.</summary>
+    public static void ClearDownloads(TrackedApp app)
+    {
+        try
+        {
+            var root = Path.GetFullPath(AppSettingsProvider.Current.DownloadFolder).TrimEnd('\\');
+            var dir = Path.GetFullPath(Path.Combine(root, Fmt.SafeName(app.Owner.Replace('/', '-') + "-" + app.Repo)));
+            if (dir.StartsWith(root + "\\", StringComparison.OrdinalIgnoreCase) && Directory.Exists(dir)) Directory.Delete(dir, true);
+        }
+        catch { }
+    }
+
     /// <summary>
     /// The files this app's release put into the folder the user chose for it, or null when that can't be known. Comes from the list made at install time;
     /// for an app installed before that list existed, from the downloaded archive if it is still on disk.
