@@ -16,17 +16,20 @@ public enum SyncService {
     /// How often a device refreshes its "last seen" time in the file when nothing else changed.
     public static let heartbeat = Timestamp.hours(6)
 
-    public static func run(transport: SyncTransport, local: SyncDoc, passphrase: String?, device: SyncDevice, now: Timestamp) async throws -> SyncResult {
+    /// Reads the shared file and nothing else: no merge, nothing written. Nil when nothing is stored yet.
+    /// `locked` says whether the file was locked with a passphrase.
+    public static func fetch(transport: SyncTransport, passphrase: String?) async throws -> (doc: SyncDoc?, locked: Bool) {
         var text = try await transport.read()
-        var remote: SyncDoc?
-        var remoteEncrypted = false
-        if let t = text, !isBlank(t) {
-            remoteEncrypted = SyncCrypto.isEncrypted(t)
-            if remoteEncrypted { text = try SyncCrypto.decrypt(t, passphrase: passphrase) }
-            let doc = try SyncDoc(text: text!)
-            if doc.version > SyncDoc.supportedVersion { throw SyncError.newer }
-            remote = doc
-        }
+        guard let t = text, !isBlank(t) else { return (nil, false) }
+        let locked = SyncCrypto.isEncrypted(t)
+        if locked { text = try SyncCrypto.decrypt(t, passphrase: passphrase) }
+        let doc = try SyncDoc(text: text!)
+        if doc.version > SyncDoc.supportedVersion { throw SyncError.newer }
+        return (doc, locked)
+    }
+
+    public static func run(transport: SyncTransport, local: SyncDoc, passphrase: String?, device: SyncDevice, now: Timestamp) async throws -> SyncResult {
+        let (remote, remoteEncrypted) = try await fetch(transport: transport, passphrase: passphrase)
 
         var me = device
         me.lastSeen = now

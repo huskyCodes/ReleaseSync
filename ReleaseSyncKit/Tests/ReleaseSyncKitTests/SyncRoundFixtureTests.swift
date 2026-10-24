@@ -43,4 +43,28 @@ final class SyncRoundFixtureTests: XCTestCase {
             }
         }
     }
+
+    /// Reading on its own gives the same file contents and the same errors as a full round, and never writes.
+    func testFetchOnlyReads() async throws {
+        for c in try Fixtures.json("sync-round.json").list("Cases") {
+            let input = try XCTUnwrap(c.member("Input")), expected = try XCTUnwrap(c.member("Expected"))
+            let name = try XCTUnwrap(input.str("Name"))
+            let remote: JSONValue? = input.present("Remote")
+            let remoteText: String? = input.str("RemoteText") ?? remote.map { JSONWriter.write($0) }
+            let transport = MemoryTransport(text: remoteText)
+            let pass = input.str("Passphrase")
+            if let kind = expected.str("Error") {
+                do { _ = try await SyncService.fetch(transport: transport, passphrase: pass); XCTFail("\(name) should have failed") }
+                catch let e as SyncError { XCTAssertEqual(e.kind.rawValue, kind, name); XCTAssertEqual(e.message, expected.str("Message"), name) }
+            } else {
+                let got = try await SyncService.fetch(transport: transport, passphrase: pass)
+                var want: SyncDoc? = try remote.map { try SyncDoc(json: $0) }
+                if want == nil, let t = remoteText, !t.allSatisfy(\.isWhitespace) { want = try SyncDoc(text: SyncCrypto.isEncrypted(t) ? try SyncCrypto.decrypt(t, passphrase: pass) : t) }
+                XCTAssertEqual(got.doc, want, name)
+                XCTAssertEqual(got.locked, remoteText.map { SyncCrypto.isEncrypted($0) } ?? false, name)
+            }
+            let writes = await transport.writes
+            XCTAssertEqual(writes, 0, "\(name): reading writes nothing")
+        }
+    }
 }
