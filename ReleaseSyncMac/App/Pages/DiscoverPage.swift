@@ -38,7 +38,7 @@ struct DiscoverPage: View {
             }
             .padding(.horizontal, Theme.pagePadding).padding(.top, 14).padding(.bottom, 32)
         }
-        .onAppear { discover.appeared() }
+        .task { await model.prepareClient(); discover.appeared() }
     }
 
     // MARK: header

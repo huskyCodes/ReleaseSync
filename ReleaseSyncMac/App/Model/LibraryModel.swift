@@ -33,6 +33,8 @@ final class LibraryModel {
     let meter: RateMeter
     private(set) var lastCheck: Date?
     private let client: SourceClient
+    /// The client the model talks to GitHub with (tests look at it).
+    func releasesClientForTests() -> SourceClient { client }
     private let releaseStore: ReleaseStore
     private var cacheLoaded = false
 
@@ -128,6 +130,12 @@ final class LibraryModel {
     }
 
     // MARK: release data
+
+    /// Makes sure GitHub requests carry the saved token even before the library has been fetched (Discover can open first).
+    func prepareClient() async {
+        guard !isDemo, !(await client.hasToken), let token = try? await secret(SecretTarget.gitHubToken), !token.isEmpty else { return }
+        await client.setToken(token)
+    }
 
     /// Shows what was remembered from earlier runs straight away.
     func loadCachedReleases() async {

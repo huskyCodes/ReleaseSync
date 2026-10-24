@@ -203,6 +203,19 @@ final class LibraryModelTests: XCTestCase {
         XCTAssertFalse(asked.paths.contains { $0.contains("hidden") })
     }
 
+    func testTheTokenIsUsableBeforeTheLibraryIsFetched() async throws {
+        let secrets = MemorySecrets(); try secrets.write(SecretTarget.gitHubToken, "fake-token")
+        let seen = Asked()
+        let m = LibraryModel(secrets: secrets, client: SourceClient(send: { seen.add($0.value(forHTTPHeaderField: "Authorization") ?? "none"); return reply(200, "{}") }))
+        await m.prepareClient()
+        _ = try? await m.releasesClientForTests().repo(source: "github", owner: "a", repo: "b")
+        XCTAssertEqual(seen.paths, ["Bearer fake-token"])
+        let none = LibraryModel(secrets: MemorySecrets(), client: SourceClient(send: { _ in reply(200, "{}") }))
+        await none.prepareClient()
+        let hasToken = await none.releasesClientForTests().hasToken
+        XCTAssertFalse(hasToken)
+    }
+
     func testNothingIsCheckedWithoutALibraryOrInDemoMode() async throws {
         let calls = Asked()
         let m = LibraryModel(secrets: MemorySecrets(), client: SourceClient(send: { calls.add($0.url!.path); return reply(200, "[]") }))
