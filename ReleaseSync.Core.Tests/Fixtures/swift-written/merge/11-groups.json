@@ -1,0 +1,23 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T13:00:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [],
+  "TryLater": [],
+  "CustomGroups": [
+    "games",
+    "Retro",
+    "Tools"
+  ],
+  "GroupStamps": {
+    "Games": "2026-01-01T12:02:00Z",
+    "Retro": "2026-01-01T12:20:00Z",
+    "Tools": "2026-01-01T12:02:00Z"
+  },
+  "Tombstones": {
+    "group:edge": "2026-01-01T12:07:00Z",
+    "group:my games": "2026-01-01T12:05:00Z",
+    "group:old": "2026-01-01T12:01:00Z"
+  },
+  "Devices": {}
+}

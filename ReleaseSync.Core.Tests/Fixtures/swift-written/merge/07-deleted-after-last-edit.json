@@ -1,0 +1,30 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T13:00:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [
+    {
+      "Key": "github:fake/kept-untouched",
+      "Source": "github",
+      "Owner": "fake",
+      "Repo": "kept-untouched",
+      "Pinned": false,
+      "Hidden": false,
+      "IncludePrereleases": false,
+      "IgnoreUpdates": false,
+      "AutoUpdate": false,
+      "Mode": "Auto",
+      "TrustUnsigned": false,
+      "AddedAt": "2026-01-01T12:00:00Z",
+      "ModifiedAt": "2026-01-01T12:10:00Z"
+    }
+  ],
+  "TryLater": [],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {
+    "github:fake/gone-later": "2026-01-01T12:20:00Z",
+    "github:fake/gone-same-time": "2026-01-01T12:10:00Z"
+  },
+  "Devices": {}
+}

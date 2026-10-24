@@ -1,0 +1,48 @@
+{
+  "Version": 2,
+  "UpdatedAt": "2026-01-01T13:00:00Z",
+  "WrittenBy": "Example Mac",
+  "Apps": [],
+  "TryLater": [
+    {
+      "Owner": "fake",
+      "Repo": "modified-tie",
+      "Source": "github",
+      "Platform": "Windows",
+      "Description": "from b",
+      "Stars": 0,
+      "SavedAt": "2026-01-01T12:01:00Z",
+      "ModifiedAt": "2026-01-01T12:04:00Z"
+    },
+    {
+      "Owner": "fake",
+      "Repo": "stamp-is-saved-at",
+      "Source": "github",
+      "Platform": "Windows",
+      "Description": "saved later, modified earlier",
+      "Stars": 0,
+      "SavedAt": "2026-01-01T12:09:00Z",
+      "ModifiedAt": "2026-01-01T12:02:00Z"
+    },
+    {
+      "Owner": "fake",
+      "Repo": "stars",
+      "Source": "github",
+      "Platform": "Windows",
+      "Stars": 5,
+      "SavedAt": "2026-01-01T12:01:00Z"
+    }
+  ],
+  "CustomGroups": [],
+  "GroupStamps": {},
+  "Tombstones": {},
+  "Devices": {
+    "cccccccccccccccccccccccccccccccc": {
+      "Id": "cccccccccccccccccccccccccccccccc",
+      "Name": "Example Mac",
+      "Platform": "Mac",
+      "AppVersion": "0.1",
+      "LastSeen": "2026-01-01T12:07:00Z"
+    }
+  }
+}
