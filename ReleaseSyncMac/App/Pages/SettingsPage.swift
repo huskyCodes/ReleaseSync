@@ -70,15 +70,21 @@ struct SettingsPage: View {
     @ViewBuilder private var devices: some View {
         if model.phase == .loaded, !model.devices.isEmpty {
             VStack(spacing: 0) {
+                let now = Timestamp.now()
                 ForEach(Array(model.devices.enumerated()), id: \.element.id) { i, d in
+                    let online = d.isOnline(at: now)
                     HStack(spacing: 14) {
                         Image(systemName: d.symbolName).font(.system(size: 17)).foregroundStyle(Theme.dim).frame(width: 28)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(d.name.isEmpty ? "Unnamed device" : d.name).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
                             Text(d.appVersion.isEmpty ? d.platform : "\(d.platform)  ·  ReleaseSync \(d.appVersion)").font(.faint).foregroundStyle(Theme.faint)
+                            if let summary = DeviceInventory.summary(of: d) { Text(summary).font(.faint).foregroundStyle(Theme.faint) }
                         }
                         Spacer()
-                        Text("Seen \(d.lastSeen.friendlyAgo)").font(.faint).foregroundStyle(Theme.faint)
+                        HStack(spacing: 7) {
+                            StatusLight(on: online)
+                            Text(online ? "Online" : "Seen \(d.lastSeen.friendlyAgo)").font(.faint).foregroundStyle(online ? Theme.success : Theme.faint)
+                        }
                     }
                     .padding(.vertical, 10)
                     if i < model.devices.count - 1 { Divider().overlay(Theme.line.opacity(0.6)) }
@@ -87,7 +93,7 @@ struct SettingsPage: View {
             .padding(.horizontal, 14)
             .background(Theme.input, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
-            Text("This Mac isn't in the list yet: for now it only reads your library and never changes it.").font(.faint).foregroundStyle(Theme.faint)
+            Text("A green light means the device said recently that ReleaseSync is open there. This Mac isn't in the list yet: for now it only reads your library and never changes it.").font(.faint).foregroundStyle(Theme.faint)
         }
     }
 }

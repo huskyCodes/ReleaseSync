@@ -7,12 +7,21 @@ struct LibraryPage: View {
     @Environment(Navigator.self) private var nav
     @State private var status = LibraryLayout.Status.all
     @State private var groupFilter: String?
+    /// The id of the device whose apps are shown (nil: the whole library).
+    @State private var deviceFilter: String?
     @State private var query = ""
     @State private var folded = Set<String>()
 
+    /// Devices that report what they have installed. A device that has since left the file can no longer be chosen.
+    private var reporting: [SyncDevice] { DeviceInventory.reporting(model.devices) }
+    private var chosenDevice: String? { reporting.contains { $0.id == deviceFilter } ? deviceFilter : nil }
+
     private var result: LibraryLayout.Result {
-        LibraryLayout.layout(apps: model.apps, customGroups: model.customGroups, releases: model.releases, status: status, groupFilter: groupFilter, query: query,
-                             sort: prefs.sort, groupItems: prefs.groupItems, autoGroups: prefs.autoGroups)
+        let devices = reporting
+        return LibraryLayout.layout(apps: model.apps, customGroups: model.customGroups, releases: model.releases, status: status, groupFilter: groupFilter, query: query,
+                                    sort: prefs.sort, groupItems: prefs.groupItems, autoGroups: prefs.autoGroups,
+                                    installedOnDevice: chosenDevice == nil ? nil : DeviceInventory.keys(on: devices, only: chosenDevice),
+                                    updatesWaiting: DeviceInventory.updatesWaiting(on: devices, only: chosenDevice))
     }
 
     var body: some View {
@@ -61,6 +70,18 @@ struct LibraryPage: View {
                 HStack(spacing: 10) { chips(r); Spacer(minLength: 12); controls(r) }
                 VStack(alignment: .leading, spacing: 10) { chips(r); controls(r) }
             }
+            if !reporting.isEmpty {
+                HStack(spacing: 8) {
+                    Text("On").font(.label).foregroundStyle(Theme.faint)
+                    ChipStrip {
+                        Chip(title: "Any device", selected: chosenDevice == nil) { deviceFilter = nil }
+                        let now = Timestamp.now()
+                        ForEach(reporting, id: \.id) { d in
+                            Chip(title: d.name.isEmpty ? "Unnamed device" : d.name, light: d.isOnline(at: now), selected: chosenDevice == d.id) { deviceFilter = (chosenDevice == d.id ? nil : d.id) }
+                        }
+                    }
+                }
+            }
             HStack(spacing: 8) {
                 ChipStrip {
                     Chip(title: "All groups", selected: groupFilter == nil) { groupFilter = nil }
@@ -77,6 +98,7 @@ struct LibraryPage: View {
         HStack(spacing: 8) {
             Chip(title: "All", count: r.total, selected: status == .all) { status = .all }
             Chip(title: "★ Favorites", count: r.favorites, selected: status == .favorites) { status = .favorites }
+            if r.updates > 0 { Chip(title: "Updates", count: r.updates, selected: status == .updates) { status = .updates } }
             if r.noMacBuild > 0 { Chip(title: "No Mac build", count: r.noMacBuild, selected: status == .noMacBuild) { status = .noMacBuild } }
             if r.hidden > 0 { Chip(title: "Hidden", count: r.hidden, selected: status == .hidden) { status = .hidden } }
         }

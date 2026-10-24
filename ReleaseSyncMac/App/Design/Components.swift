@@ -152,6 +152,8 @@ struct Pill: View {
 struct Chip: View {
     let title: String
     var count: Int?
+    /// A small status light before the title (green when online).
+    var light: Bool?
     let selected: Bool
     let action: () -> Void
     @State private var hovering = false
@@ -159,6 +161,7 @@ struct Chip: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
+                if let light { StatusLight(on: light) }
                 Text(title).fontWeight(.semibold)
                 if let count { Text("\(count)").fontWeight(.regular) }
             }
@@ -386,5 +389,15 @@ struct ChipFlow: Layout {
             x += size.width + spacing; rowHeight = max(rowHeight, size.height); maxX = max(maxX, x - spacing)
         }
         return (frames, CGSize(width: maxX, height: y + rowHeight))
+    }
+}
+
+/// The little light beside a device: green when it says it is running ReleaseSync, grey otherwise.
+struct StatusLight: View {
+    let on: Bool
+    var body: some View {
+        Circle().fill(on ? Theme.success : Theme.faint.opacity(0.55)).frame(width: 8, height: 8)
+            .overlay(Circle().strokeBorder(on ? Theme.success.opacity(0.35) : .clear, lineWidth: 3))
+            .accessibilityLabel(on ? "Online" : "Offline")
     }
 }

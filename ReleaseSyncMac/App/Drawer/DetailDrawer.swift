@@ -22,6 +22,7 @@ struct DetailDrawer: View {
                         if let r = facts.info?.latestPublished { row("Released", r.friendlyAgo) }
                         row("Last checked", facts.info?.lastChecked?.friendlyAgo ?? "Not yet", last: true)
                     }
+                    onDevices
                     if facts.hasRelease { notes(facts) }
                     if let releases = facts.info?.releases, !releases.isEmpty { versions(releases, latest: facts.latestTag) }
                     if facts.hasRelease { download(facts) }
@@ -59,6 +60,31 @@ struct DetailDrawer: View {
     }
 
     // MARK: pieces
+
+    /// Where this app is installed on the person's other devices, as those devices report it.
+    @ViewBuilder private var onDevices: some View {
+        let now = Timestamp.now()
+        let installs = DeviceInventory.installs(of: app.key, on: model.devices, now: now)
+        if !installs.isEmpty {
+            label("ON YOUR DEVICES")
+            VStack(spacing: 0) {
+                ForEach(Array(installs.enumerated()), id: \.element.id) { i, item in
+                    VStack(spacing: 0) {
+                        HStack(spacing: 10) {
+                            StatusLight(on: item.device.isOnline(at: now))
+                            Text(item.device.name.isEmpty ? "Unnamed device" : item.device.name).font(.dim).foregroundStyle(Theme.dim)
+                            Spacer(minLength: 12)
+                            if item.install.hasUpdate, let latest = item.install.latest { Pill(text: "Update to \(latest)", kind: .warn) }
+                            Text(item.install.version.isEmpty ? "Installed" : item.install.version).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
+                        }
+                        .padding(.vertical, 9)
+                        if i < installs.count - 1 { Divider().overlay(Theme.line.opacity(0.6)) }
+                    }
+                }
+            }
+            .card(padding: EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)).padding(.bottom, 22)
+        }
+    }
 
     private func header(_ facts: ReleaseFacts) -> some View {
         HStack(alignment: .top, spacing: 16) {

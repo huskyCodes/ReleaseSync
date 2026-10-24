@@ -7,7 +7,7 @@ import ReleaseSyncKit
 enum LibraryLayout {
     static let ungrouped = "Ungrouped"
 
-    enum Status: Hashable { case all, favorites, noMacBuild, hidden }
+    enum Status: Hashable { case all, favorites, noMacBuild, updates, hidden }
 
     struct Section: Identifiable, Equatable {
         var id: String { title }
@@ -27,7 +27,7 @@ enum LibraryLayout {
         var chips: [GroupChip] = []
         /// The person's own groups that have nothing in them yet (shown so they don't seem to vanish).
         var emptyGroups: [String] = []
-        var total = 0, favorites = 0, hidden = 0, noMacBuild = 0
+        var total = 0, favorites = 0, hidden = 0, noMacBuild = 0, updates = 0
     }
 
     /// The group an app is shown under: its own group, else (when automatic groups are on) its type, else "Ungrouped".
@@ -39,16 +39,19 @@ enum LibraryLayout {
         return Categorizer.categorize(name: app.repo, description: info?.meta?.description, topics: info?.meta?.topics, language: info?.meta?.language)
     }
 
-    static func layout(apps: [SyncApp], customGroups: [String], releases: [String: AppRelease] = [:], status: Status, groupFilter: String?, query: String, sort: String, groupItems: Bool, autoGroups: Bool) -> Result {
+    static func layout(apps: [SyncApp], customGroups: [String], releases: [String: AppRelease] = [:], status: Status, groupFilter: String?, query: String, sort: String, groupItems: Bool, autoGroups: Bool,
+                       installedOnDevice: Set<String>? = nil, updatesWaiting: Set<String> = []) -> Result {
         func noMac(_ a: SyncApp) -> Bool { ReleaseFacts(a, releases[a.key]).hasMacBuild == false }
         var r = Result()
         r.total = apps.filter { !$0.hidden }.count
         r.favorites = apps.filter { !$0.hidden && $0.pinned }.count
         r.hidden = apps.filter(\.hidden).count
         r.noMacBuild = apps.filter { !$0.hidden && noMac($0) }.count
+        r.updates = apps.filter { !$0.hidden && updatesWaiting.contains($0.key) }.count
 
         // group chips count what the status filter shows
-        let inScope = apps.filter { $0.hidden == (status == .hidden) }
+        // (a chosen device narrows everything: only what is installed there)
+        let inScope = apps.filter { $0.hidden == (status == .hidden) && (installedOnDevice?.contains($0.key) ?? true) }
         var counts: [String: Int] = [:]
         for a in inScope { counts[displayGroup(a, autoGroups: autoGroups, info: releases[a.key]), default: 0] += 1 }
         for g in customGroups where counts.first(where: { $0.key.caseInsensitiveCompare(g) == .orderedSame }) == nil { counts[g] = 0 }
@@ -67,6 +70,7 @@ enum LibraryLayout {
             if let groupFilter, displayGroup(a, autoGroups: autoGroups, info: releases[a.key]) != groupFilter { return false }
             if status == .favorites && !a.pinned { return false }
             if status == .noMacBuild && !noMac(a) { return false }
+            if status == .updates && !updatesWaiting.contains(a.key) { return false }
             return matches(a, q, autoGroups, releases[a.key])
         }
 
