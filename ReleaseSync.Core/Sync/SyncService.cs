@@ -20,8 +20,8 @@ public sealed class SyncResult
 /// <summary>One sync round: read the shared file, merge it with this device's library, write it back if it changed.</summary>
 public static class SyncService
 {
-    /// <summary>How often a device refreshes its "last seen" time in the file when nothing else changed.</summary>
-    public static readonly TimeSpan Heartbeat = TimeSpan.FromHours(6);
+    /// <summary>How often a device refreshes its "last seen" time in the file when nothing else changed. (This is what keeps a device's light green: see <see cref="SyncPresence"/>.)</summary>
+    public static readonly TimeSpan Heartbeat = TimeSpan.FromHours(2);
 
     public static async Task<SyncResult> RunAsync(ISyncTransport transport, SyncDoc local, string? passphrase, SyncDevice self, DateTime now, CancellationToken ct = default)
     {
@@ -34,7 +34,7 @@ public static class SyncService
             try { remote = JsonSerializer.Deserialize<SyncDoc>(text, Store.Options); }
             catch (JsonException ex) { throw new SyncException("The sync file isn't readable, so nothing was changed.", ex); }
             if (remote == null) throw new SyncException("The sync file isn't readable, so nothing was changed.");
-            if (remote.Version > 2) throw new SyncException("The sync file was made by a newer version of ReleaseSync. Update ReleaseSync and try again.");
+            if (remote.Version > SyncDoc.CurrentVersion) throw new SyncException("The sync file was made by a newer version of ReleaseSync. Update ReleaseSync and try again.");
         }
 
         self.LastSeen = now;
