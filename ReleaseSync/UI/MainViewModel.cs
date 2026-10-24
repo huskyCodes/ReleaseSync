@@ -1693,9 +1693,18 @@ public sealed partial class MainViewModel : Observable
         try
         {
             var zip = await Installer.DownloadAsync(app, tag, asset, new Progress<InstallProgress>(p => { app.Progress = p.Percent; app.BusyText = p.Text; }), CancellationToken.None);
-            var files = await Task.Run(() => InstallManifest.ListZip(zip));
-            InstallManifest.Save(app.Id, InstallService.PortableTarget(app), files);
-            FinishPortableUninstall(app, InstallService.RemoveFiles(app), true, false);
+            try
+            {
+                var files = await Task.Run(() => InstallManifest.ListZip(zip));
+                InstallManifest.Save(app.Id, InstallService.PortableTarget(app), files);
+                FinishPortableUninstall(app, InstallService.RemoveFiles(app), true, false);
+            }
+            finally
+            {
+                // the zip was only fetched to read its file list; don't leave a copy behind (unless the user keeps downloads on purpose)
+                if (!Settings.KeepDownloads)
+                    try { File.Delete(zip); var d = Path.GetDirectoryName(zip)!; if (!Directory.EnumerateFileSystemEntries(d).Any()) Directory.Delete(d); } catch { }
+            }
         }
         catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast("Couldn't read the file list, so nothing was deleted: " + ex.Message, "error"); }
         finally { app.IsBusy = false; app.BusyText = ""; app.NotifyAll(); }
