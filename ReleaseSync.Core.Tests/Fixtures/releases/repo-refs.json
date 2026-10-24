@@ -1,0 +1,323 @@
+{
+  "Description": "What the engine makes of text pasted into the search-and-add box: whether it is a project, and which one. Source is github, gitlab, codeberg or unknown:host (a site that still has to be identified).",
+  "Cases": [
+    {
+      "Input": "example/sample-app",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "Example/Sample-App",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "Example",
+      "Repo": "Sample-App",
+      "Url": "https://github.com/Example/Sample-App"
+    },
+    {
+      "Input": " example/sample-app ",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "\u0022example/sample-app\u0022",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "\u003Cexample/sample-app\u003E",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "https://github.com/example/sample-app",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "http://github.com/example/sample-app/",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "https://www.github.com/example/sample-app.git",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "https://github.com/example/sample-app/releases/tag/v1.0",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "https://github.com/example/sample-app?tab=readme",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "git@github.com:example/sample-app.git",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "github.com/example/sample-app",
+      "Ok": true,
+      "Source": "github",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://github.com/example/sample-app"
+    },
+    {
+      "Input": "https://github.com/orgs/example/people",
+      "Ok": true,
+      "Source": "unknown:github.com",
+      "Owner": "orgs",
+      "Repo": "example",
+      "FullPath": "orgs/example/people",
+      "Url": "https://github.com/orgs/example"
+    },
+    {
+      "Input": "https://github.com/topics/emulator",
+      "Ok": true,
+      "Source": "unknown:github.com",
+      "Owner": "topics",
+      "Repo": "emulator",
+      "FullPath": "topics/emulator",
+      "Url": "https://github.com/topics/emulator"
+    },
+    {
+      "Input": "example",
+      "Ok": false
+    },
+    {
+      "Input": "example/sample/app",
+      "Ok": false
+    },
+    {
+      "Input": "example/sample app",
+      "Ok": false
+    },
+    {
+      "Input": "a b/c",
+      "Ok": false
+    },
+    {
+      "Input": "C:\\path\\to",
+      "Ok": false
+    },
+    {
+      "Input": "./relative/path",
+      "Ok": false
+    },
+    {
+      "Input": "https://gitlab.com/example/sample-app",
+      "Ok": true,
+      "Source": "gitlab",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://gitlab.com/example/sample-app"
+    },
+    {
+      "Input": "https://gitlab.com/example/group/sample-app",
+      "Ok": true,
+      "Source": "gitlab",
+      "Owner": "example/group",
+      "Repo": "sample-app",
+      "Url": "https://gitlab.com/example/group/sample-app"
+    },
+    {
+      "Input": "https://gitlab.com/example/sample-app/-/releases",
+      "Ok": true,
+      "Source": "gitlab",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://gitlab.com/example/sample-app"
+    },
+    {
+      "Input": "gitlab.com/example/sample-app.git",
+      "Ok": true,
+      "Source": "gitlab",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://gitlab.com/example/sample-app"
+    },
+    {
+      "Input": "https://gitlab.com/onlyone",
+      "Ok": false
+    },
+    {
+      "Input": "https://codeberg.org/example/sample-app",
+      "Ok": true,
+      "Source": "codeberg",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://codeberg.org/example/sample-app"
+    },
+    {
+      "Input": "codeberg.org/example/sample-app.git",
+      "Ok": true,
+      "Source": "codeberg",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://codeberg.org/example/sample-app"
+    },
+    {
+      "Input": "https://www.codeberg.org/example/sample-app/releases",
+      "Ok": true,
+      "Source": "codeberg",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "Url": "https://codeberg.org/example/sample-app"
+    },
+    {
+      "Input": "https://git.example.test/example/sample-app",
+      "Ok": true,
+      "Source": "unknown:git.example.test",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "FullPath": "example/sample-app",
+      "Url": "https://git.example.test/example/sample-app"
+    },
+    {
+      "Input": "https://git.example.test/example/sample-app/releases/tag/v1",
+      "Ok": true,
+      "Source": "unknown:git.example.test",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "FullPath": "example/sample-app",
+      "Url": "https://git.example.test/example/sample-app"
+    },
+    {
+      "Input": "https://git.example.test/example/sample-app.git",
+      "Ok": true,
+      "Source": "unknown:git.example.test",
+      "Owner": "example",
+      "Repo": "sample-app",
+      "FullPath": "example/sample-app",
+      "Url": "https://git.example.test/example/sample-app"
+    },
+    {
+      "Input": "https://git.example.test/group/sub/sample-app/-/tree/main",
+      "Ok": true,
+      "Source": "unknown:git.example.test",
+      "Owner": "group",
+      "Repo": "sub",
+      "FullPath": "group/sub/sample-app",
+      "Url": "https://git.example.test/group/sub"
+    },
+    {
+      "Input": "http://localhost/example/sample-app",
+      "Ok": false
+    },
+    {
+      "Input": "https://example.test/",
+      "Ok": false
+    },
+    {
+      "Input": "https://example.test/onlyone",
+      "Ok": false
+    },
+    {
+      "Input": "ftp://git.example.test/example/sample-app",
+      "Ok": false
+    },
+    {
+      "Input": "",
+      "Ok": false
+    },
+    {
+      "Input": "   ",
+      "Ok": false
+    },
+    {
+      "Input": "not a link",
+      "Ok": false
+    },
+    {
+      "Input": "https://github.com/",
+      "Ok": false
+    },
+    {
+      "Input": "https://github.com/example",
+      "Ok": false
+    },
+    {
+      "Input": "example/sample-app/",
+      "Ok": false
+    }
+  ],
+  "Urls": [
+    {
+      "Item1": "github",
+      "Item2": "o",
+      "Item3": "r",
+      "Url": "https://github.com/o/r"
+    },
+    {
+      "Item1": "gitlab",
+      "Item2": "o/g",
+      "Item3": "r",
+      "Url": "https://gitlab.com/o/g/r"
+    },
+    {
+      "Item1": "codeberg",
+      "Item2": "o",
+      "Item3": "r",
+      "Url": "https://codeberg.org/o/r"
+    },
+    {
+      "Item1": "forgejo:git.example.test",
+      "Item2": "o",
+      "Item3": "r",
+      "Url": "https://git.example.test/o/r"
+    },
+    {
+      "Item1": "gitlab:git.example.test",
+      "Item2": "o",
+      "Item3": "r",
+      "Url": "https://git.example.test/o/r"
+    },
+    {
+      "Item1": "unknown:git.example.test",
+      "Item2": "o",
+      "Item3": "r",
+      "Url": "https://git.example.test/o/r"
+    },
+    {
+      "Item1": "weird",
+      "Item2": "o",
+      "Item3": "r",
+      "Url": "https://github.com/o/r"
+    }
+  ]
+}

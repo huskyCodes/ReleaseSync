@@ -1,0 +1,85 @@
+{
+  "Description": "Release notes as plain text for display, cut at 2500 characters with an ellipsis.",
+  "Cases": [
+    {
+      "Text": "",
+      "Plain": ""
+    },
+    {
+      "Text": "   ",
+      "Plain": ""
+    },
+    {
+      "Text": "plain text",
+      "Plain": "plain text"
+    },
+    {
+      "Text": "# Heading\n\nBody text",
+      "Plain": "Heading\n\nBody text"
+    },
+    {
+      "Text": "## What\u0027s new\n- one\n- two\n* three\n\u002B four",
+      "Plain": "What\u0027s new\n\u2022  one\n\u2022  two\n\u2022  three\n\u2022  four"
+    },
+    {
+      "Text": "**bold** and __bold__ and \u0060code\u0060 and ~~gone~~",
+      "Plain": "bold and bold and code and gone"
+    },
+    {
+      "Text": "A [link](https://example.test/x) and ![image](https://example.test/i.png)",
+      "Plain": "A link and"
+    },
+    {
+      "Text": "\u003Cb\u003Ehtml\u003C/b\u003E \u003Cbr/\u003E text",
+      "Plain": "html  text"
+    },
+    {
+      "Text": "---\n\ntext\n\n***\n",
+      "Plain": "text"
+    },
+    {
+      "Text": "line one   \nline two\t\nline three",
+      "Plain": "line one\nline two\nline three"
+    },
+    {
+      "Text": "a\n\n\n\n\nb",
+      "Plain": "a\n\nb"
+    },
+    {
+      "Text": "snake_case_name and *emphasis* and _under_",
+      "Plain": "snake_case_name and emphasis and under"
+    },
+    {
+      "Text": "2 * 3 * 4",
+      "Plain": "2  3  4"
+    },
+    {
+      "Text": "Windows line\r\nendings\r\nhere",
+      "Plain": "Windows line\nendings\nhere"
+    },
+    {
+      "Text": "### Fixes\n\n- Fixed a crash (#123)\n- Improved **speed** by \u006020%\u0060\n\n### Known issues\n\n1. Something\n2. Something else",
+      "Plain": "Fixes\n\u2022  Fixed a crash (#123)\n\u2022  Improved speed by 20%\nKnown issues\n\n1. Something\n2. Something else"
+    },
+    {
+      "Text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "Plain": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\u2026"
+    },
+    {
+      "Text": "- item 0\n- item 1\n- item 2\n- item 3\n- item 4\n- item 5\n- item 6\n- item 7\n- item 8\n- item 9\n- item 10\n- item 11\n- item 12\n- item 13\n- item 14\n- item 15\n- item 16\n- item 17\n- item 18\n- item 19\n- item 20\n- item 21\n- item 22\n- item 23\n- item 24\n- item 25\n- item 26\n- item 27\n- item 28\n- item 29\n- item 30\n- item 31\n- item 32\n- item 33\n- item 34\n- item 35\n- item 36\n- item 37\n- item 38\n- item 39\n- item 40\n- item 41\n- item 42\n- item 43\n- item 44\n- item 45\n- item 46\n- item 47\n- item 48\n- item 49\n- item 50\n- item 51\n- item 52\n- item 53\n- item 54\n- item 55\n- item 56\n- item 57\n- item 58\n- item 59\n- item 60\n- item 61\n- item 62\n- item 63\n- item 64\n- item 65\n- item 66\n- item 67\n- item 68\n- item 69\n- item 70\n- item 71\n- item 72\n- item 73\n- item 74\n- item 75\n- item 76\n- item 77\n- item 78\n- item 79\n- item 80\n- item 81\n- item 82\n- item 83\n- item 84\n- item 85\n- item 86\n- item 87\n- item 88\n- item 89\n- item 90\n- item 91\n- item 92\n- item 93\n- item 94\n- item 95\n- item 96\n- item 97\n- item 98\n- item 99\n- item 100\n- item 101\n- item 102\n- item 103\n- item 104\n- item 105\n- item 106\n- item 107\n- item 108\n- item 109\n- item 110\n- item 111\n- item 112\n- item 113\n- item 114\n- item 115\n- item 116\n- item 117\n- item 118\n- item 119\n- item 120\n- item 121\n- item 122\n- item 123\n- item 124\n- item 125\n- item 126\n- item 127\n- item 128\n- item 129\n- item 130\n- item 131\n- item 132\n- item 133\n- item 134\n- item 135\n- item 136\n- item 137\n- item 138\n- item 139\n- item 140\n- item 141\n- item 142\n- item 143\n- item 144\n- item 145\n- item 146\n- item 147\n- item 148\n- item 149\n- item 150\n- item 151\n- item 152\n- item 153\n- item 154\n- item 155\n- item 156\n- item 157\n- item 158\n- item 159\n- item 160\n- item 161\n- item 162\n- item 163\n- item 164\n- item 165\n- item 166\n- item 167\n- item 168\n- item 169\n- item 170\n- item 171\n- item 172\n- item 173\n- item 174\n- item 175\n- item 176\n- item 177\n- item 178\n- item 179\n- item 180\n- item 181\n- item 182\n- item 183\n- item 184\n- item 185\n- item 186\n- item 187\n- item 188\n- item 189\n- item 190\n- item 191\n- item 192\n- item 193\n- item 194\n- item 195\n- item 196\n- item 197\n- item 198\n- item 199\n- item 200\n- item 201\n- item 202\n- item 203\n- item 204\n- item 205\n- item 206\n- item 207\n- item 208\n- item 209\n- item 210\n- item 211\n- item 212\n- item 213\n- item 214\n- item 215\n- item 216\n- item 217\n- item 218\n- item 219\n- item 220\n- item 221\n- item 222\n- item 223\n- item 224\n- item 225\n- item 226\n- item 227\n- item 228\n- item 229\n- item 230\n- item 231\n- item 232\n- item 233\n- item 234\n- item 235\n- item 236\n- item 237\n- item 238\n- item 239\n- item 240\n- item 241\n- item 242\n- item 243\n- item 244\n- item 245\n- item 246\n- item 247\n- item 248\n- item 249\n- item 250\n- item 251\n- item 252\n- item 253\n- item 254\n- item 255\n- item 256\n- item 257\n- item 258\n- item 259\n- item 260\n- item 261\n- item 262\n- item 263\n- item 264\n- item 265\n- item 266\n- item 267\n- item 268\n- item 269\n- item 270\n- item 271\n- item 272\n- item 273\n- item 274\n- item 275\n- item 276\n- item 277\n- item 278\n- item 279\n- item 280\n- item 281\n- item 282\n- item 283\n- item 284\n- item 285\n- item 286\n- item 287\n- item 288\n- item 289\n- item 290\n- item 291\n- item 292\n- item 293\n- item 294\n- item 295\n- item 296\n- item 297\n- item 298\n- item 299\n- item 300\n- item 301\n- item 302\n- item 303\n- item 304\n- item 305\n- item 306\n- item 307\n- item 308\n- item 309\n- item 310\n- item 311\n- item 312\n- item 313\n- item 314\n- item 315\n- item 316\n- item 317\n- item 318\n- item 319\n- item 320\n- item 321\n- item 322\n- item 323\n- item 324\n- item 325\n- item 326\n- item 327\n- item 328\n- item 329\n- item 330\n- item 331\n- item 332\n- item 333\n- item 334\n- item 335\n- item 336\n- item 337\n- item 338\n- item 339\n- item 340\n- item 341\n- item 342\n- item 343\n- item 344\n- item 345\n- item 346\n- item 347\n- item 348\n- item 349\n- item 350\n- item 351\n- item 352\n- item 353\n- item 354\n- item 355\n- item 356\n- item 357\n- item 358\n- item 359\n- item 360\n- item 361\n- item 362\n- item 363\n- item 364\n- item 365\n- item 366\n- item 367\n- item 368\n- item 369\n- item 370\n- item 371\n- item 372\n- item 373\n- item 374\n- item 375\n- item 376\n- item 377\n- item 378\n- item 379\n- item 380\n- item 381\n- item 382\n- item 383\n- item 384\n- item 385\n- item 386\n- item 387\n- item 388\n- item 389\n- item 390\n- item 391\n- item 392\n- item 393\n- item 394\n- item 395\n- item 396\n- item 397\n- item 398\n- item 399",
+      "Plain": "\u2022  item 0\n\u2022  item 1\n\u2022  item 2\n\u2022  item 3\n\u2022  item 4\n\u2022  item 5\n\u2022  item 6\n\u2022  item 7\n\u2022  item 8\n\u2022  item 9\n\u2022  item 10\n\u2022  item 11\n\u2022  item 12\n\u2022  item 13\n\u2022  item 14\n\u2022  item 15\n\u2022  item 16\n\u2022  item 17\n\u2022  item 18\n\u2022  item 19\n\u2022  item 20\n\u2022  item 21\n\u2022  item 22\n\u2022  item 23\n\u2022  item 24\n\u2022  item 25\n\u2022  item 26\n\u2022  item 27\n\u2022  item 28\n\u2022  item 29\n\u2022  item 30\n\u2022  item 31\n\u2022  item 32\n\u2022  item 33\n\u2022  item 34\n\u2022  item 35\n\u2022  item 36\n\u2022  item 37\n\u2022  item 38\n\u2022  item 39\n\u2022  item 40\n\u2022  item 41\n\u2022  item 42\n\u2022  item 43\n\u2022  item 44\n\u2022  item 45\n\u2022  item 46\n\u2022  item 47\n\u2022  item 48\n\u2022  item 49\n\u2022  item 50\n\u2022  item 51\n\u2022  item 52\n\u2022  item 53\n\u2022  item 54\n\u2022  item 55\n\u2022  item 56\n\u2022  item 57\n\u2022  item 58\n\u2022  item 59\n\u2022  item 60\n\u2022  item 61\n\u2022  item 62\n\u2022  item 63\n\u2022  item 64\n\u2022  item 65\n\u2022  item 66\n\u2022  item 67\n\u2022  item 68\n\u2022  item 69\n\u2022  item 70\n\u2022  item 71\n\u2022  item 72\n\u2022  item 73\n\u2022  item 74\n\u2022  item 75\n\u2022  item 76\n\u2022  item 77\n\u2022  item 78\n\u2022  item 79\n\u2022  item 80\n\u2022  item 81\n\u2022  item 82\n\u2022  item 83\n\u2022  item 84\n\u2022  item 85\n\u2022  item 86\n\u2022  item 87\n\u2022  item 88\n\u2022  item 89\n\u2022  item 90\n\u2022  item 91\n\u2022  item 92\n\u2022  item 93\n\u2022  item 94\n\u2022  item 95\n\u2022  item 96\n\u2022  item 97\n\u2022  item 98\n\u2022  item 99\n\u2022  item 100\n\u2022  item 101\n\u2022  item 102\n\u2022  item 103\n\u2022  item 104\n\u2022  item 105\n\u2022  item 106\n\u2022  item 107\n\u2022  item 108\n\u2022  item 109\n\u2022  item 110\n\u2022  item 111\n\u2022  item 112\n\u2022  item 113\n\u2022  item 114\n\u2022  item 115\n\u2022  item 116\n\u2022  item 117\n\u2022  item 118\n\u2022  item 119\n\u2022  item 120\n\u2022  item 121\n\u2022  item 122\n\u2022  item 123\n\u2022  item 124\n\u2022  item 125\n\u2022  item 126\n\u2022  item 127\n\u2022  item 128\n\u2022  item 129\n\u2022  item 130\n\u2022  item 131\n\u2022  item 132\n\u2022  item 133\n\u2022  item 134\n\u2022  item 135\n\u2022  item 136\n\u2022  item 137\n\u2022  item 138\n\u2022  item 139\n\u2022  item 140\n\u2022  item 141\n\u2022  item 142\n\u2022  item 143\n\u2022  item 144\n\u2022  item 145\n\u2022  item 146\n\u2022  item 147\n\u2022  item 148\n\u2022  item 149\n\u2022  item 150\n\u2022  item 151\n\u2022  item 152\n\u2022  item 153\n\u2022  item 154\n\u2022  item 155\n\u2022  item 156\n\u2022  item 157\n\u2022  item 158\n\u2022  item 159\n\u2022  item 160\n\u2022  item 161\n\u2022  item 162\n\u2022  item 163\n\u2022  item 164\n\u2022  item 165\n\u2022  item 166\n\u2022  item 167\n\u2022  item 168\n\u2022  item 169\n\u2022  item 170\n\u2022  item 171\n\u2022  item 172\n\u2022  item 173\n\u2022  item 174\n\u2022  item 175\n\u2022  item 176\n\u2022  item 177\n\u2022  item 178\n\u2022  item 179\n\u2022  item 180\n\u2022  item 181\n\u2022  item 182\n\u2022  item 183\n\u2022  item 184\n\u2022  item 185\n\u2022  item 186\n\u2022  item 187\n\u2022  item 188\n\u2022  item 189\n\u2022  item 190\n\u2022  item 191\n\u2022  item 192\n\u2022  item 193\n\u2022  item 194\n\u2022  item 195\n\u2022  item 196\n\u2022  item 197\n\u2022  item 198\n\u2022  item 199\n\u2022  item 200\n\u2022  item 201\n\u2022  item 202\n\u2022  item 203\n\u2022  item 204\n\u2022  item 205\n\u2022  item 206\n\u2022  item 207\n\u2022  item 208\n\u2022  item 209\n\u2022  item 210\n\u2022  item 211\n\u2022  item 212\n\u2022  item 213\n\u2022  item 214\n\u2022  item 215\n\u2022  item 216\n\u2022  ite\u2026"
+    },
+    {
+      "Text": "caf\u00E9 \u2713 \uD83D\uDE00 text",
+      "Plain": "caf\u00E9 \u2713 \uD83D\uDE00 text"
+    },
+    {
+      "Text": "[nested [brackets]](https://example.test)",
+      "Plain": "[nested [brackets]](https://example.test)"
+    },
+    {
+      "Text": "Full Changelog: https://example.test/compare/v1...v2",
+      "Plain": "Full Changelog: https://example.test/compare/v1...v2"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "Description": "The JSON GitHub (and Forgejo/Codeberg) send for a project and its releases, and what the engine makes of it. Times are shown in UTC.",
+  "RepoJson": "{\u0022id\u0022:1,\u0022full_name\u0022:\u0022example-org/sample-app\u0022,\u0022name\u0022:\u0022sample-app\u0022,\u0022owner\u0022:{\u0022login\u0022:\u0022example-org\u0022,\u0022avatar_url\u0022:\u0022https://avatars.example.test/u/1?v=4\u0022,\u0022type\u0022:\u0022Organization\u0022},\n \u0022description\u0022:\u0022A small sample application.\u0022,\u0022stargazers_count\u0022:8421,\u0022language\u0022:\u0022Rust\u0022,\u0022topics\u0022:[\u0022sample\u0022,\u0022desktop\u0022,\u0022media-player\u0022],\u0022html_url\u0022:\u0022https://github.com/example-org/sample-app\u0022,\n \u0022archived\u0022:false,\u0022fork\u0022:false,\u0022forks_count\u0022:310,\u0022open_issues_count\u0022:42,\u0022subscribers_count\u0022:77,\u0022license\u0022:{\u0022key\u0022:\u0022mit\u0022,\u0022name\u0022:\u0022MIT License\u0022,\u0022spdx_id\u0022:\u0022MIT\u0022},\u0022homepage\u0022:\u0022https://sample.example.test\u0022,\n \u0022created_at\u0022:\u00222023-05-01T10:00:00Z\u0022,\u0022pushed_at\u0022:\u00222026-01-02T03:04:05Z\u0022,\u0022unknown_extra\u0022:{\u0022ignored\u0022:true}}",
+  "ReleasesJson": "[\n {\u0022tag_name\u0022:\u0022v1.1.0\u0022,\u0022name\u0022:\u0022Version 1.1\u0022,\u0022body\u0022:\u0022## Changes\\n- faster\\n- **fixes**\u0022,\u0022prerelease\u0022:false,\u0022draft\u0022:false,\u0022published_at\u0022:\u00222026-01-02T12:00:00Z\u0022,\u0022html_url\u0022:\u0022https://github.com/example-org/sample-app/releases/tag/v1.1.0\u0022,\n  \u0022assets\u0022:[{\u0022name\u0022:\u0022SampleApp-1.1.0-universal.dmg\u0022,\u0022size\u0022:52428800,\u0022browser_download_url\u0022:\u0022https://github.com/example-org/sample-app/releases/download/v1.1.0/SampleApp-1.1.0-universal.dmg\u0022,\u0022download_count\u0022:120,\u0022state\u0022:\u0022uploaded\u0022,\u0022digest\u0022:\u0022sha256:0123456789abcdef\u0022},\n           {\u0022name\u0022:\u0022SampleApp-1.1.0-setup.exe\u0022,\u0022size\u0022:41943040,\u0022browser_download_url\u0022:\u0022https://github.com/example-org/sample-app/releases/download/v1.1.0/SampleApp-1.1.0-setup.exe\u0022,\u0022download_count\u0022:900,\u0022state\u0022:\u0022uploaded\u0022},\n           {\u0022name\u0022:\u0022partial.zip\u0022,\u0022size\u0022:1,\u0022browser_download_url\u0022:\u0022https://example.test/partial.zip\u0022,\u0022download_count\u0022:0,\u0022state\u0022:\u0022uploading\u0022}]},\n {\u0022tag_name\u0022:\u0022v1.2.0-beta.1\u0022,\u0022name\u0022:null,\u0022body\u0022:null,\u0022prerelease\u0022:true,\u0022draft\u0022:false,\u0022published_at\u0022:\u00222026-01-05T08:30:00.123Z\u0022,\u0022html_url\u0022:\u0022https://github.com/example-org/sample-app/releases/tag/v1.2.0-beta.1\u0022,\u0022assets\u0022:[]},\n {\u0022tag_name\u0022:\u0022v1.3.0-draft\u0022,\u0022name\u0022:\u0022Draft\u0022,\u0022body\u0022:\u0022not published\u0022,\u0022prerelease\u0022:false,\u0022draft\u0022:true,\u0022published_at\u0022:null,\u0022html_url\u0022:null,\u0022assets\u0022:[]},\n {\u0022tag_name\u0022:\u0022v1.0.0\u0022,\u0022name\u0022:\u0022First release\u0022,\u0022body\u0022:\u0022First!\u0022,\u0022prerelease\u0022:false,\u0022draft\u0022:false,\u0022published_at\u0022:\u00222025-12-01T00:00:00\u002B02:00\u0022,\u0022html_url\u0022:\u0022https://github.com/example-org/sample-app/releases/tag/v1.0.0\u0022,\n  \u0022assets\u0022:[{\u0022name\u0022:\u0022SampleApp-1.0.0-arm64.zip\u0022,\u0022size\u0022:31457280,\u0022browser_download_url\u0022:\u0022https://github.com/example-org/sample-app/releases/download/v1.0.0/SampleApp-1.0.0-arm64.zip\u0022,\u0022download_count\u0022:5}]},\n {\u0022tag_name\u0022:\u0022untimed\u0022,\u0022name\u0022:\u0022No date\u0022,\u0022body\u0022:\u0022\u0022,\u0022prerelease\u0022:false,\u0022draft\u0022:false,\u0022published_at\u0022:null,\u0022html_url\u0022:null,\u0022assets\u0022:[]}\n]",
+  "Repo": {
+    "FullName": "example-org/sample-app",
+    "Name": "sample-app",
+    "OwnerLogin": "example-org",
+    "AvatarUrl": "https://avatars.example.test/u/1?v=4",
+    "Description": "A small sample application.",
+    "Stars": 8421,
+    "Language": "Rust",
+    "Topics": [
+      "sample",
+      "desktop",
+      "media-player"
+    ],
+    "HtmlUrl": "https://github.com/example-org/sample-app",
+    "Archived": false,
+    "Fork": false,
+    "Forks": 310,
+    "OpenIssues": 42,
+    "Watchers": 77,
+    "LicenseSpdx": "MIT",
+    "LicenseName": "MIT License",
+    "Homepage": "https://sample.example.test",
+    "CreatedAt": "2023-05-01T10:00:00Z",
+    "PushedAt": "2026-01-02T03:04:05Z"
+  },
+  "Releases": [
+    {
+      "Tag": "v1.2.0-beta.1",
+      "Prerelease": true,
+      "PublishedAt": "2026-01-05T08:30:00.123Z",
+      "HtmlUrl": "https://github.com/example-org/sample-app/releases/tag/v1.2.0-beta.1",
+      "Assets": []
+    },
+    {
+      "Tag": "v1.1.0",
+      "Name": "Version 1.1",
+      "Body": "## Changes\n- faster\n- **fixes**",
+      "Prerelease": false,
+      "PublishedAt": "2026-01-02T12:00:00Z",
+      "HtmlUrl": "https://github.com/example-org/sample-app/releases/tag/v1.1.0",
+      "Assets": [
+        {
+          "Name": "SampleApp-1.1.0-universal.dmg",
+          "Size": 52428800,
+          "Url": "https://github.com/example-org/sample-app/releases/download/v1.1.0/SampleApp-1.1.0-universal.dmg",
+          "Downloads": 120,
+          "State": "uploaded",
+          "Digest": "sha256:0123456789abcdef"
+        },
+        {
+          "Name": "SampleApp-1.1.0-setup.exe",
+          "Size": 41943040,
+          "Url": "https://github.com/example-org/sample-app/releases/download/v1.1.0/SampleApp-1.1.0-setup.exe",
+          "Downloads": 900,
+          "State": "uploaded"
+        },
+        {
+          "Name": "partial.zip",
+          "Size": 1,
+          "Url": "https://example.test/partial.zip",
+          "Downloads": 0,
+          "State": "uploading"
+        }
+      ]
+    },
+    {
+      "Tag": "v1.0.0",
+      "Name": "First release",
+      "Body": "First!",
+      "Prerelease": false,
+      "PublishedAt": "2025-11-30T22:00:00Z",
+      "HtmlUrl": "https://github.com/example-org/sample-app/releases/tag/v1.0.0",
+      "Assets": [
+        {
+          "Name": "SampleApp-1.0.0-arm64.zip",
+          "Size": 31457280,
+          "Url": "https://github.com/example-org/sample-app/releases/download/v1.0.0/SampleApp-1.0.0-arm64.zip",
+          "Downloads": 5
+        }
+      ]
+    },
+    {
+      "Tag": "untimed",
+      "Name": "No date",
+      "Body": "",
+      "Prerelease": false,
+      "Assets": []
+    }
+  ]
+}

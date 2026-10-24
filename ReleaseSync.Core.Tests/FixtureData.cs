@@ -497,6 +497,107 @@ public static class FixtureData
         };
     }
 
+    // ---------------- release data ----------------
+    static object VersionVectors()
+    {
+        var v = new[] { "v1.2.3", "1.2.3", "1.2", "1.2.0", "1.10", "1.9", "1.2.3-beta.1", "1.2.3-rc1", "2.0.0-rc1", "2.0.0", "2.0.0-alpha", "nightly-2026-01-01", "nightly", "build 123", "123", "",
+                        "latest", "V2", "release-1.4.2", "1.0.0+meta", "10.0", "0.9.9", "0", "v0.0.1", "3.1.4.1", "3.1.4", "2026.01.15", "2026.1.2", "r1234", "v1.2.3 (preview)", "1.2.3 dev", "1.2.3snapshot", "  v1.2.3  " };
+        return new
+        {
+            Description = "Newer[i][j] is true when Versions[i] counts as a newer release than an installed Versions[j]. Clean[i] is Versions[i] with its leading v and spaces removed.",
+            Versions = v, Clean = v.Select(VersionUtil.Clean).ToArray(),
+            Newer = v.Select(latest => v.Select(installed => VersionUtil.IsNewer(latest, installed)).ToArray()).ToArray(),
+        };
+    }
+
+    static object MarkdownVectors()
+    {
+        var inputs = new[]
+        {
+            "", "   ", "plain text", "# Heading\n\nBody text", "## What's new\n- one\n- two\n* three\n+ four", "**bold** and __bold__ and `code` and ~~gone~~", "A [link](https://example.test/x) and ![image](https://example.test/i.png)",
+            "<b>html</b> <br/> text", "---\n\ntext\n\n***\n", "line one   \nline two\t\nline three", "a\n\n\n\n\nb", "snake_case_name and *emphasis* and _under_", "2 * 3 * 4", "Windows line\r\nendings\r\nhere",
+            "### Fixes\n\n- Fixed a crash (#123)\n- Improved **speed** by `20%`\n\n### Known issues\n\n1. Something\n2. Something else", new string('x', 3000), string.Join("\n", Enumerable.Range(0, 400).Select(i => "- item " + i)),
+            "caf\u00E9 \u2713 \U0001F600 text", "[nested [brackets]](https://example.test)", "Full Changelog: https://example.test/compare/v1...v2",
+        };
+        return new { Description = "Release notes as plain text for display, cut at 2500 characters with an ellipsis.", Cases = inputs.Select(i => new { Text = i, Plain = Fmt.StripMarkdown(i) }).ToList() };
+    }
+
+    static object FormatVectors() => new
+    {
+        Description = "Short counts (1200 becomes 1.2k) and file sizes, as the Windows app shows them.",
+        Counts = new[] { 0, 1, 9, 999, 1000, 1049, 1050, 1234, 9999, 10_000, 99_999, 100_000, 999_999, 1_000_000, 1_250_000, 12_345_678, int.MaxValue }.Select(n => new { Value = n, Text = Fmt.Count(n) }).ToList(),
+        Sizes = new long[] { -5, 0, 1, 1023, 1024, 1536, 10_240, 1_048_575, 1_048_576, 5_452_595, 1_073_741_823, 1_073_741_824, 10_737_418_240, 5_497_558_138_880 }.Select(n => new { Value = n, Text = Fmt.Size(n) }).ToList(),
+    };
+
+    static object RepoRefVectors()
+    {
+        var inputs = new[]
+        {
+            "example/sample-app", "Example/Sample-App", " example/sample-app ", "\"example/sample-app\"", "<example/sample-app>", "https://github.com/example/sample-app", "http://github.com/example/sample-app/", "https://www.github.com/example/sample-app.git",
+            "https://github.com/example/sample-app/releases/tag/v1.0", "https://github.com/example/sample-app?tab=readme", "git@github.com:example/sample-app.git", "github.com/example/sample-app", "https://github.com/orgs/example/people",
+            "https://github.com/topics/emulator", "example", "example/sample/app", "example/sample app", "a b/c", "C:\\path\\to", "./relative/path", "https://gitlab.com/example/sample-app", "https://gitlab.com/example/group/sample-app",
+            "https://gitlab.com/example/sample-app/-/releases", "gitlab.com/example/sample-app.git", "https://gitlab.com/onlyone", "https://codeberg.org/example/sample-app", "codeberg.org/example/sample-app.git", "https://www.codeberg.org/example/sample-app/releases",
+            "https://git.example.test/example/sample-app", "https://git.example.test/example/sample-app/releases/tag/v1", "https://git.example.test/example/sample-app.git", "https://git.example.test/group/sub/sample-app/-/tree/main", "http://localhost/example/sample-app",
+            "https://example.test/", "https://example.test/onlyone", "ftp://git.example.test/example/sample-app", "", "   ", "not a link", "https://github.com/", "https://github.com/example", "example/sample-app/",
+        };
+        return new
+        {
+            Description = "What the engine makes of text pasted into the search-and-add box: whether it is a project, and which one. Source is github, gitlab, codeberg or unknown:host (a site that still has to be identified).",
+            Cases = inputs.Select(i =>
+            {
+                var ok = SourceClient.TryParse(i, out var r);
+                return new { Input = i, Ok = ok, Source = r?.Source, Owner = r?.Owner, Repo = r?.Repo, FullPath = r?.FullPath, Url = r?.Url };
+            }).ToList(),
+            Urls = new[] { ("github", "o", "r"), ("gitlab", "o/g", "r"), ("codeberg", "o", "r"), ("forgejo:git.example.test", "o", "r"), ("gitlab:git.example.test", "o", "r"), ("unknown:git.example.test", "o", "r"), ("weird", "o", "r") }
+                .Select(t => new { t.Item1, t.Item2, t.Item3, Url = RepoRef.UrlFor(t.Item1, t.Item2, t.Item3) }).ToList(),
+        };
+    }
+
+    const string GitHubRepoJson = """
+        {"id":1,"full_name":"example-org/sample-app","name":"sample-app","owner":{"login":"example-org","avatar_url":"https://avatars.example.test/u/1?v=4","type":"Organization"},
+         "description":"A small sample application.","stargazers_count":8421,"language":"Rust","topics":["sample","desktop","media-player"],"html_url":"https://github.com/example-org/sample-app",
+         "archived":false,"fork":false,"forks_count":310,"open_issues_count":42,"subscribers_count":77,"license":{"key":"mit","name":"MIT License","spdx_id":"MIT"},"homepage":"https://sample.example.test",
+         "created_at":"2023-05-01T10:00:00Z","pushed_at":"2026-01-02T03:04:05Z","unknown_extra":{"ignored":true}}
+        """;
+
+    const string GitHubReleasesJson = """
+        [
+         {"tag_name":"v1.1.0","name":"Version 1.1","body":"## Changes\n- faster\n- **fixes**","prerelease":false,"draft":false,"published_at":"2026-01-02T12:00:00Z","html_url":"https://github.com/example-org/sample-app/releases/tag/v1.1.0",
+          "assets":[{"name":"SampleApp-1.1.0-universal.dmg","size":52428800,"browser_download_url":"https://github.com/example-org/sample-app/releases/download/v1.1.0/SampleApp-1.1.0-universal.dmg","download_count":120,"state":"uploaded","digest":"sha256:0123456789abcdef"},
+                   {"name":"SampleApp-1.1.0-setup.exe","size":41943040,"browser_download_url":"https://github.com/example-org/sample-app/releases/download/v1.1.0/SampleApp-1.1.0-setup.exe","download_count":900,"state":"uploaded"},
+                   {"name":"partial.zip","size":1,"browser_download_url":"https://example.test/partial.zip","download_count":0,"state":"uploading"}]},
+         {"tag_name":"v1.2.0-beta.1","name":null,"body":null,"prerelease":true,"draft":false,"published_at":"2026-01-05T08:30:00.123Z","html_url":"https://github.com/example-org/sample-app/releases/tag/v1.2.0-beta.1","assets":[]},
+         {"tag_name":"v1.3.0-draft","name":"Draft","body":"not published","prerelease":false,"draft":true,"published_at":null,"html_url":null,"assets":[]},
+         {"tag_name":"v1.0.0","name":"First release","body":"First!","prerelease":false,"draft":false,"published_at":"2025-12-01T00:00:00+02:00","html_url":"https://github.com/example-org/sample-app/releases/tag/v1.0.0",
+          "assets":[{"name":"SampleApp-1.0.0-arm64.zip","size":31457280,"browser_download_url":"https://github.com/example-org/sample-app/releases/download/v1.0.0/SampleApp-1.0.0-arm64.zip","download_count":5}]},
+         {"tag_name":"untimed","name":"No date","body":"","prerelease":false,"draft":false,"published_at":null,"html_url":null,"assets":[]}
+        ]
+        """;
+
+    static object ReleaseParsingVectors()
+    {
+        var repo = JsonSerializer.Deserialize<RepoInfo>(GitHubRepoJson)!;
+        var releases = JsonSerializer.Deserialize<List<ReleaseInfo>>(GitHubReleasesJson)!;
+        // what the engine does with a list from GitHub or a Forgejo site such as Codeberg: drop drafts, newest first
+        var kept = releases.Where(x => !x.Draft).OrderByDescending(x => x.PublishedAt ?? DateTime.MinValue).ToList();
+        string? Utc(DateTime? t) => t.HasValue ? JsonSerializer.Serialize(t.Value.Kind == DateTimeKind.Local ? t.Value.ToUniversalTime() : t.Value).Trim('"') : null;
+        return new
+        {
+            Description = "The JSON GitHub (and Forgejo/Codeberg) send for a project and its releases, and what the engine makes of it. Times are shown in UTC.",
+            RepoJson = GitHubRepoJson, ReleasesJson = GitHubReleasesJson,
+            Repo = new
+            {
+                repo.FullName, repo.Name, OwnerLogin = repo.OwnerLogin, AvatarUrl = repo.AvatarUrl, repo.Description, repo.Stars, repo.Language, repo.Topics, repo.HtmlUrl, repo.Archived, repo.Fork, repo.Forks, repo.OpenIssues, repo.Watchers,
+                LicenseSpdx = repo.License?.SpdxId, LicenseName = repo.License?.Name, repo.Homepage, CreatedAt = Utc(repo.CreatedAt), PushedAt = Utc(repo.PushedAt),
+            },
+            Releases = kept.Select(r => new
+            {
+                r.Tag, r.Name, r.Body, r.Prerelease, PublishedAt = Utc(r.PublishedAt), r.HtmlUrl,
+                Assets = r.Assets.Select(a => new { a.Name, a.Size, a.Url, a.Downloads, a.State, a.Digest }).ToList(),
+            }).ToList(),
+        };
+    }
+
     static object EncryptionDetection()
     {
         var env = CryptoCases()[0].Envelope;
@@ -544,6 +645,11 @@ public static class FixtureData
         files["timestamps.json"] = Text(TimestampVectors());
         files["escapes.json"] = Text(EscapeVectors());
         files["categorize.json"] = Text(CategorizeVectors());
+        files["releases/versions.json"] = Text(VersionVectors());
+        files["releases/markdown.json"] = Text(MarkdownVectors());
+        files["releases/format.json"] = Text(FormatVectors());
+        files["releases/repo-refs.json"] = Text(RepoRefVectors());
+        files["releases/parsing.json"] = Text(ReleaseParsingVectors());
 
         var rounds = RoundCases().Select(r =>
         {
@@ -598,6 +704,7 @@ public static class FixtureData
         | `crypto/is-encrypted.json` | Texts and whether they count as an encrypted file. |
         | `timestamps.json` | How times are written, and how the different spellings of a time are read. |
         | `escapes.json` | How strings are escaped in JSON text. The tie-break in the merge depends on this being exact. |
+        | `releases/` | Release data: version comparison, release-notes cleanup, counts and sizes, project links, and how GitHub's JSON for a project and its releases is read. |
         | `categorize.json` | The kind of project (the automatic group) the engine puts each name, description, topics and language in. |
 
         ## Rules for comparing

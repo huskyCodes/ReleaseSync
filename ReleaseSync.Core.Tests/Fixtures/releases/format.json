@@ -1,0 +1,131 @@
+{
+  "Description": "Short counts (1200 becomes 1.2k) and file sizes, as the Windows app shows them.",
+  "Counts": [
+    {
+      "Value": 0,
+      "Text": "0"
+    },
+    {
+      "Value": 1,
+      "Text": "1"
+    },
+    {
+      "Value": 9,
+      "Text": "9"
+    },
+    {
+      "Value": 999,
+      "Text": "999"
+    },
+    {
+      "Value": 1000,
+      "Text": "1k"
+    },
+    {
+      "Value": 1049,
+      "Text": "1k"
+    },
+    {
+      "Value": 1050,
+      "Text": "1.1k"
+    },
+    {
+      "Value": 1234,
+      "Text": "1.2k"
+    },
+    {
+      "Value": 9999,
+      "Text": "10k"
+    },
+    {
+      "Value": 10000,
+      "Text": "10k"
+    },
+    {
+      "Value": 99999,
+      "Text": "100k"
+    },
+    {
+      "Value": 100000,
+      "Text": "100k"
+    },
+    {
+      "Value": 999999,
+      "Text": "1000k"
+    },
+    {
+      "Value": 1000000,
+      "Text": "1M"
+    },
+    {
+      "Value": 1250000,
+      "Text": "1.3M"
+    },
+    {
+      "Value": 12345678,
+      "Text": "12.3M"
+    },
+    {
+      "Value": 2147483647,
+      "Text": "2147.5M"
+    }
+  ],
+  "Sizes": [
+    {
+      "Value": -5,
+      "Text": "\u2014"
+    },
+    {
+      "Value": 0,
+      "Text": "\u2014"
+    },
+    {
+      "Value": 1,
+      "Text": "1 B"
+    },
+    {
+      "Value": 1023,
+      "Text": "1023 B"
+    },
+    {
+      "Value": 1024,
+      "Text": "1 KB"
+    },
+    {
+      "Value": 1536,
+      "Text": "1.5 KB"
+    },
+    {
+      "Value": 10240,
+      "Text": "10 KB"
+    },
+    {
+      "Value": 1048575,
+      "Text": "1024 KB"
+    },
+    {
+      "Value": 1048576,
+      "Text": "1 MB"
+    },
+    {
+      "Value": 5452595,
+      "Text": "5.2 MB"
+    },
+    {
+      "Value": 1073741823,
+      "Text": "1024 MB"
+    },
+    {
+      "Value": 1073741824,
+      "Text": "1 GB"
+    },
+    {
+      "Value": 10737418240,
+      "Text": "10 GB"
+    },
+    {
+      "Value": 5497558138880,
+      "Text": "5120 GB"
+    }
+  ]
+}
