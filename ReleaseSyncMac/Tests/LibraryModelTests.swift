@@ -75,12 +75,12 @@ final class LibraryModelTests: XCTestCase {
         await m.refresh()
         XCTAssertEqual(m.phase, .needsPassphrase(wrong: false))
 
-        try m.save("wrong one", as: SecretTarget.syncPassphrase)
+        try await m.save("wrong one", as: SecretTarget.syncPassphrase)
         await m.refresh()
         XCTAssertEqual(m.phase, .needsPassphrase(wrong: true))
         XCTAssertTrue(m.apps.isEmpty, "nothing from a locked file is shown")
 
-        try m.save(pass, as: SecretTarget.syncPassphrase)
+        try await m.save(pass, as: SecretTarget.syncPassphrase)
         await m.refresh()
         XCTAssertEqual(m.phase, .loaded)
         XCTAssertEqual(m.apps.count, 1)
@@ -98,18 +98,19 @@ final class LibraryModelTests: XCTestCase {
         let m = model(secrets: secrets, transport: SpyTransport(text: Self.library().text()))
         await m.refresh()
         XCTAssertEqual(m.phase, .loaded)
-        try m.remove(SecretTarget.gitHubToken)
+        try await m.remove(SecretTarget.gitHubToken)
         await m.refresh()
         XCTAssertEqual(m.phase, .needsToken)
         XCTAssertTrue(m.apps.isEmpty)
-        XCTAssertFalse(m.hasSecret(SecretTarget.gitHubToken))
+        let stillSaved = await m.hasSecret(SecretTarget.gitHubToken)
+        XCTAssertFalse(stillSaved)
     }
 
-    func testTokensAreTrimmedButPassphrasesAreNot() throws {
+    func testTokensAreTrimmedButPassphrasesAreNot() async throws {
         let secrets = MemorySecrets()
         let m = model(secrets: secrets, transport: SpyTransport(text: nil))
-        try m.save("  fake-token\n", as: SecretTarget.gitHubToken)
-        try m.save("  pass phrase  ", as: SecretTarget.syncPassphrase)
+        try await m.save("  fake-token\n", as: SecretTarget.gitHubToken)
+        try await m.save("  pass phrase  ", as: SecretTarget.syncPassphrase)
         XCTAssertEqual(try secrets.read(SecretTarget.gitHubToken), "fake-token")
         XCTAssertEqual(try secrets.read(SecretTarget.syncPassphrase), "  pass phrase  ")
     }

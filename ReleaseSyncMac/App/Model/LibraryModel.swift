@@ -43,6 +43,14 @@ final class LibraryModel {
         self.isDemo = true
     }
 
+    /// A screen to look at without any account (`--status needsToken` and so on); nothing is fetched or read from the Keychain.
+    init(previewing phase: Phase, secrets: SecretStore) {
+        self.secrets = secrets
+        self.makeTransport = { _ in MemoryTransport() }
+        self.phase = phase
+        self.isDemo = true
+    }
+
     var apps: [SyncApp] { doc?.apps ?? [] }
     var tryLater: [TryLaterItem] { doc?.tryLater ?? [] }
     var devices: [SyncDevice] {
@@ -57,11 +65,13 @@ final class LibraryModel {
         guard !isDemo else { return }
         generation += 1
         let mine = generation
+        // the Keychain can make the app wait (macOS may ask whether this build may use an item), so it is never read on the main thread
+        let secrets = self.secrets
         let token: String?, passphrase: String?
         do {
-            token = try secrets.read(SecretTarget.gitHubToken)
-            passphrase = try secrets.read(SecretTarget.syncPassphrase)
+            (token, passphrase) = try await Task.detached { (try secrets.read(SecretTarget.gitHubToken), try secrets.read(SecretTarget.syncPassphrase)) }.value
         } catch {
+            guard mine == generation else { return }
             doc = nil; phase = .failed(error.localizedDescription)
             return
         }
@@ -86,17 +96,24 @@ final class LibraryModel {
         }
     }
 
-    // MARK: secrets, as the settings screen uses them
+    // MARK: secrets, as the settings screen uses them (all off the main thread, see above)
 
-    func hasSecret(_ target: String) -> Bool { ((try? secrets.read(target)) ?? nil)?.isEmpty == false }
+    func hasSecret(_ target: String) async -> Bool {
+        guard !isDemo else { return false }
+        let secrets = self.secrets
+        return await Task.detached { ((try? secrets.read(target)) ?? nil)?.isEmpty == false }.value
+    }
 
     /// Stores a secret in the Keychain. A token pasted with a stray space or line break at the end would be refused by GitHub,
     /// so tokens are trimmed; a passphrase is kept exactly as typed. Call `refresh()` afterwards.
-    func save(_ secret: String, as target: String) throws {
-        try secrets.write(target, target == SecretTarget.syncPassphrase ? secret : secret.trimmingCharacters(in: .whitespacesAndNewlines))
+    func save(_ secret: String, as target: String) async throws {
+        let value = target == SecretTarget.syncPassphrase ? secret : secret.trimmingCharacters(in: .whitespacesAndNewlines)
+        let secrets = self.secrets
+        try await Task.detached { try secrets.write(target, value) }.value
     }
 
-    func remove(_ target: String) throws {
-        try secrets.delete(target)
+    func remove(_ target: String) async throws {
+        let secrets = self.secrets
+        try await Task.detached { try secrets.delete(target) }.value
     }
 }

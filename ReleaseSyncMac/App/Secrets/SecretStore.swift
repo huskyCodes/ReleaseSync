@@ -62,3 +62,12 @@ struct KeychainSecretStore: SecretStore {
         guard status == errSecSuccess || status == errSecItemNotFound else { throw KeychainError(status: status) }
     }
 }
+
+/// Secrets kept in memory only. Used when the app runs under tests, so a test run never touches (or waits on) the real Keychain.
+final class InMemorySecrets: SecretStore, @unchecked Sendable {
+    private let lock = NSLock()
+    private var items: [String: String] = [:]
+    func read(_ target: String) throws -> String? { lock.lock(); defer { lock.unlock() }; return items[target] }
+    func write(_ target: String, _ secret: String) throws { lock.lock(); items[target] = secret; lock.unlock() }
+    func delete(_ target: String) throws { lock.lock(); items[target] = nil; lock.unlock() }
+}
