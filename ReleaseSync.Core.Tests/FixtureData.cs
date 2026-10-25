@@ -636,14 +636,14 @@ public static class FixtureData
         };
     }
 
-    const string GitHubRepoJson = """
+    static readonly string GitHubRepoJson = """
         {"id":1,"full_name":"example-org/sample-app","name":"sample-app","owner":{"login":"example-org","avatar_url":"https://avatars.example.test/u/1?v=4","type":"Organization"},
          "description":"A small sample application.","stargazers_count":8421,"language":"Rust","topics":["sample","desktop","media-player"],"html_url":"https://github.com/example-org/sample-app",
          "archived":false,"fork":false,"forks_count":310,"open_issues_count":42,"subscribers_count":77,"license":{"key":"mit","name":"MIT License","spdx_id":"MIT"},"homepage":"https://sample.example.test",
          "created_at":"2023-05-01T10:00:00Z","pushed_at":"2026-01-02T03:04:05Z","unknown_extra":{"ignored":true}}
-        """;
+        """.ReplaceLineEndings("\n");
 
-    const string GitHubReleasesJson = """
+    static readonly string GitHubReleasesJson = """
         [
          {"tag_name":"v1.1.0","name":"Version 1.1","body":"## Changes\n- faster\n- **fixes**","prerelease":false,"draft":false,"published_at":"2026-01-02T12:00:00Z","html_url":"https://github.com/example-org/sample-app/releases/tag/v1.1.0",
           "assets":[{"name":"SampleApp-1.1.0-universal.dmg","size":52428800,"browser_download_url":"https://github.com/example-org/sample-app/releases/download/v1.1.0/SampleApp-1.1.0-universal.dmg","download_count":120,"state":"uploaded","digest":"sha256:0123456789abcdef"},
@@ -655,7 +655,7 @@ public static class FixtureData
           "assets":[{"name":"SampleApp-1.0.0-arm64.zip","size":31457280,"browser_download_url":"https://github.com/example-org/sample-app/releases/download/v1.0.0/SampleApp-1.0.0-arm64.zip","download_count":5}]},
          {"tag_name":"untimed","name":"No date","body":"","prerelease":false,"draft":false,"published_at":null,"html_url":null,"assets":[]}
         ]
-        """;
+        """.ReplaceLineEndings("\n");
 
     static object ReleaseParsingVectors()
     {
@@ -802,7 +802,7 @@ public static class FixtureData
         return files;
     }
 
-    const string Readme = """
+    static readonly string Readme = """
         # Sync fixtures
 
         Files written by the C# sync engine (`ReleaseSync.Core/Sync`). Other implementations are tested against them: they must read each file and produce the same results. The format is described in `docs/SYNC-FORMAT.md`.
@@ -848,5 +848,5 @@ public static class FixtureData
         ```
 
         A diff in the fixtures is a change to the sync format or its rules. Every other implementation must be updated and tested against the new files, and the devices must keep reading each other's files.
-        """;
+        """.ReplaceLineEndings("\n");
 }
