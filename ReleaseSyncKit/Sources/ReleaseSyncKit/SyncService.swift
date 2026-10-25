@@ -13,8 +13,8 @@ public struct SyncResult: Sendable {
 
 /// One sync round: read the shared file, merge it with this device's library, write it back if it changed.
 public enum SyncService {
-    /// How often a device refreshes its "last seen" time in the file when nothing else changed (this keeps its light green: see `SyncPresence`).
-    public static let heartbeat = Timestamp.hours(2)
+    /// How often a device refreshes its "last seen" time in the file when nothing else changed.
+    public static let heartbeat = Timestamp.hours(6)
 
     /// Reads the shared file and nothing else: no merge, nothing written. Nil when nothing is stored yet.
     /// `locked` says whether the file was locked with a passphrase.

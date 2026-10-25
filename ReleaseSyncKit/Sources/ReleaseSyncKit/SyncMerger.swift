@@ -94,11 +94,7 @@ public enum SyncMerger {
         c.customGroups = d.customGroups.sorted { ordinalIgnoreCaseCompare($0, $1) < 0 }
         for (k, t) in d.groupStamps { c.groupStamps[invariantLower(k)] = t }
         c.tombstones = d.tombstones
-        for dev in d.devices.values {
-            // what a device has installed, and whether it is online, are part of what the file says (their order is not)
-            c.devices[dev.id] = SyncDevice(id: dev.id, name: dev.name, platform: dev.platform, appVersion: dev.appVersion, online: dev.online,
-                                           installed: dev.installed?.sortedOrdinal { $0.key })
-        }
+        for dev in d.devices.values { c.devices[dev.id] = SyncDevice(id: dev.id, name: dev.name, platform: dev.platform, appVersion: dev.appVersion) }
         return c.text()
     }
 }
