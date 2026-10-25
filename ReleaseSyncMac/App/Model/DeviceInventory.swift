@@ -1,28 +1,12 @@
 import Foundation
 import ReleaseSyncKit
 
-/// One program another device says it has installed. This is a stand-in until the local-network link exists (docs/LAN-PRESENCE.md): nothing
-/// fills it yet, and nothing about it is read from or written to the sync file.
-struct PeerInstall: Equatable {
-    var key: String
-    var version: String
-    var installedAt: Timestamp?
-    /// The newest version that device knows of.
-    var latest: String?
-
-    /// An update is waiting on that device: it knows of a newer version than the one it has.
-    var hasUpdate: Bool {
-        guard let latest, !latest.isEmpty, !version.isEmpty else { return false }
-        return VersionUtil.isNewer(latest, than: version)
-    }
-}
-
 /// What the local-network link has told us about one of the person's other devices. Held in memory only.
 struct PeerState: Equatable {
     /// A live, authenticated link to that device exists right now (the green light).
     var online: Bool
     /// What it has installed; nil until it has said.
-    var installed: [PeerInstall]?
+    var installed: [LanInstall]?
     /// When `installed` was last received (shown as "as of …" when the device is not online).
     var asOf: Timestamp?
 }
@@ -31,7 +15,7 @@ struct PeerState: Equatable {
 struct DeviceInstall: Identifiable, Equatable {
     let device: SyncDevice
     let online: Bool
-    let install: PeerInstall
+    let install: LanInstall
     var id: String { device.id }
 }
 
@@ -41,8 +25,8 @@ enum DeviceInventory {
 
     /// A device's installed programs by app key (lower case, the way the library writes keys). Entries without a key are ignored,
     /// a repeated key is taken from its last entry, and only the first 1,000 in key order count.
-    static func installed(_ state: PeerState?) -> [String: PeerInstall] {
-        var byKey: [String: PeerInstall] = [:]
+    static func installed(_ state: PeerState?) -> [String: LanInstall] {
+        var byKey: [String: LanInstall] = [:]
         for i in state?.installed ?? [] where !i.key.isEmpty { byKey[i.key.lowercased()] = i }
         let kept = byKey.keys.sorted { Array($0.utf16).lexicographicallyPrecedes(Array($1.utf16)) }.prefix(maxInstalled)
         return Dictionary(uniqueKeysWithValues: kept.map { ($0, byKey[$0]!) })

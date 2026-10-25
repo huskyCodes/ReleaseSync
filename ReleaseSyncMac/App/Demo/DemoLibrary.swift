@@ -62,18 +62,29 @@ enum DemoLibrary {
         let now = Timestamp.now()
         return [
             "demo-pc": PeerState(online: true, installed: [
-                PeerInstall(key: "github:example-org/pixel-player", version: "2.3.0", installedAt: now - Timestamp.days(20), latest: "2.4.1"),
-                PeerInstall(key: "github:example-org/quick-notes", version: "1.8.2", latest: "1.8.2"),
-                PeerInstall(key: "github:sample-dev/retro-launcher", version: "0.9.0", latest: "0.10.0"),
-                PeerInstall(key: "github:fake-labs/disk-peek", version: "3.1.0", latest: "3.1.0"),
+                LanInstall(key: "github:example-org/pixel-player", version: "2.3.0", installedAt: now - Timestamp.days(20), latest: "2.4.1"),
+                LanInstall(key: "github:example-org/quick-notes", version: "1.8.2", latest: "1.8.2"),
+                LanInstall(key: "github:sample-dev/retro-launcher", version: "0.9.0", latest: "0.10.0"),
+                LanInstall(key: "github:fake-labs/disk-peek", version: "3.1.0", latest: "3.1.0"),
             ], asOf: now),
             "demo-handheld": PeerState(online: false, installed: [
-                PeerInstall(key: "github:example-org/quick-notes", version: "1.7.0", latest: "1.8.2"),
+                LanInstall(key: "github:example-org/quick-notes", version: "1.7.0", latest: "1.8.2"),
             ], asOf: now - Timestamp.hours(40)),
             "demo-laptop": PeerState(online: false, installed: [
-                PeerInstall(key: "github:example-org/pixel-player", version: "2.4.1", latest: "2.4.1"),
+                LanInstall(key: "github:example-org/pixel-player", version: "2.4.1", latest: "2.4.1"),
             ], asOf: now - Timestamp.days(9)),
         ]
+    }
+
+    /// Made-up pairings and blocked attempts for the "Find my devices" screen (nothing is paired or blocked in reality).
+    @MainActor static func lan() -> LanModel {
+        let now = Timestamp.now()
+        let pairs = [
+            LanPairRecord(pairId: "00112233445566778899aabbccddeeff", peerName: "Demo PC", peerPlatform: "Windows", role: .joiner, createdAt: now - Timestamp.days(12), peerDeviceId: "demo-pc"),
+            LanPairRecord(pairId: "ffeeddccbbaa99887766554433221100", peerName: "Demo Handheld", peerPlatform: "Android", role: .host, createdAt: now - Timestamp.days(3), peerDeviceId: "demo-handheld", paused: true),
+        ]
+        let blocked = (0..<3).map { LanModel.BlockedAttempt(at: Date().addingTimeInterval(Double(-$0) * 600), address: "192.0.2.\(40 + $0)") }
+        return LanModel(showing: pairs, blocked: blocked, secrets: LanPairSecrets(store: InMemorySecrets()))
     }
 
     /// Made-up release information for the made-up apps: some with Mac downloads, some Windows-only, one never checked, a couple with problems.

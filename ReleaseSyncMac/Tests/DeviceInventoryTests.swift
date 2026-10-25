@@ -6,7 +6,7 @@ final class DeviceInventoryTests: XCTestCase {
     func device(_ id: String, _ name: String) -> SyncDevice {
         SyncDevice(id: id, name: name, platform: "Windows", appVersion: "1", lastSeen: Timestamp.now())
     }
-    func install(_ key: String, _ version: String, latest: String? = nil) -> PeerInstall { PeerInstall(key: key, version: version, installedAt: nil, latest: latest) }
+    func install(_ key: String, _ version: String, latest: String? = nil) -> LanInstall { LanInstall(key: key, version: version, installedAt: nil, latest: latest) }
     func app(_ repo: String) -> SyncApp { var a = SyncApp(); a.owner = "fake"; a.repo = repo; a.key = "github:fake/\(repo)"; return a }
 
     func testWhereAnAppIsInstalledShowsOnlineDevicesFirst() {

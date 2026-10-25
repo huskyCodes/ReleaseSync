@@ -39,6 +39,8 @@ struct SettingsPage: View {
                     changesSwitch
                 }
 
+                SettingsCard { FindDevicesSection() }
+
                 SettingsCard {
                     Text("Appearance").font(.h2).foregroundStyle(Theme.text)
                     Text("Follow your Mac, or always use light or dark.").font(.dim).foregroundStyle(Theme.dim)

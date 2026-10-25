@@ -16,6 +16,16 @@ targets:
     sources: [App]
     dependencies:
       - package: ReleaseSyncKit
+    # Find my devices (docs/LAN-PRESENCE.md): macOS asks permission before the first local-network use and only for these services
+    info:
+      path: Config/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSLocalNetworkUsageDescription: ReleaseSync looks for your own devices on this network so it can show which ones are online. Nothing leaves your network.
+        NSBonjourServices:
+          - _releasesync._tcp
+          - _releasesync-pair._tcp
     configFiles:
       Debug: Config/ReleaseSync.xcconfig
       Release: Config/ReleaseSync.xcconfig
