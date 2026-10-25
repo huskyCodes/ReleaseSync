@@ -1,6 +1,6 @@
 # ReleaseSync device presence on the local network
 
-**Status: DRAFT for review. Nothing here is implemented yet.** Both the Windows side (C#, `ReleaseSync.Core`) and the Mac side (Swift, `ReleaseSyncKit`) follow this one document. Later: Android, then iPhone.
+**Status: DRAFT, revised after the PC review. Nothing here is implemented yet.** The protocol (sections 5 to 7) was designed and reviewed by AI assistants only; **it needs a review by a human with cryptography experience before any public release.** Both the Windows side (C#, `ReleaseSync.Core`) and the Mac side (Swift, `ReleaseSyncKit`) follow this one document. Later: Android, then iPhone.
 
 This replaces the file-based presence that was added in sync format 3 (`Online`, `Installed`, `SyncPresence`). See [Open questions](#14-open-questions) for what that removal means for each side.
 
@@ -53,7 +53,9 @@ Contents: [1 Goal](#1-goal-and-non-goals) · [2 Threats](#2-who-we-defend-agains
 | Redial backoff | 1, 2, 4, 8, 16, 30 s (stays at 30), reset after a success |
 | State message rate | at most one per 2 s (changes are merged) |
 | Pairing window | 120 s |
-| Wrong code attempts | 3, then pairing mode ends |
+| Pairing network step timeout | 5 s |
+| Pairing confirmation wait (people compare digits) | 60 s |
+| Declined or failed pairing sessions | 3, then pairing mode ends |
 | Replay memory | 5 min |
 | Failed-handshake limit | more than 10 from one address in 60 s: ignore that address for 5 min |
 | Max paired devices | 16 |
@@ -84,17 +86,19 @@ DNS-SD (Bonjour) on the local network. Windows uses the system DNS-SD API, the M
 
 ## 5. Pairing
 
-Pairing happens once per pair of devices. It creates a 32-byte shared secret (`psk`) that both store in their platform secret store. There are two roles: the **Host** (the device the user chose "Add a device" on; it shows a code) and the **Joiner** (the device that finds the Host and takes the code in).
+Pairing happens once per pair of devices. It creates a 32-byte shared secret (`psk`) that both store in their platform secret store. There are two roles: the **Host** (the device the user chose "Add a device" on) and the **Joiner** (the device that finds the Host and asks to pair). **Both devices show the same 6 digits, and the user confirms on both that they match.**
 
 ### 5.1 What it is, and why it is not a PAKE
 
-The code is a **6-digit short authentication string (SAS)**, the same idea as Bluetooth "numeric comparison" and ZRTP's SAS. Both devices do an ephemeral P-256 key exchange, derive the same 6 digits from everything they exchanged, and the user types the Host's 6 digits into the Joiner. If someone sat in the middle, the two devices would have different digits, so pairing fails.
+The 6 digits are a **short authentication string (SAS)**, the same idea as Bluetooth "numeric comparison" and ZRTP's SAS. Both devices do an ephemeral P-256 key exchange and derive the same 6 digits from everything they exchanged. The user looks at both screens. If someone sat in the middle, the two devices would have different digits.
 
-I (the Mac side) propose this over a PAKE such as SPAKE2/CPace because **neither platform ships a PAKE**: not CryptoKit, not .NET. SPAKE2 needs elliptic-curve point addition and CPace needs hash-to-curve; the platform ECDH APIs expose neither (ECDH returns only the x-coordinate). Implementing curve arithmetic ourselves in two languages is exactly the "home-made" cryptography we want to avoid, and adding a third-party library is a supply-chain risk for a public repo. The SAS approach uses only primitives both platforms have (P-256 ECDH, SHA-256, HMAC, HKDF) and is a well-understood pattern. The price: the code is checked against a value derived from the session rather than typed into a PAKE. **See open question 5**; if you would rather take a vetted PAKE library, the rest of this document does not change.
+**Nothing is typed.** An earlier draft had the user type the Host's digits into the Joiner. That protected only the Joiner: the Host never learned what was typed, and anyone who had completed the key exchange with the Host could compute the same proof. An attacker who connected to the Host's pairing window first could therefore have been paired without guessing anything. The fix, from the PC review, is that **each device only goes on after its own user has said the digits match**, and the Host stores the secret only after its own user said so.
+
+We use this over a PAKE such as SPAKE2/CPace because **neither platform ships a PAKE** (not CryptoKit, not .NET). SPAKE2 needs elliptic-curve point addition and CPace needs hash-to-curve; the platform ECDH APIs expose neither (ECDH returns only the x-coordinate). Writing curve arithmetic ourselves in two languages is the "home-made" cryptography we want to avoid, and a third-party library is a supply-chain risk for a public repo. The SAS approach uses only primitives both platforms have (P-256 ECDH, SHA-256, HMAC, HKDF).
 
 ### 5.2 Messages
 
-Pairing runs over a TCP connection from the Joiner to the Host's pairing service. Each message is a 2-byte big-endian length followed by that many bytes of compact UTF-8 JSON (conventions in [section 8.1](#81-json-conventions)); binary values are standard Base64. Maximum message size 1,024 bytes.
+Pairing runs over a TCP connection from the Joiner to the Host's pairing service. Each message is a 2-byte big-endian length followed by that many bytes of compact UTF-8 JSON ([8.1](#81-json-conventions)); binary values are standard Base64. Maximum message size 1,024 bytes. The Host serves one session at a time. **No identifier from the sync file (such as `DeviceId`) is sent in these cleartext messages.**
 
 ```
 Joiner                                                    Host
@@ -105,17 +109,21 @@ Joiner                                                    Host
                        <------  P2 {Type:"pair2", Name, Platform, Key: PD, Nonce: ND}
   P3 {Type:"pair3", Key: PI, Nonce: NI}              ------>
                                                               check Commit matches PI and NI
-                                                              both compute Z, T, SAS (below)
-                                                              Host SHOWS the SAS
-  User types the SAS into the Joiner.
-  Joiner compares it with its own SAS. If different: stop, send nothing more.
-  P4 {Type:"pair4", Proof: HMAC(confirmKey, "rs-confirm-J" || SAS)}  ------>
-                                                              check; if wrong: count a failed attempt, stop
+  both compute Z, T, SAS (5.3)
+  BOTH SHOW the SAS:
+     Joiner: "Does <Host name> show 482 913?"           Host: "Pairing with <Joiner name>. Does it show 482 913?"
+  user taps "Yes, they match" on the Joiner          user taps "Yes, they match" on the Host
+  (or "No": stop, send nothing more)                 (or "No": stop, send nothing more)
+  P4 {Type:"pair4", Proof: HMAC(confirmKey, "rs-confirm-J" || SAS)}  ------>   (sent only after the Joiner's own tap)
+                                                              Host checks P4 AND needs its own tap
                        <------  P5 {Type:"pair5", Proof: HMAC(confirmKey, "rs-confirm-H" || SAS)}
-  both store psk, the peer's name and platform, and their role; close.
+                                (sent only after the Host's own tap AND a valid P4)
+  Joiner stores psk after a valid P5.                Host stores psk after valid P4 AND its own tap.
 ```
 
 `PI`, `PD` are 65-byte uncompressed X9.63 points (`04 || X || Y`). A receiver rejects a point that is not on the curve.
+
+The names and platforms in P1/P2 are chosen by whoever sent them and prove nothing; **the digits are the proof.** The screens say so ("Only tap Yes if both screens show the same digits").
 
 ### 5.3 Derived values
 
@@ -133,19 +141,20 @@ psk     = HKDF-Expand(PRK, info = "rs-psk",     L = 32)
 SAS     = (uint32 big-endian of sasRaw) mod 1,000,000, written as 6 digits with leading zeros
 ```
 
-The names and platforms are in `T`, so the SAS also proves they were not changed on the way.
+The names and platforms are in `T`, so the digits also show that they were not changed on the way.
 
 ### 5.4 Why this holds
 
-- **No grinding.** The Joiner commits to `PI, NI` before it sees `PD, ND`; the Host fixes `PD, ND` before it sees `PI, NI`. Neither side can pick keys to steer the six digits. An attacker in the middle runs two separate sessions and the digits match by luck only: 1 in 1,000,000 per try.
-- **The code is never sent in a form that can be guessed offline.** The Joiner checks the typed digits against its own SAS **before** it sends anything derived from them. A wrong code (or an attacker in the middle) leaks nothing about the Host's real code. Only when the Joiner's own SAS equals what was typed does it send `Proof`.
-- **Online guessing is capped.** One attempt per session; after 3 failed sessions, or 120 s, pairing mode ends and the user must start it again. An attacker's chance per pairing window is at most 3 in 1,000,000.
-- **Who is joining is shown.** The Host's screen says "Pairing with <Joiner name>" so the user can cancel if the name is not the device they are holding.
-- **One session at a time.** A second connection while one is in progress is refused ("busy").
+- **The tap is what stops an attacker who connects first.** The proofs `pair4`/`pair5` can be computed by anyone who completed the key exchange, so they are not what protects pairing. What protects it is that **the Host stores nothing until its own user taps "Yes, they match"**, and the user taps only when the Joiner they are holding shows the same digits. An attacker who connected to the Host's window first has no screen the user is looking at: the user's own Joiner is refused ("busy") or shows different digits, the user taps "No" (or nothing), and nothing is stored. The same holds the other way round for a fake Host facing the Joiner.
+- **No grinding.** The Joiner commits to `PI, NI` before it sees `PD, ND`; the Host fixes `PD, ND` before it sees `PI, NI`. Neither side can pick keys to steer the digits.
+- **An attacker between the two real devices** runs two separate sessions with independent digits. The two screens show different digits except by luck: **1 in 1,000,000 per session**, and the user must look at both screens and tap Yes on both for it to matter. Each failed session is visible to the user ("No").
+- **Limits on retries.** After 3 declined or failed sessions, or 120 s, pairing mode ends and the user must start it again.
+- **Nobody can park on the window.** Each network step has a 5-second timeout (P1 to P3 must arrive in time). After P3 the Host waits at most 60 seconds for the people to compare. When a timeout fires, or the user taps No or "Not this device", the session is dropped and the one-session slot is free again. A "Not this device" tap also refuses that address for the rest of the window.
+- **A user who taps Yes without looking** defeats any numeric comparison. The screens ask for a real comparison and show the device name and platform next to the digits, but the digits are what counts.
 
 ### 5.5 What gets stored
 
-Per pair: `pairId` (16 random bytes, local only, never sent), the peer's name and platform, our role (Host or Joiner), the date. These are not secrets and go in ordinary app preferences. The `psk` goes **only** in the platform secret store (Mac: Keychain item `ReleaseSync/LanPair/<pairId>`, this-device-only, never iCloud Keychain). It is never written to a file, a log, a backup or a test.
+Per pair: `pairId` (16 random bytes, local only, never sent), the peer's name and platform, our role (Host or Joiner), the date, and the peer's sync-file `DeviceId` once its `hello` has told us. These are not secrets and go in ordinary app preferences. The `psk` goes **only** in the platform secret store (Mac: Keychain item `ReleaseSync/LanPair/<pairId>`, this-device-only, never iCloud Keychain). It is never written to a file, a log, a backup or a test.
 
 ---
 
@@ -177,9 +186,9 @@ Noise does not register P-256, so we define it as follows (everything else is No
 <- e, ee         (responder)
 ```
 
-Each handshake message on the wire is a 2-byte big-endian length followed by the bytes of the Noise message (maximum 1,024). The payload of message 1 is the dialer's `hello`, the payload of message 2 is the responder's `hello` (section 8.2), both encrypted by Noise.
+Each handshake message on the wire is a 2-byte big-endian length followed by the bytes of the Noise message (maximum 1,024). **Both handshake payloads are empty** (each message is the ephemeral key plus a 16-byte tag, 81 bytes). The first message is protected only by the `psk`, so nothing about the device goes in it; each side sends its `hello` ([8.2](#82-message-types)) as the **first record** after `Split()`, when the keys already include the ephemeral exchange and so have forward secrecy.
 
-The responder tries each of its paired `psk`s on message 1. If none decrypts it, the responder **closes the connection without sending a single byte**. After the second message both sides call `Split()`; the initiator sends with the first key and receives with the second. From then on [records](#7-records) carry the traffic.
+The responder tries each of its paired `psk`s on message 1 (the empty payload's tag is what tells it the `psk` is right). If none works, the responder **closes the connection without sending a single byte**. After the second message both sides call `Split()`; the initiator sends with the first key and receives with the second. From then on [records](#7-records) carry the traffic.
 
 The responder keeps a 5-minute memory of the ephemeral public keys it has seen in message 1 and drops repeats, so a captured message 1 cannot be replayed to make the device do work. (A replay would not give the attacker anything anyway: they cannot compute the session keys without the ephemeral private key.)
 
@@ -213,7 +222,7 @@ The same as the sync file ([SYNC-FORMAT.md section 2](SYNC-FORMAT.md)): UTF-8, P
 
 | `Type` | Properties (in this order) | When |
 |---|---|---|
-| `hello` | `Type`, `Proto`, `Name`, `Platform`, `AppVersion` | Payload of the two handshake messages. If the two `Proto` values differ, both use the lower if they support it, else close. |
+| `hello` | `Type`, `Proto`, `DeviceId`, `Name`, `Platform`, `AppVersion` | The first record each side sends after the handshake. `DeviceId` is the device's id in the sync file's `Devices` list (32 lower-case hex digits), so what arrives over the link can be matched to that registry entry; it travels only inside encrypted records, never in discovery or the pairing messages. If the two `Proto` values differ, both use the lower if they support it, else close. A receiver stores the `DeviceId` with the pair record (and updates it if it changes after a reinstall). |
 | `state` | `Type`, `Seq`, `Open`, `Installed` | Right after the handshake, and whenever what a device has installed changes (merged, at most one per 2 s). `Seq` counts up from 1 on each connection. `Open` is `true` while ReleaseSync is running. `Installed` is a list of the entries below; the whole list is sent every time. |
 | `ping` | `Type`, `N` | Sent after 2 s with nothing sent. |
 | `pong` | `Type`, `N` | The answer to `ping`, with the same `N`. |
@@ -237,7 +246,7 @@ It replaces what it knew about that device with the new list (applying the limit
 - **Grey** when nothing arrives for 5 seconds, the socket closes or errors, or a `goodbye` arrives. The connection is closed and the redial rules apply. TCP keep-alive is also turned on as a backstop; it is not what the 5 seconds rely on.
 - **Redial.** While the other device's service is still visible in DNS-SD, the dialer retries with the backoff in section 3. When DNS-SD says the service is gone, it stops. On a network change, wake from sleep, or the feature being turned on, it browses again and dials at once.
 - **Duplicate links.** Both devices may dial each other at once. When a second connection for the same pair finishes its handshake, the device keeps the one **the Joiner dialled** and closes the other, without a `goodbye`.
-- **Handshake time.** A connection that has not finished the handshake after 5 seconds is closed.
+- **Handshake time.** A connection that has not finished the handshake and received the peer's `hello` after 5 seconds is closed.
 - **Backgrounded phones** (later) may use longer intervals; they would need a protocol change and are not designed here.
 
 ---
@@ -263,6 +272,7 @@ If the other device was not reachable, it finds out later: its dials are closed 
 | `Installed` entries per device | 1,000 | ignore the rest |
 | `Key` | 200 bytes (UTF-8) | ignore the entry |
 | `Version`, `Latest` | 64 bytes | ignore the entry |
+| `DeviceId` | 32 bytes (hex digits) | ignore the value |
 | `Name` | 64 bytes | shorten |
 | `Platform` | 32 bytes | shorten |
 | `AppVersion` | 32 bytes | shorten |
@@ -294,7 +304,12 @@ If the other device was not reachable, it finds out later: its dials are closed 
 
 If the user declines the macOS prompt, the Mac shows "macOS is blocking local network access for ReleaseSync" with a button to open Privacy settings.
 
-**Windows.** An inbound Windows Firewall rule for the app on Private networks is needed because the port is chosen by the system. (To be filled in from the PC side.)
+**Windows.** (From the PC review.)
+- Windows itself asks the user when a program first listens, and only for the network types they tick. The app does not create firewall rules (that needs administrator rights). The rule belongs to the program's path, so a moved program asks again.
+- The PC binds its listener only after the user has turned the feature on, and explains the Windows prompt before it appears.
+- A network Windows has marked **Public** blocks inbound connections silently. The PC detects that (Network List Manager) and shows: *"This network is set to Public in Windows. Change it to Private to find your devices."*
+- The PC advertises only on networks marked Private.
+- Discovery on Windows needs a spike first: the Windows DNS-SD API against a small mDNS implementation over UDP multicast. The PC side will report the result; the wire protocol does not depend on it.
 
 ---
 
@@ -327,8 +342,8 @@ A platform provides: listening, DNS-SD advertise/browse, sockets or `NWConnectio
 | File | Contents |
 |---|---|
 | `messages.json` | Every message type: the object and its exact compact text. Escaping cases. Over-limit and unknown cases (ignored). |
-| `pairing.json` | Obviously fake fixed private scalars, nonces, names, so the public keys, the commitment, `Z`, `T`, the SAS, `confirmKey`, `psk`, both proofs and all five wire messages are fixed. Cases for a wrong commitment, a wrong code and an off-curve point. |
-| `handshake.json` | A fake `psk`, fixed ephemeral keys and payloads: both handshake messages byte for byte, the running `h` and `ck`, the two transport keys, and the first records. Cases for a wrong `psk` (no reply), a damaged message and a replayed message. |
+| `pairing.json` | Obviously fake fixed private scalars, nonces, names, so the public keys, the commitment, `Z`, `T`, the SAS, `confirmKey`, `psk`, both proofs and all five wire messages are fixed. Cases for a wrong commitment, an off-curve point, a Joiner who taps No, a Host who taps No, a timeout at each step, and **an attacker as Joiner who sends a valid `pair4` but whose Host user never confirmed: the Host stores no `psk`, sends no `pair5`, and frees the session.** |
+| `handshake.json` | A fake `psk` and fixed ephemeral keys: both (empty-payload) handshake messages byte for byte, the running `h` and `ck`, the two transport keys, and the first records (the two `hello` records). Cases for a wrong `psk` (no reply), a damaged message and a replayed message. |
 | `records.json` | Record framing and nonce counters, size limits, a bad tag, a skipped or repeated counter. |
 | `liveness.json` | Scenarios for the sans-IO link with a fake clock: ping after 2 s of silence, grey at 5 s, goodbye, duplicate links, backoff times. |
 | `limits.json` | The limits in section 11, applied to `state` messages. |
@@ -339,24 +354,22 @@ The usual rules apply: nothing from a real machine, no real names, paths, keys o
 
 ## 14. Open questions
 
-**Answers to step 1 (from the Mac side).**
+**Settled (PC review, and the Mac side's answers).**
 
-1. **Do I agree with removing the file-based presence and returning to format 2? Yes**, for these reasons and with these notes:
-   - **It also removes the rollout blocker.** The Mac's write support (favorites, hide, groups, notes, remove; behind a switch, off by default) currently warns that older Windows apps stop syncing because the first write makes the file format 3. With the file back at format 2, a Mac write is readable by every existing Windows app, so the switch no longer depends on updating the PC first. I will then drop that warning.
-   - **What the Mac app uses today** (all of it moves to the LAN link as an in-memory source):
-     `ReleaseSyncKit`: `SyncInstall`, `SyncDevice.online`/`installed`, `SyncPresence`, the signature including them, `supportedVersion = 3`, the 2-hour heartbeat, `PresenceFixtureTests`.
-     Mac app: `DeviceInventory`, `StatusLight` and the lights in Settings, the Library device chips and the drawer's "On your devices", the Library "Updates" filter, `LibraryModel`'s `online = true` when the Mac registers itself, the demo data, and `DeviceInventoryTests`, `LibraryEditingTests`.
-   - **Away from home**, "what is installed on my other devices" and the Updates filter would show nothing. I propose to keep the last list per paired device in the Mac's encrypted cache, shown grey as "as of <time>" (section 8.3). Tell me if you object.
-   - **The Mac still registers itself in the file's `Devices` list** (Id, Name, Platform, AppVersion, LastSeen), so the device registry stays as it is.
-2. **Constants.** In the repository today the heartbeat is **2 hours** and the online window **150 minutes** (`SyncService.Heartbeat`, `SyncPresence.OnlineWindow`), not 4 and 11 minutes. If you have a different version locally, tell me. On removal the heartbeat should go back to **6 hours**, its format 2 value.
+1. **Remove the file-based presence and return to format 2: agreed by both.** The heartbeat goes back to 6 hours. The PC's local 4- and 11-minute commits were never pushed and are being dropped (the repository's 2-hour and 150-minute values go with the removal).
+   - **The Mac's write switch** (favorites, hide, groups, notes, remove; off by default) warned that older Windows apps stop syncing because a write made the file format 3. At format 2 that warning goes, and the switch no longer depends on updating the PC first.
+   - **What the Mac used from the file, and moves to the LAN link:** `SyncInstall`, `SyncDevice.online`/`installed`, `SyncPresence`, the signature including them, `supportedVersion = 3`, the 2-hour heartbeat and `PresenceFixtureTests` in the Swift package; `DeviceInventory`, `StatusLight` and the lights in Settings, the Library device chips, the drawer's "On your devices", the Library "Updates" filter, `online = true` on registering, the demo data, `DeviceInventoryTests` and `LibraryEditingTests` in the Mac app. The Mac keeps listing itself in the file's `Devices` registry.
+2. **A cached per-device list, shown grey as "as of <time>", is agreed** (section 8.3).
+3. **Noise rather than TLS: agreed** (section 6.1).
+4. **Trying each paired `psk` on each new instance: agreed.**
+5. **A short authentication string rather than a PAKE: agreed only with two-sided confirmation**, which section 5 now has.
+6. **Names shown in the pairing service for at most 120 s: agreed.**
+7. **No padding of records in version 1: agreed.**
+8. **Windows firewall behaviour:** settled in section 12.
 
-**Questions for you (PC side) and decisions I want you to confirm.**
+**Still open.**
 
-3. **Not TLS.** Section 6.1 gives the reasons for a Noise handshake instead (no stable certificate for strangers to track, no per-connection identity choice in `NWListener`, no TLS-PSK in .NET, no TLS 1.3 on Windows 10). It is a standard pattern with a small, spelled-out deviation (P-256). I would like an independent cryptography review of sections 5 to 7 before this ships; I do not want to be the only reviewer of my own design.
-4. **Dialling every instance.** Because nothing identifying is published, a device cannot tell which instance is whose, so it tries each paired secret on each new instance (cached for 10 minutes). With the 16-device cap this is cheap, but it does mean strangers' devices receive one closed connection per secret. Acceptable?
-5. **SAS instead of a PAKE** (section 5.1). The UX is the same ("one device shows 6 digits, the other takes them"), the security is a 1-in-a-million guess per session with at most 3 sessions per pairing window, and there is no cryptography of our own beyond ECDH/HKDF/HMAC. If you prefer a vetted PAKE library (CPace, SPAKE2+), say so; the rest of the protocol does not change, only section 5.2 to 5.4.
-6. **QR pairing** (phones, later): a QR code could carry a random 128-bit secret instead of the SAS flow, skipping the typed code. Not designed here.
-7. **Names in pairing mode.** The pairing service publishes the device name (`n=`) for at most 120 s so the user can pick the right device. Alternative: show only "ReleaseSync on <platform>". I chose the name for usability; tell me if you want it hidden.
-8. **No padding of records** in version 1, so sizes hint at app counts. Say so if you want padding to a multiple of 1 KiB.
-9. **Windows Firewall.** The system-assigned port needs a program-based inbound rule on Private networks. Please add what the Windows installer/first-run does (section 12).
-10. **Process.** After you say "spec agreed": you change the engine and fixtures (format back to 2, 6-hour heartbeat, presence removed) and I pull; I port the LAN logic to Swift as you port it to C#, each side then builds its networking and UI.
+9. **A human cryptography review** of sections 5 to 7 before any public release. Both of us are AI assistants.
+10. **QR pairing** (phones, later): a QR code could carry a random 128-bit secret instead of the SAS flow. Not designed here.
+11. **Windows discovery spike** (Windows DNS-SD API or a small mDNS over UDP multicast): the PC side will report. The protocol does not depend on it.
+12. **Process.** After "spec agreed": the PC changes the engine and fixtures (format back to 2, 6-hour heartbeat, file presence removed) and the Mac pulls; the Mac ports the LAN logic to Swift as the PC ports it to C#; each side then builds its networking and UI.
