@@ -30,8 +30,40 @@ final class DiscoverModelTests: XCTestCase {
         let client = SourceClient(token: token, send: send(count: count, remaining: remaining, asked: asked), sleep: { _ in })
         let prefs = prefs ?? ViewPrefs(defaults: defaults())
         let meter = RateMeter()
-        if remaining < 150 { await client.setToken(token); _ = try? await client.search("warm", sort: "stars", perPage: 1); _ = try? await client.releases(source: "github", owner: "o", repo: "x", etag: nil); await meter.update(from: client) }
+        if remaining < 1500 { await client.setToken(token); _ = try? await client.search("warm", sort: "stars", perPage: 1); _ = try? await client.releases(source: "github", owner: "o", repo: "x", etag: nil); await meter.update(from: client) }
         return (DiscoverModel(client: client, prefs: prefs, meter: meter), prefs, meter)
+    }
+
+    func testFullModePreparesTheOtherTabsAndLightDoesNot() async throws {
+        let full = Asked()
+        let (m, prefs, _) = await make(asked: full)
+        prefs.discoverCategory = "media"; prefs.discoverMode = .popular; prefs.discoverLight = false; prefs.discoverMacOnly = false
+        m.prefetchPause = .milliseconds(5)
+        m.load(); await m.waitUntilIdle()
+        let afterFirst = full.paths.filter { $0 == "/search/repositories" }.count
+        for _ in 0..<400 where full.paths.filter({ $0 == "/search/repositories" }).count == afterFirst { try await Task.sleep(for: .milliseconds(10)) }
+        m.stopPrefetch()
+        let afterPrefetch = full.paths.filter { $0 == "/search/repositories" }.count
+        XCTAssertGreaterThan(afterPrefetch, afterFirst, "the other tabs were fetched ahead")
+
+        let light = Asked()
+        let (l, lightPrefs, _) = await make(asked: light)
+        lightPrefs.discoverCategory = "media"; lightPrefs.discoverMode = .popular; lightPrefs.discoverLight = true; lightPrefs.discoverMacOnly = false
+        l.load(); await l.waitUntilIdle(); await l.waitForPrefetch()
+        XCTAssertEqual(light.paths.filter { $0 == "/search/repositories" }.count, 4, "light mode asks only for the tab you are looking at")
+        XCTAssertEqual(l.items.count, 8)
+    }
+
+    func testNoPreparingAheadWithoutATokenOrWhenAllowanceIsModerate() async throws {
+        for (token, remaining) in [(String?.none, 4000), ("t", 1200)] {
+            let asked = Asked()
+            let (m, prefs, _) = await make(token: token, remaining: remaining, asked: asked)
+            prefs.discoverCategory = "media"; prefs.discoverMode = .popular; prefs.discoverLight = false; prefs.discoverMacOnly = false
+            m.load(); await m.waitUntilIdle()
+            let first = asked.paths.filter { $0 == "/search/repositories" }.count
+            await m.waitForPrefetch()
+            XCTAssertEqual(asked.paths.filter { $0 == "/search/repositories" }.count, first, "token \(token ?? "none"), \(remaining) left")
+        }
     }
 
     func testOnlyProjectsWithMacDownloadsAreShownAndRanked() async throws {

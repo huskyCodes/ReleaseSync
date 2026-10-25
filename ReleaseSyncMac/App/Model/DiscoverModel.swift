@@ -24,6 +24,10 @@ final class DiscoverModel {
     private var filtering = false
     private var task: Task<Void, Never>?
     private var generation = 0
+    private var prefetchTask: Task<Void, Never>?
+    private var prefetchTag: String?
+    /// How long background preparing waits between checks that the person's own searches have finished (tests make it short).
+    var prefetchPause: Duration = .milliseconds(1500)
 
     init(client: SourceClient, prefs: ViewPrefs, meter: RateMeter, blobs: BlobStore? = nil) {
         self.client = client; self.prefs = prefs; self.meter = meter
@@ -63,6 +67,7 @@ final class DiscoverModel {
                 try Task.checkCancellation()
                 if mode == .featured && hasToken && !prefs.discoverLight && !meter.isTight { await markMacBuilds() }
                 await service.record(key, items)
+                startPrefetch(category, mode, hasToken: hasToken)
                 var parts = ["updated " + fetched.friendlyAgo]
                 if let b = baseline { parts.append("movement vs " + (b.age / 3600 < 30 ? "yesterday" : b.days >= 6 ? "last week" : "\(Int(b.days.rounded())) days ago")) }
                 else if mode != .featured { parts.append("movement arrows appear on your next visit: today's ranking is saved") }
@@ -144,10 +149,53 @@ final class DiscoverModel {
     }
 
     func setMode(_ m: DiscoverMode) { guard m != prefs.discoverMode else { return }; prefs.discoverMode = m; load() }
-    func setCategory(_ c: String) { guard c != prefs.discoverCategory else { return }; prefs.discoverCategory = c; load() }
+    func setCategory(_ c: String) { guard c != prefs.discoverCategory else { return }; prefetchTask?.cancel(); prefs.discoverCategory = c; load() }
     func setCompare(week: Bool) { guard week != prefs.discoverCompareWeek else { return }; prefs.discoverCompareWeek = week; load() }
     func setMacOnly(_ on: Bool) { prefs.discoverMacOnly = on; load() }
-    func setLight(_ on: Bool) { prefs.discoverLight = on; if !isDemo, !items.isEmpty { load() } }
+    func setLight(_ on: Bool) {
+        prefs.discoverLight = on
+        if on { prefetchTask?.cancel(); prefetchTag = nil }          // stop preparing the other tabs right away
+        if !isDemo, !items.isEmpty { load() }
+    }
+
+    /// Full mode only, with a token and plenty of allowance left (at least 1,500): quietly prepares the other tabs of this category
+    /// (their lists, and which projects have Mac downloads) while the person looks at this one, so switching tabs is instant.
+    /// It waits for the person's own searches to finish first, and stops as soon as the allowance runs low.
+    private func startPrefetch(_ category: DiscoverCategory, _ current: DiscoverMode, hasToken: Bool) {
+        let remaining = meter.status.remaining
+        guard !isDemo, hasToken, current != .featured, !prefs.discoverLight, !(remaining >= 0 && remaining < 1500) else { return }
+        let verify = prefs.discoverMacOnly, week = prefs.discoverCompareWeek
+        let tag = "\(category.key)|\(verify)|\(week)"
+        if prefetchTag == tag, prefetchTask?.isCancelled == false { return }          // already preparing this category
+        prefetchTask?.cancel()
+        prefetchTag = tag
+        let service = self.service, client = self.client, pause = prefetchPause
+        prefetchTask = Task.detached(priority: .utility) { [weak self] in
+            for m in [DiscoverMode.trending, .popular, .new, .updated] where m != current {
+                var waited = 0
+                while waited < 60 && !Task.isCancelled {
+                    if await service.canPrefetch() { break }
+                    waited += 1; try? await Task.sleep(for: pause)
+                }      // the person's own searches go first
+                let roomLeft = await service.canPrefetch()
+                if Task.isCancelled || !roomLeft { return }
+                guard let (items, _) = try? await service.candidates(m, category, force: false) else { continue }
+                if verify {
+                    let baseline = await service.baseline(DiscoverService.key(m, category.key), week: week)
+                    let ordered = DiscoverService.order(items, mode: m, baseline: baseline)
+                    await service.preverify(Array(ordered.prefix(48)))
+                }
+            }
+            await self?.prefetchFinished(client)
+        }
+    }
+
+    private func prefetchFinished(_ client: SourceClient) async { await meter.update(from: client) }
+
+    func stopPrefetch() { prefetchTask?.cancel(); prefetchTag = nil }
+
+    /// Waits for the tabs being prepared in the background (used by tests).
+    func waitForPrefetch() async { await prefetchTask?.value }
     /// Waits for the list that is being built (used by tests).
     func waitUntilIdle() async { await task?.value }
 

@@ -15,6 +15,12 @@ public enum DiscoverCatalog {
     public static let categories: [DiscoverCategory] = [
         DiscoverCategory(key: "all", title: "Everything",
                          topics: ["topic:macos topic:app", "topic:macos topic:utility", "topic:menubar-app", "topic:swiftui topic:macos", "topic:developer-tools topic:macos"], seeds: []),
+        DiscoverCategory(key: "games", title: "Games & ports",
+                         topics: ["topic:decompilation topic:macos", "topic:source-port topic:macos", "topic:recompilation", "topic:game topic:macos"],
+                         seeds: ["HarbourMasters/Shipwright", "HarbourMasters/2ship2harkinian", "HarbourMasters/Starship", "sm64-port/sm64-port", "OpenRCT2/OpenRCT2", "OpenTTD/OpenTTD", "diasurgical/devilutionX", "RSDKModding/RSDKv5-Decompilation", "Eukaryot/sonic3air", "ScummVM/scummvm", "OpenMW/openmw", "OpenRA/OpenRA", "ZDoom/gzdoom", "dhewm/dhewm3", "yquake2/yquake2", "OpenXcom/OpenXcom"]),
+        DiscoverCategory(key: "emulators", title: "Emulators",
+                         topics: ["topic:emulator topic:macos", "topic:emulation topic:macos", "topic:nintendo-switch topic:emulator", "topic:playstation topic:emulator"],
+                         seeds: ["dolphin-emu/dolphin", "PCSX2/pcsx2", "RPCS3/rpcs3", "stenzek/duckstation", "hrydgard/ppsspp", "flyinghead/flycast", "shadps4-emu/shadPS4", "azahar-emu/azahar", "xemu-project/xemu", "melonDS-emu/melonDS", "mgba-emu/mgba", "SourMesen/Mesen2", "libretro/RetroArch", "Vita3K/Vita3K", "ares-emulator/ares", "joncampbell123/dosbox-x", "snes9x/snes9x"]),
         DiscoverCategory(key: "utilities", title: "Utilities",
                          topics: ["topic:macos topic:utility", "topic:menubar-app", "topic:macos topic:productivity", "topic:window-manager topic:macos"],
                          seeds: ["rxhanson/Rectangle", "exelban/stats", "lwouis/alt-tab-macos", "MonitorControl/MonitorControl", "Hammerspoon/hammerspoon", "pqrs-org/Karabiner-Elements", "nikitabobko/AeroSpace", "jordanbaird/Ice", "ianyh/Amethyst", "aonez/Keka", "transmission/transmission"]),
@@ -45,9 +51,6 @@ public enum DiscoverCatalog {
         DiscoverCategory(key: "internet", title: "Browsers & internet",
                          topics: ["topic:browser topic:macos", "topic:download-manager", "topic:vpn topic:macos", "topic:rss-reader topic:macos"],
                          seeds: ["zen-browser/desktop", "brave/brave-browser", "Floorp-Projects/Floorp", "mullvad/mullvad-browser", "agalwood/Motrix", "transmission/transmission"]),
-        DiscoverCategory(key: "games", title: "Games & emulation",
-                         topics: ["topic:emulator topic:macos", "topic:emulation topic:macos", "topic:game topic:macos", "topic:retro-gaming topic:macos"],
-                         seeds: ["stenzek/duckstation", "melonDS-emu/melonDS", "mgba-emu/mgba", "SourMesen/Mesen2", "ares-emulator/ares", "xemu-project/xemu", "shadps4-emu/shadPS4", "Vita3K/Vita3K", "ScummVM/scummvm", "OpenMW/openmw", "OpenRCT2/OpenRCT2", "OpenTTD/OpenTTD", "diasurgical/devilutionX", "ZDoom/gzdoom"]),
     ]
 
     public static func find(_ key: String?) -> DiscoverCategory { categories.first { $0.key == key } ?? categories[0] }

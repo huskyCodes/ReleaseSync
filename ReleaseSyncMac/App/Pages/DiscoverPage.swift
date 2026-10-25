@@ -79,7 +79,7 @@ struct DiscoverPage: View {
             Spacer(minLength: 8)
             Text(discover.status).font(.faint).foregroundStyle(Theme.faint).lineLimit(1)
             SegTabs(options: [("Full", false), ("Light", true)], selection: Binding(get: { prefs.discoverLight }, set: { discover.setLight($0) }), small: true)
-                .help("Light mode asks GitHub for about a third as much")
+                .help("Full: 36 per list, other tabs prepared ahead.  Light: 15 per list, fewest requests.")
         }
     }
 

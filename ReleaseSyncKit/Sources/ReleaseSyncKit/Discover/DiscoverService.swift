@@ -272,4 +272,20 @@ public actor DiscoverService {
     }
 
     public func saveMacChecks() async { await save() }
+
+    /// Whether there is room for background work: a whole tab's searches could go out without anyone waiting, so a person's own searches go first.
+    public func canPrefetch() async -> Bool { await client.searchesAvailable >= 11 }
+
+    /// Looks up the Mac downloads of these projects ahead of time (a few at a time), so the tab is ready when it is opened.
+    /// A project that can't be checked (allowance used up, site unreachable) is skipped quietly.
+    public func preverify(_ repos: [RepoInfo]) async {
+        for start in stride(from: 0, to: repos.count, by: 8) {
+            if Task.isCancelled { break }
+            let chunk = Array(repos[start..<min(start + 8, repos.count)])
+            await withTaskGroup(of: Void.self) { group in
+                for r in chunk { group.addTask { [self] in _ = try? await hasMacBuild(r) } }
+            }
+        }
+        await save()
+    }
 }

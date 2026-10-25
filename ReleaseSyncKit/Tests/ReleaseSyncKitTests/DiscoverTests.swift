@@ -227,6 +227,8 @@ final class DiscoverServiceTests: XCTestCase {
 
     func testTheCatalogIsSane() {
         XCTAssertEqual(DiscoverCatalog.categories.first?.key, "all")
+        XCTAssertEqual(DiscoverCatalog.categories.map(\.title), ["Everything", "Games & ports", "Emulators", "Utilities", "Media", "Developer tools", "Privacy & security", "Productivity", "Customization", "Graphics & design", "Communication", "AI & data", "Browsers & internet"],
+                       "the same tabs in the same order as the Windows app")
         XCTAssertEqual(Set(DiscoverCatalog.categories.map(\.key)).count, DiscoverCatalog.categories.count)
         for c in DiscoverCatalog.categories {
             XCTAssertFalse(c.topics.isEmpty, c.key)
