@@ -218,7 +218,7 @@ N bytes: AES-256-GCM ciphertext followed by its 16-byte tag
 
 ### 8.1 JSON conventions
 
-The same as the sync file ([SYNC-FORMAT.md section 2](SYNC-FORMAT.md)): UTF-8, PascalCase names, properties in the order given here, properties with no value left out, `\uXXXX` escaping exactly as that document describes, timestamps as UTC with a trailing `Z` and no more than 7 fractional digits. **Compact**: no spaces and no line breaks. Readers ignore properties they do not know and ignore messages with a `Type` they do not know.
+The same as the sync file ([SYNC-FORMAT.md section 2](SYNC-FORMAT.md)): UTF-8, PascalCase names, properties in the order given here, properties with no value left out, `\uXXXX` escaping exactly as that document describes, timestamps as UTC with a trailing `Z` and no more than 7 fractional digits. **Compact**: no spaces and no line breaks. Readers ignore properties they do not know and ignore messages with a `Type` they do not know. The rest of the reading rules (what a missing property means, what counts as an error, how the installed list is cleaned, how free text is cut) are written down in `ReleaseSync.Core.Tests/Fixtures/lan/README.md` and tested by `messages.json`.
 
 ### 8.2 Message types
 

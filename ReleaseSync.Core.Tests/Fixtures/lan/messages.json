@@ -1,0 +1,402 @@
+{
+  "Description": "Section 8 of docs/LAN-PRESENCE.md. Writing: build the message from Message, write it, and the bytes must equal Text (UTF-8, compact). Reading: parse Input; Outcome says what must happen: \u0022message\u0022 (apply the limits of section 11, then write the result: it must equal Text), \u0022ignored\u0022 (a Type this version does not know) or \u0022error\u0022 (the connection is closed).",
+  "Writing": [
+    {
+      "Name": "pair1",
+      "Description": "First pairing message (Joiner to Host). Binary values are standard Base64.",
+      "Message": {
+        "Type": "pair1",
+        "Proto": 1,
+        "Name": "Example Mac",
+        "Platform": "Mac",
+        "Commit": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA="
+      },
+      "Text": "{\u0022Type\u0022:\u0022pair1\u0022,\u0022Proto\u0022:1,\u0022Name\u0022:\u0022Example Mac\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022Commit\u0022:\u0022AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=\u0022}"
+    },
+    {
+      "Name": "pair2",
+      "Description": "Host\u0027s answer: its key (65 bytes) and nonce (16 bytes).",
+      "Message": {
+        "Type": "pair2",
+        "Name": "Example PC",
+        "Platform": "Windows",
+        "Key": "BAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0\u002BP0A=",
+        "Nonce": "KCkqKywtLi8wMTIzNDU2Nw=="
+      },
+      "Text": "{\u0022Type\u0022:\u0022pair2\u0022,\u0022Name\u0022:\u0022Example PC\u0022,\u0022Platform\u0022:\u0022Windows\u0022,\u0022Key\u0022:\u0022BAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0\\u002BP0A=\u0022,\u0022Nonce\u0022:\u0022KCkqKywtLi8wMTIzNDU2Nw==\u0022}"
+    },
+    {
+      "Name": "pair3",
+      "Description": "The Joiner opens its commitment.",
+      "Message": {
+        "Type": "pair3",
+        "Key": "BGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1\u002Bf4CBgoOEhYaHiImKi4yNjo\u002BQkZKTlJWWl5iZmpucnZ6foKGio6Q=",
+        "Nonce": "PD0\u002BP0BBQkNERUZHSElKSw=="
+      },
+      "Text": "{\u0022Type\u0022:\u0022pair3\u0022,\u0022Key\u0022:\u0022BGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1\\u002Bf4CBgoOEhYaHiImKi4yNjo\\u002BQkZKTlJWWl5iZmpucnZ6foKGio6Q=\u0022,\u0022Nonce\u0022:\u0022PD0\\u002BP0BBQkNERUZHSElKSw==\u0022}"
+    },
+    {
+      "Name": "pair4",
+      "Description": "The Joiner\u0027s proof, sent after its user tapped Yes.",
+      "Message": {
+        "Type": "pair4",
+        "Proof": "AAMGCQwPEhUYGx4hJCcqLTAzNjk8P0JFSEtOUVRXWl0="
+      },
+      "Text": "{\u0022Type\u0022:\u0022pair4\u0022,\u0022Proof\u0022:\u0022AAMGCQwPEhUYGx4hJCcqLTAzNjk8P0JFSEtOUVRXWl0=\u0022}"
+    },
+    {
+      "Name": "pair5",
+      "Description": "The Host\u0027s proof, sent after its user tapped Yes and a valid pair4.",
+      "Message": {
+        "Type": "pair5",
+        "Proof": "//79/Pv6\u002Bfj39vX08/Lx8O/u7ezr6uno5\u002Bbl5OPi4eA="
+      },
+      "Text": "{\u0022Type\u0022:\u0022pair5\u0022,\u0022Proof\u0022:\u0022//79/Pv6\\u002Bfj39vX08/Lx8O/u7ezr6uno5\\u002Bbl5OPi4eA=\u0022}"
+    },
+    {
+      "Name": "hello",
+      "Description": "The first record each side sends after the handshake.",
+      "Message": {
+        "Type": "hello",
+        "Proto": 1,
+        "DeviceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "Name": "Example Mac",
+        "Platform": "Mac",
+        "AppVersion": "1.0.0"
+      },
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022DeviceId\u0022:\u0022aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u0022,\u0022Name\u0022:\u0022Example Mac\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221.0.0\u0022}"
+    },
+    {
+      "Name": "hello-without-device-id",
+      "Description": "A property with no value is left out, not written as null.",
+      "Message": {
+        "Type": "hello",
+        "Proto": 1,
+        "Name": "Example Mac",
+        "Platform": "Mac",
+        "AppVersion": "1.0.0"
+      },
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022Name\u0022:\u0022Example Mac\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221.0.0\u0022}"
+    },
+    {
+      "Name": "hello-escaping",
+      "Description": "Non-ASCII and \u003C \u003E \u0026 \u0027 \u002B are written as \\uXXXX with upper-case hex; a character outside the basic plane is a surrogate pair.",
+      "Message": {
+        "Type": "hello",
+        "Proto": 1,
+        "DeviceId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "Name": "Caf\u00E9 \u003Cb\u003E \u0026 \u0027x\u0027 \u002B \uD83D\uDE00",
+        "Platform": "Mac",
+        "AppVersion": "1.0.0"
+      },
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022DeviceId\u0022:\u0022bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\u0022,\u0022Name\u0022:\u0022Caf\\u00E9 \\u003Cb\\u003E \\u0026 \\u0027x\\u0027 \\u002B \\uD83D\\uDE00\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221.0.0\u0022}"
+    },
+    {
+      "Name": "hello-name-too-long",
+      "Description": "Free text is cut to its limit (Name: 64 bytes) between characters: 22 euro signs are 66 bytes, so 21 are kept.",
+      "Message": {
+        "Type": "hello",
+        "Proto": 1,
+        "DeviceId": "cccccccccccccccccccccccccccccccc",
+        "Name": "\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC",
+        "Platform": "Mac",
+        "AppVersion": "1.0.0"
+      },
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022DeviceId\u0022:\u0022cccccccccccccccccccccccccccccccc\u0022,\u0022Name\u0022:\u0022\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221.0.0\u0022}"
+    },
+    {
+      "Name": "state-empty",
+      "Description": "Nothing installed: Open false is still written, and the empty list too.",
+      "Message": {
+        "Type": "state",
+        "Seq": 1,
+        "Open": false,
+        "Installed": []
+      },
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:false,\u0022Installed\u0022:[]}"
+    },
+    {
+      "Name": "state-installed",
+      "Description": "Entries are written in key order. Optional properties with no value are left out. Times are UTC with a trailing Z and no trailing zeros in the fraction.",
+      "Message": {
+        "Type": "state",
+        "Seq": 2,
+        "Open": true,
+        "Installed": [
+          {
+            "Key": "github:fake/zeta",
+            "Version": "2.0.0",
+            "InstalledAt": "2026-01-02T03:04:05Z",
+            "Latest": "2.1.0"
+          },
+          {
+            "Key": "github:fake/alpha",
+            "Version": "1.0.0"
+          },
+          {
+            "Key": "codeberg:fake/beta",
+            "Version": "0.9",
+            "InstalledAt": "2026-01-02T03:04:05.1234567Z",
+            "Latest": "0.9"
+          },
+          {
+            "Key": "github:fake/gamma",
+            "Version": "3",
+            "InstalledAt": "2026-01-02T03:04:05.12Z"
+          }
+        ]
+      },
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:2,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022codeberg:fake/beta\u0022,\u0022Version\u0022:\u00220.9\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05.1234567Z\u0022,\u0022Latest\u0022:\u00220.9\u0022},{\u0022Key\u0022:\u0022github:fake/alpha\u0022,\u0022Version\u0022:\u00221.0.0\u0022},{\u0022Key\u0022:\u0022github:fake/gamma\u0022,\u0022Version\u0022:\u00223\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05.12Z\u0022},{\u0022Key\u0022:\u0022github:fake/zeta\u0022,\u0022Version\u0022:\u00222.0.0\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05Z\u0022,\u0022Latest\u0022:\u00222.1.0\u0022}]}"
+    },
+    {
+      "Name": "ping",
+      "Description": "Sent after 2 seconds with nothing sent.",
+      "Message": {
+        "Type": "ping",
+        "N": 7
+      },
+      "Text": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:7}"
+    },
+    {
+      "Name": "pong",
+      "Description": "The answer to a ping, with the same N.",
+      "Message": {
+        "Type": "pong",
+        "N": 7
+      },
+      "Text": "{\u0022Type\u0022:\u0022pong\u0022,\u0022N\u0022:7}"
+    },
+    {
+      "Name": "goodbye",
+      "Description": "A normal quit.",
+      "Message": {
+        "Type": "goodbye"
+      },
+      "Text": "{\u0022Type\u0022:\u0022goodbye\u0022}"
+    },
+    {
+      "Name": "goodbye-with-reason",
+      "Description": "The reason is optional.",
+      "Message": {
+        "Type": "goodbye",
+        "Reason": "quit"
+      },
+      "Text": "{\u0022Type\u0022:\u0022goodbye\u0022,\u0022Reason\u0022:\u0022quit\u0022}"
+    },
+    {
+      "Name": "forget",
+      "Description": "Sent just before a device deletes the pairing.",
+      "Message": {
+        "Type": "forget"
+      },
+      "Text": "{\u0022Type\u0022:\u0022forget\u0022}"
+    }
+  ],
+  "Reading": [
+    {
+      "Name": "plain-ping",
+      "Description": "A message in the exact form it is written in.",
+      "Input": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:3}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:3}"
+    },
+    {
+      "Name": "names-in-any-case",
+      "Description": "Property names match in any case when reading; the Type value itself is case-sensitive and is written back in the proper form.",
+      "Input": "{\u0022type\u0022:\u0022ping\u0022,\u0022n\u0022:3}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:3}"
+    },
+    {
+      "Name": "whitespace-and-order",
+      "Description": "Spaces, line breaks and a different property order are fine when reading.",
+      "Input": "{ \u0022N\u0022 : 3 ,\n \u0022Type\u0022 : \u0022pong\u0022 }",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022pong\u0022,\u0022N\u0022:3}"
+    },
+    {
+      "Name": "unknown-properties",
+      "Description": "Properties this version does not know are ignored.",
+      "Input": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:3,\u0022Future\u0022:{\u0022x\u0022:[1,2,3]},\u0022Other\u0022:true}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:3}"
+    },
+    {
+      "Name": "missing-properties",
+      "Description": "A property that is missing reads as 0, false, an empty list or an empty text.",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:0,\u0022Open\u0022:false,\u0022Installed\u0022:[]}"
+    },
+    {
+      "Name": "missing-number",
+      "Description": "A ping with no N reads as N 0.",
+      "Input": "{\u0022Type\u0022:\u0022ping\u0022}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:0}"
+    },
+    {
+      "Name": "unknown-type",
+      "Description": "A Type this version does not know is ignored, not an error.",
+      "Input": "{\u0022Type\u0022:\u0022suggest\u0022,\u0022Key\u0022:\u0022github:fake/x\u0022}",
+      "Outcome": "ignored"
+    },
+    {
+      "Name": "type-is-case-sensitive",
+      "Description": "\u0022PING\u0022 is not \u0022ping\u0022: it is a Type this version does not know.",
+      "Input": "{\u0022Type\u0022:\u0022PING\u0022,\u0022N\u0022:3}",
+      "Outcome": "ignored"
+    },
+    {
+      "Name": "no-type",
+      "Description": "An object with no Type is an error.",
+      "Input": "{\u0022N\u0022:3}",
+      "Outcome": "error"
+    },
+    {
+      "Name": "type-not-text",
+      "Description": "A Type that is not text is an error.",
+      "Input": "{\u0022Type\u0022:5}",
+      "Outcome": "error"
+    },
+    {
+      "Name": "not-an-object",
+      "Description": "A message must be a JSON object.",
+      "Input": "[1,2,3]",
+      "Outcome": "error"
+    },
+    {
+      "Name": "not-json",
+      "Description": "Not JSON at all is an error.",
+      "Input": "hello there",
+      "Outcome": "error"
+    },
+    {
+      "Name": "empty",
+      "Description": "Nothing is an error.",
+      "Input": "",
+      "Outcome": "error"
+    },
+    {
+      "Name": "trailing-garbage",
+      "Description": "Anything after the object is an error.",
+      "Input": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:3} x",
+      "Outcome": "error"
+    },
+    {
+      "Name": "wrong-type-of-number",
+      "Description": "A number that is text is an error.",
+      "Input": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:\u00223\u0022}",
+      "Outcome": "error"
+    },
+    {
+      "Name": "number-too-large",
+      "Description": "A number that does not fit is an error.",
+      "Input": "{\u0022Type\u0022:\u0022ping\u0022,\u0022N\u0022:99999999999}",
+      "Outcome": "error"
+    },
+    {
+      "Name": "wrong-type-of-flag",
+      "Description": "A flag that is not true or false is an error.",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:\u0022yes\u0022,\u0022Installed\u0022:[]}",
+      "Outcome": "error"
+    },
+    {
+      "Name": "installed-not-a-list",
+      "Description": "A list that is not a list is an error.",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:5}",
+      "Outcome": "error"
+    },
+    {
+      "Name": "installed-null",
+      "Description": "A null list reads as an empty one.",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:null}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[]}"
+    },
+    {
+      "Name": "hello-device-id-upper-case",
+      "Description": "A DeviceId must be lower-case hex digits; anything else is dropped (the rest of the hello is kept).",
+      "Input": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022DeviceId\u0022:\u0022AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\u0022,\u0022Name\u0022:\u0022Example\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022Name\u0022:\u0022Example\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}"
+    },
+    {
+      "Name": "hello-device-id-too-long",
+      "Description": "A DeviceId over 32 bytes is dropped.",
+      "Input": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022DeviceId\u0022:\u0022aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u0022,\u0022Name\u0022:\u0022Example\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022Name\u0022:\u0022Example\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}"
+    },
+    {
+      "Name": "hello-device-id-not-hex",
+      "Description": "A DeviceId that is not hex is dropped.",
+      "Input": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022DeviceId\u0022:\u0022gggggggggggggggggggggggggggggggg\u0022,\u0022Name\u0022:\u0022Example\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022Name\u0022:\u0022Example\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}"
+    },
+    {
+      "Name": "hello-texts-too-long",
+      "Description": "Name (64 bytes), Platform (32) and AppVersion (32) are cut to their limits.",
+      "Input": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022DeviceId\u0022:\u0022dddddddddddddddddddddddddddddddd\u0022,\u0022Name\u0022:\u0022nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\u0022,\u0022Platform\u0022:\u0022pppppppppppppppppppppppppppppppppppppppp\u0022,\u0022AppVersion\u0022:\u0022vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\u0022}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022DeviceId\u0022:\u0022dddddddddddddddddddddddddddddddd\u0022,\u0022Name\u0022:\u0022nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\u0022,\u0022Platform\u0022:\u0022pppppppppppppppppppppppppppppppp\u0022,\u0022AppVersion\u0022:\u0022vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\u0022}"
+    },
+    {
+      "Name": "hello-cut-inside-a-character",
+      "Description": "The cut falls between characters: 22 euro signs (3 bytes each) become 21, not 21 plus half of one.",
+      "Input": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022Name\u0022:\u0022\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u20AC\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022Name\u0022:\u0022\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\\u20AC\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}"
+    },
+    {
+      "Name": "hello-escapes-in-input",
+      "Description": "Any valid JSON escape is accepted when reading (a surrogate pair, \\u0041, \\n); the writer then uses its own escaping.",
+      "Input": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022Name\u0022:\u0022\\ud83d\\ude00 \\u0041\\n\\\u0022q\\\u0022\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022hello\u0022,\u0022Proto\u0022:1,\u0022Name\u0022:\u0022\\uD83D\\uDE00 A\\n\\u0022q\\u0022\u0022,\u0022Platform\u0022:\u0022Mac\u0022,\u0022AppVersion\u0022:\u00221\u0022}"
+    },
+    {
+      "Name": "installed-sorted",
+      "Description": "The list is put in key order (ordinal), whatever order it arrived in.",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:fake/b\u0022,\u0022Version\u0022:\u00221\u0022},{\u0022Key\u0022:\u0022codeberg:fake/z\u0022,\u0022Version\u0022:\u00221\u0022},{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00221\u0022},{\u0022Key\u0022:\u0022github:Fake/B2\u0022,\u0022Version\u0022:\u00221\u0022}]}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022codeberg:fake/z\u0022,\u0022Version\u0022:\u00221\u0022},{\u0022Key\u0022:\u0022github:Fake/B2\u0022,\u0022Version\u0022:\u00221\u0022},{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00221\u0022},{\u0022Key\u0022:\u0022github:fake/b\u0022,\u0022Version\u0022:\u00221\u0022}]}"
+    },
+    {
+      "Name": "installed-duplicate-key-last-wins",
+      "Description": "If a key appears more than once, the last entry wins.",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00221\u0022,\u0022Latest\u0022:\u00221\u0022},{\u0022Key\u0022:\u0022github:fake/b\u0022,\u0022Version\u0022:\u00221\u0022},{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00222\u0022,\u0022Latest\u0022:\u00223\u0022}]}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00222\u0022,\u0022Latest\u0022:\u00223\u0022},{\u0022Key\u0022:\u0022github:fake/b\u0022,\u0022Version\u0022:\u00221\u0022}]}"
+    },
+    {
+      "Name": "installed-empty-key-skipped",
+      "Description": "An entry with an empty key is skipped; a missing key counts as empty.",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022\u0022,\u0022Version\u0022:\u00221\u0022},{\u0022Version\u0022:\u00229\u0022},{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00221\u0022}]}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00221\u0022}]}"
+    },
+    {
+      "Name": "installed-key-too-long",
+      "Description": "A key over 200 bytes skips the entry (200 exactly is kept).",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\u0022,\u0022Version\u0022:\u00221\u0022},{\u0022Key\u0022:\u0022github:kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\u0022,\u0022Version\u0022:\u00221\u0022}]}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\u0022,\u0022Version\u0022:\u00221\u0022}]}"
+    },
+    {
+      "Name": "installed-version-too-long",
+      "Description": "A Version or Latest over 64 bytes skips the entry (64 exactly is kept).",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00221111111111111111111111111111111111111111111111111111111111111111\u0022},{\u0022Key\u0022:\u0022github:fake/b\u0022,\u0022Version\u0022:\u002211111111111111111111111111111111111111111111111111111111111111111\u0022},{\u0022Key\u0022:\u0022github:fake/c\u0022,\u0022Version\u0022:\u00221\u0022,\u0022Latest\u0022:\u00222222222222222222222222222222222222222222222222222222222222222222\u0022},{\u0022Key\u0022:\u0022github:fake/d\u0022,\u0022Version\u0022:\u00221\u0022,\u0022Latest\u0022:\u002222222222222222222222222222222222222222222222222222222222222222222\u0022}]}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00221111111111111111111111111111111111111111111111111111111111111111\u0022},{\u0022Key\u0022:\u0022github:fake/c\u0022,\u0022Version\u0022:\u00221\u0022,\u0022Latest\u0022:\u00222222222222222222222222222222222222222222222222222222222222222222\u0022}]}"
+    },
+    {
+      "Name": "installed-time-spellings",
+      "Description": "InstalledAt is read in any of the spellings of a UTC time and written back in the standard one.",
+      "Input": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00221\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05Z\u0022},{\u0022Key\u0022:\u0022github:fake/b\u0022,\u0022Version\u0022:\u00221\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05.000Z\u0022},{\u0022Key\u0022:\u0022github:fake/c\u0022,\u0022Version\u0022:\u00221\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05.1234567Z\u0022},{\u0022Key\u0022:\u0022github:fake/d\u0022,\u0022Version\u0022:\u00221\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T05:04:05\u002B02:00\u0022}]}",
+      "Outcome": "message",
+      "Text": "{\u0022Type\u0022:\u0022state\u0022,\u0022Seq\u0022:1,\u0022Open\u0022:true,\u0022Installed\u0022:[{\u0022Key\u0022:\u0022github:fake/a\u0022,\u0022Version\u0022:\u00221\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05Z\u0022},{\u0022Key\u0022:\u0022github:fake/b\u0022,\u0022Version\u0022:\u00221\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05Z\u0022},{\u0022Key\u0022:\u0022github:fake/c\u0022,\u0022Version\u0022:\u00221\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05.1234567Z\u0022},{\u0022Key\u0022:\u0022github:fake/d\u0022,\u0022Version\u0022:\u00221\u0022,\u0022InstalledAt\u0022:\u00222026-01-02T03:04:05Z\u0022}]}"
+    }
+  ]
+}

@@ -711,6 +711,8 @@ public static class FixtureData
             Cases = rounds,
         });
 
+        foreach (var (path, text) in LanFixtureData.Build()) files[path] = text;
+
         // fixtures are shared, possibly in public: nothing from this machine may have leaked in
         foreach (var (path, text) in files)
             foreach (var secret in new[] { Environment.MachineName, Environment.UserName, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) })
