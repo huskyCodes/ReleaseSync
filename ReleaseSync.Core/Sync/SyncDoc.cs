@@ -28,18 +28,6 @@ public sealed class SyncApp
     public DateTime ModifiedAt { get; set; }
 }
 
-/// <summary>One program installed on a device: what that device itself reports. Only the device that has it writes its own list.</summary>
-public sealed class SyncInstall
-{
-    /// <summary>The app's key, as in <see cref="SyncApp.Key"/> (<c>github:owner/repo</c>).</summary>
-    public string Key { get; set; } = "";
-    /// <summary>The version installed there, as that device knows it.</summary>
-    public string Version { get; set; } = "";
-    public DateTime? InstalledAt { get; set; }
-    /// <summary>The newest version that device knows of for its own kind of computer. When it is newer than <see cref="Version"/> an update is waiting there.</summary>
-    public string? Latest { get; set; }
-}
-
 /// <summary>One of your devices, as the other ones see it in the sync file.</summary>
 public sealed class SyncDevice
 {
@@ -49,18 +37,11 @@ public sealed class SyncDevice
     public string Platform { get; set; } = "Windows";
     public string AppVersion { get; set; } = "";
     public DateTime LastSeen { get; set; }
-    /// <summary>True while ReleaseSync is open on that device and false after it was closed normally. Missing in files from before format 3. See <see cref="SyncPresence"/>.</summary>
-    public bool? Online { get; set; }
-    /// <summary>What is installed on that device. Missing when the device doesn't say (older versions, or it can't install things).</summary>
-    public List<SyncInstall>? Installed { get; set; }
 }
 
 public sealed class SyncDoc
 {
-    /// <summary>The newest format this code reads and writes. A file with a higher version is refused, so an older ReleaseSync never rewrites a file it doesn't fully understand.</summary>
-    public const int CurrentVersion = 3;
-
-    public int Version { get; set; } = CurrentVersion;
+    public int Version { get; set; } = 2;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public string WrittenBy { get; set; } = Environment.MachineName;
     public List<SyncApp> Apps { get; set; } = new();

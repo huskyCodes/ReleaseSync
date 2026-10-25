@@ -19,7 +19,6 @@ Everything here is made up: fake owners and repositories, fake devices, a fake p
 | `escapes.json` | How strings are escaped in JSON text. The tie-break in the merge depends on this being exact. |
 | `releases/` | Release data: version comparison, release-notes cleanup, counts and sizes, project links, and how GitHub's JSON for a project and its releases is read. |
 | `discover/` | Discover: how the engine orders projects and shows their movement since an earlier ranking. |
-| `presence.json` | Devices: when a device's light is green, how its list of installed programs is read, and when a program has an update waiting. |
 | `categorize.json` | The kind of project (the automatic group) the engine puts each name, description, topics and language in. |
 
 ## Rules for comparing

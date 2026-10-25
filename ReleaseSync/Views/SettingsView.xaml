@@ -383,28 +383,10 @@
                                 <ItemsControl ItemsSource="{Binding SyncDevices}" Margin="0,6,0,0" Visibility="{Binding HasSyncDevices, Converter={StaticResource BoolVis}}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid Margin="0,0,0,8">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <Ellipse Width="10" Height="10" Margin="0,6,10,0" VerticalAlignment="Top" ToolTip="{Binding Detail}">
-                                                    <Ellipse.Style>
-                                                        <Style TargetType="Ellipse">
-                                                            <Setter Property="Fill" Value="{DynamicResource DimBrush}"/>
-                                                            <Setter Property="Opacity" Value="0.5"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsOnline}" Value="True">
-                                                                    <Setter Property="Fill" Value="{DynamicResource SuccessBrush}"/>
-                                                                    <Setter Property="Opacity" Value="1"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Ellipse.Style>
-                                                </Ellipse>
-                                                <StackPanel Grid.Column="1">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="{Binding Detail}" Style="{StaticResource Dim}"/>
-                                                    <TextBlock Text="{Binding Inventory}" Style="{StaticResource Dim}" Visibility="{Binding HasInventory, Converter={StaticResource BoolVis}}"/>
-                                                </StackPanel>
-                                            </Grid>
+                                            <StackPanel Margin="0,0,0,6">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Dim}"/>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

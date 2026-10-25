@@ -57,10 +57,7 @@ public static class FixtureData
         return i;
     }
 
-    static SyncDevice Dev(string id, string name, string platform, DateTime seen, string version = "0.1", bool? online = null, List<SyncInstall>? installed = null) =>
-        new() { Id = id, Name = name, Platform = platform, AppVersion = version, LastSeen = seen, Online = online, Installed = installed };
-
-    static SyncInstall Inst(string key, string version, DateTime? installedAt = null, string? latest = null) => new() { Key = key, Version = version, InstalledAt = installedAt, Latest = latest };
+    static SyncDevice Dev(string id, string name, string platform, DateTime seen, string version = "0.1") => new() { Id = id, Name = name, Platform = platform, AppVersion = version, LastSeen = seen };
 
     static readonly SyncDevice PcInfo = Dev("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "Example PC", "Windows", T0, "1.9.1");
     static readonly SyncDevice MacInfo = Dev("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "Example Mac", "Mac", T0);
@@ -292,30 +289,11 @@ public static class FixtureData
                 d.Devices[MacInfo.Id] = Dev(MacInfo.Id, MacInfo.Name, MacInfo.Platform, At(9));
             }));
 
-        var shared = "github:fake/shared-app";
-        Add("14-device-inventory",
-            "A device entry is taken whole from the side with the later LastSeen, including Online and its Installed list; nothing is combined inside it. At an equal LastSeen the greater JSON text wins, so a list with 'Latest' beats one without, and Online:true beats Online:false. A device that never wrote the new fields (an older app) keeps none.",
-            At(60),
-            Doc(pc, At(40), d =>
-            {
-                d.Devices[PcInfo.Id] = Dev(PcInfo.Id, PcInfo.Name, PcInfo.Platform, At(20), PcInfo.AppVersion, true, new List<SyncInstall> { Inst(shared, "1.0", At(3)), Inst("github:fake/pc-only", "3.1") });
-                d.Devices[MacInfo.Id] = Dev(MacInfo.Id, MacInfo.Name, MacInfo.Platform, At(30), MacInfo.AppVersion, false, new List<SyncInstall> { Inst(shared, "1.0", At(3), "1.1") });
-                d.Devices["cccccccccccccccccccccccccccccccc"] = Dev("cccccccccccccccccccccccccccccccc", "Example Tablet", "Android", At(7), "0.1", true, new List<SyncInstall> { Inst(shared, "1.0") });
-                d.Devices["dddddddddddddddddddddddddddddddd"] = Dev("dddddddddddddddddddddddddddddddd", "Old PC", "Windows", At(8), "1.8");
-            }),
-            Doc(mac, At(41), d =>
-            {
-                d.Devices[PcInfo.Id] = Dev(PcInfo.Id, PcInfo.Name, PcInfo.Platform, At(21), PcInfo.AppVersion, false, new List<SyncInstall>());
-                d.Devices[MacInfo.Id] = Dev(MacInfo.Id, MacInfo.Name, MacInfo.Platform, At(29), MacInfo.AppVersion, true, new List<SyncInstall> { Inst(shared, "1.1", At(29)) });
-                d.Devices["cccccccccccccccccccccccccccccccc"] = Dev("cccccccccccccccccccccccccccccccc", "Example Tablet", "Android", At(7), "0.1", false, new List<SyncInstall> { Inst(shared, "1.0") });
-                d.Devices["dddddddddddddddddddddddddddddddd"] = Dev("dddddddddddddddddddddddddddddddd", "Old PC", "Windows", At(8), "1.8");
-            }));
-
         return cases;
     }
 
     // ---------------- sync round cases ----------------
-    sealed record RoundCase(string Name, string Description, DateTime Now, SyncDoc Local, SyncDoc? Remote, string? RemoteText, string? Passphrase, SyncDevice? Self = null);
+    sealed record RoundCase(string Name, string Description, DateTime Now, SyncDoc Local, SyncDoc? Remote, string? RemoteText, string? Passphrase);
 
     static List<RoundCase> RoundCases()
     {
@@ -337,17 +315,14 @@ public static class FixtureData
             more?.Invoke(d);
         });
         var cases = new List<RoundCase>();
-        void Add(string name, string description, SyncDoc local, SyncDoc? remote, string? remoteText = null, string? pass = null, SyncDevice? thisDevice = null) =>
-            cases.Add(new RoundCase(name, description, now, local, remote, remoteText, pass, thisDevice));
-        // what this Mac says about itself in the file
-        var mine = new List<SyncInstall> { Inst("github:fake/shared-app", "1.0", At(5), "1.2"), Inst("github:fake/mac-only", "2.0.1", At(6)) };
-        SyncDevice MacWith(bool? online, List<SyncInstall>? installed) => Dev(self.Id, self.Name, self.Platform, T0, self.AppVersion, online, installed);
+        void Add(string name, string description, SyncDoc local, SyncDoc? remote, string? remoteText = null, string? pass = null) =>
+            cases.Add(new RoundCase(name, description, now, local, remote, remoteText, pass));
         var locked = Envelope(Text(Remote(now)), Pass, Bytes(1, 16), Bytes(2, 12));
 
         Add("01-first-sync", "Nothing stored yet: this device writes its library.", Library("Example Mac"), null);
         Add("02-nothing-new", "The file already says the same and this device checked in recently: nothing changes and nothing is written.", Library("Example Mac"), Remote(now - TimeSpan.FromHours(1)));
-        Add("03-heartbeat", "Nothing changed, but this device last checked in more than 2 hours ago, so it writes to refresh that.", Library("Example Mac"), Remote(now - TimeSpan.FromHours(3)));
-        Add("04-heartbeat-boundary", "Exactly 2 hours is not 'more than 2 hours': nothing is written.", Library("Example Mac"), Remote(now - TimeSpan.FromHours(2)));
+        Add("03-heartbeat", "Nothing changed, but this device last checked in more than 6 hours ago, so it writes to refresh that.", Library("Example Mac"), Remote(now - TimeSpan.FromHours(7)));
+        Add("04-heartbeat-boundary", "Exactly 6 hours is not 'more than 6 hours': nothing is written.", Library("Example Mac"), Remote(now - TimeSpan.FromHours(6)));
         Add("05-file-has-more", "The file has an app this device lacks: the library should be updated (Changed), and nothing needs writing.", Library("Example Mac"),
             Remote(now - TimeSpan.FromHours(1), d => d.Apps.Add(App("fake", "from-the-pc", At(50), At(50)))));
         Add("06-this-device-has-more", "This device has an app the file lacks: it is written.",
@@ -361,24 +336,9 @@ public static class FixtureData
         Add("10-turn-off-passphrase", "The file is locked but no passphrase is set on this device: the sync stops.", Library("Example Mac"), null, locked);
         Add("11-locked-and-opened", "The file is locked and the passphrase opens it. Nothing else changed, so it is not rewritten.", Library("Example Mac"), null, locked, Pass);
         Add("12-wrong-passphrase", "The passphrase does not open the file: the sync stops and nothing is written.", Library("Example Mac"), null, locked, "wrong passphrase");
-        Add("13-newer-format", "The file was made by a newer version of ReleaseSync (Version 4; this one reads up to 3): the sync stops.", Library("Example Mac"), null, Text(Doc("Future", At(0), d => d.Version = 4)));
+        Add("13-newer-format", "The file was made by a newer version of ReleaseSync: the sync stops.", Library("Example Mac"), null, Text(Doc("Future", At(0), d => d.Version = 3)));
         Add("14-unreadable-file", "The file is not valid JSON: the sync stops and nothing is written.", Library("Example Mac"), null, "this is not a library");
         Add("15-blank-file", "A blank file counts as nothing stored.", Library("Example Mac"), null, "  \n");
-        Add("16-older-format-read", "A file written as Version 2 (before devices listed what they have installed) is still read. The result is Version 3, and the device is listed with the new fields, so it is written.",
-            Library("Example Mac"), Remote(now - TimeSpan.FromHours(1), d => d.Version = 2), thisDevice: MacWith(true, mine));
-        Add("17-publishes-inventory", "This device says it is online and lists what it has installed; the file does not say so yet, so it is written.",
-            Library("Example Mac"), Remote(now - TimeSpan.FromHours(1)), thisDevice: MacWith(true, mine));
-        Add("18-inventory-unchanged", "The file already has the same online flag and list (in any order) and this device checked in recently: nothing is written. The order of the list does not matter.",
-            Library("Example Mac"), Remote(now - TimeSpan.FromHours(1), d => d.Devices[self.Id] = Dev(self.Id, self.Name, self.Platform, now - TimeSpan.FromHours(1), self.AppVersion, true, mine.AsEnumerable().Reverse().ToList())),
-            thisDevice: MacWith(true, mine));
-        Add("19-inventory-changed", "One program on this device has a newer version than the file says: the change is written.",
-            Library("Example Mac"), Remote(now - TimeSpan.FromHours(1), d => d.Devices[self.Id] = Dev(self.Id, self.Name, self.Platform, now - TimeSpan.FromHours(1), self.AppVersion, true, mine)),
-            thisDevice: MacWith(true, new List<SyncInstall> { Inst("github:fake/shared-app", "1.2", At(110), "1.2"), Inst("github:fake/mac-only", "2.0.1", At(6)) }));
-        Add("20-goes-offline", "This device is closing and says so: Online becomes false, which is written even though it checked in a minute ago.",
-            Library("Example Mac"), Remote(now - TimeSpan.FromMinutes(1), d => d.Devices[self.Id] = Dev(self.Id, self.Name, self.Platform, now - TimeSpan.FromMinutes(1), self.AppVersion, true, mine)),
-            thisDevice: MacWith(false, mine));
-        Add("21-other-device-details-kept", "What the PC says about itself is kept as the file has it: its list and online flag come through the merge untouched.",
-            Library("Example Mac"), Remote(now - TimeSpan.FromHours(1), d => d.Devices[PcInfo.Id] = Dev(PcInfo.Id, PcInfo.Name, PcInfo.Platform, At(110), PcInfo.AppVersion, true, new List<SyncInstall> { Inst("github:fake/shared-app", "0.9", null, "1.2") })));
         return cases;
     }
 
@@ -472,49 +432,6 @@ public static class FixtureData
         {
             Description = "Write: an instant (whole Unix seconds + 100 ns ticks) becomes this text. Read: this text means this instant, as the merge compares it; a time with no zone is taken as UTC, a time with an offset is converted. Always write UTC with a Z.",
             Write = write, Read = read,
-        };
-    }
-
-    static object PresenceVectors()
-    {
-        var now = At(1000);
-        object Online(string name, bool? online, TimeSpan? age)
-        {
-            var d = Dev("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "Example", "Windows", age == null ? now : now - age.Value, "1.0", online);
-            return new { Name = name, Device = J(d), Now = now, IsOnline = SyncPresence.IsOnline(d, now) };
-        }
-        var lights = new[]
-        {
-            Online("online-just-now", true, TimeSpan.Zero),
-            Online("online-an-hour-ago", true, TimeSpan.FromHours(1)),
-            Online("online-at-the-limit", true, TimeSpan.FromMinutes(150)),
-            Online("online-one-tick-past-the-limit", true, TimeSpan.FromMinutes(150) + TimeSpan.FromTicks(1)),
-            Online("said-offline", false, TimeSpan.Zero),
-            Online("never-said", null, TimeSpan.Zero),
-            Online("clock-a-little-ahead", true, TimeSpan.FromMinutes(-10)),
-            Online("clock-too-far-ahead", true, TimeSpan.FromMinutes(-10) - TimeSpan.FromTicks(1)),
-        };
-        var many = Enumerable.Range(0, 1002).Select(n => Inst($"github:fake/app-{n:D4}", "1.0")).ToList();
-        var messy = Dev("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "Example", "Windows", now, "1.0", true, new List<SyncInstall>
-        {
-            Inst("github:fake/zeta", "1.0"), Inst("", "9.9"), Inst("github:fake/alpha", "1.0"), Inst("github:fake/zeta", "2.0", T0, "2.1"), Inst("github:fake/Alpha", "3.0"), Inst("github:fake/a-b", "1.0"), Inst("github:fake/a_b", "1.0"),
-        });
-        var tooMany = Dev("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "Example", "Windows", now, "1.0", true, many);
-        var updates = new (string Version, string? Latest)[]
-        {
-            ("1.0", "1.1"), ("1.0", "1.0"), ("1.1", "1.0"), ("1.0", null), ("1.0", ""), ("", "1.0"), ("1.9", "1.10"), ("v1.0", "1.0.1"), ("2.0-beta", "2.0"), ("2.0", "2.0-beta"), ("1.0.0", "1.0"),
-        }.Select(u => new { u.Version, u.Latest, HasUpdate = SyncPresence.HasUpdate(Inst("github:fake/x", u.Version, null, u.Latest)) }).ToList();
-        return new
-        {
-            Description = "Online: whether a device's light is green at Now (Online is true, and LastSeen is no more than 150 minutes before Now and no more than 10 minutes after it). Inventory: a device's Installed list as a reader should use it (no empty keys, each key once with the last entry winning, keys in plain character order, at most 1000). Updates: whether an installed program has an update waiting.",
-            Online = lights,
-            Inventory = new { Device = J(messy), Keys = SyncPresence.Inventory(messy).Select(i => new { i.Key, i.Version }).ToList() },
-            TooMany = new
-            {
-                Description = "A device whose Installed list holds 1002 entries, keys github:fake/app-0000 to github:fake/app-1001: only the first 1000 in key order are used.",
-                Count = SyncPresence.Inventory(tooMany).Count, First = SyncPresence.Inventory(tooMany).First().Key, Last = SyncPresence.Inventory(tooMany).Last().Key,
-            },
-            Updates = updates,
         };
     }
 
@@ -761,7 +678,6 @@ public static class FixtureData
         files["timestamps.json"] = Text(TimestampVectors());
         files["escapes.json"] = Text(EscapeVectors());
         files["categorize.json"] = Text(CategorizeVectors());
-        files["presence.json"] = Text(PresenceVectors());
         files["releases/versions.json"] = Text(VersionVectors());
         files["releases/markdown.json"] = Text(MarkdownVectors());
         files["releases/format.json"] = Text(FormatVectors());
@@ -775,8 +691,8 @@ public static class FixtureData
             var remoteText = r.RemoteText ?? (r.Remote == null ? null : Text(r.Remote));
             if (remoteText != null) transport.WriteAsync(remoteText).GetAwaiter().GetResult();
             var writesBefore = transport.Writes;
-            var local = Clone(r.Local); var self = Clone(r.Self ?? MacInfo);
-            var input = new { r.Name, r.Description, r.Now, Self = Clone(r.Self ?? MacInfo), Local = J(r.Local), Remote = r.Remote == null ? (JsonElement?)null : J(r.Remote), r.RemoteText, r.Passphrase };
+            var local = Clone(r.Local); var self = Clone(MacInfo);
+            var input = new { r.Name, r.Description, r.Now, Self = Clone(MacInfo), Local = J(r.Local), Remote = r.Remote == null ? (JsonElement?)null : J(r.Remote), r.RemoteText, r.Passphrase };
             try
             {
                 var res = SyncService.RunAsync(transport, local, r.Passphrase, self, r.Now).GetAwaiter().GetResult();
@@ -824,7 +740,6 @@ public static class FixtureData
         | `escapes.json` | How strings are escaped in JSON text. The tie-break in the merge depends on this being exact. |
         | `releases/` | Release data: version comparison, release-notes cleanup, counts and sizes, project links, and how GitHub's JSON for a project and its releases is read. |
         | `discover/` | Discover: how the engine orders projects and shows their movement since an earlier ranking. |
-        | `presence.json` | Devices: when a device's light is green, how its list of installed programs is read, and when a program has an update waiting. |
         | `categorize.json` | The kind of project (the automatic group) the engine puts each name, description, topics and language in. |
 
         ## Rules for comparing

@@ -97,8 +97,7 @@ public static class SyncMerger
         return result;
     }
 
-    /// <summary>What the document says, without bookkeeping that changes on every sync (time written, who wrote it, when each device last checked in).
-    /// A device's online state and its list of installed programs do count: when they change, the file is written.</summary>
+    /// <summary>What the document says, without bookkeeping that changes on every sync (time written, who wrote it, when each device last checked in).</summary>
     public static string Signature(SyncDoc d)
     {
         var copy = new SyncDoc
@@ -110,12 +109,7 @@ public static class SyncMerger
             GroupStamps = d.GroupStamps.OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase).ToDictionary(k => k.Key.ToLowerInvariant(), k => Utc(k.Value)),
             Tombstones = d.Tombstones.OrderBy(k => k.Key, StringComparer.Ordinal).ToDictionary(k => k.Key, k => Utc(k.Value)),
         };
-        foreach (var dev in d.Devices.Values.OrderBy(x => x.Id, StringComparer.Ordinal))
-            copy.Devices[dev.Id] = new SyncDevice
-            {
-                Id = dev.Id, Name = dev.Name, Platform = dev.Platform, AppVersion = dev.AppVersion, Online = dev.Online,
-                Installed = dev.Installed?.OrderBy(i => i.Key, StringComparer.Ordinal).ToList(),      // what a device has installed, and whether it is online, are part of what the file says
-            };
+        foreach (var dev in d.Devices.Values.OrderBy(x => x.Id, StringComparer.Ordinal)) copy.Devices[dev.Id] = new SyncDevice { Id = dev.Id, Name = dev.Name, Platform = dev.Platform, AppVersion = dev.AppVersion };
         return Json(copy);
     }
 }

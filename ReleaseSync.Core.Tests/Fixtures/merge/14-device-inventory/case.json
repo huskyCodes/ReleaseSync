@@ -1,4 +1,0 @@
-{
-  "Description": "A device entry is taken whole from the side with the later LastSeen, including Online and its Installed list; nothing is combined inside it. At an equal LastSeen the greater JSON text wins, so a list with \u0027Latest\u0027 beats one without, and Online:true beats Online:false. A device that never wrote the new fields (an older app) keeps none.",
-  "Now": "2026-01-01T13:00:00Z"
-}

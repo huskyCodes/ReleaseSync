@@ -38,7 +38,7 @@ Example of the escaping: the text `café <b>` is written `"café <b>"`.
 
 | Property | Type | Default | Meaning |
 |---|---|---|---|
-| `Version` | integer | `3` | Format version. A reader that sees `Version` greater than `3` must stop and tell the user to update. Versions `1` and `2` files are still read. (What changed in each version is in [9](#9-compatibility-and-things-that-can-bite).) |
+| `Version` | integer | `2` | Format version. A reader that sees `Version` greater than `2` must stop and tell the user to update. Version `1` files are still read. |
 | `UpdatedAt` | timestamp | now | When the file was last written (see [5](#5-timestamps)). |
 | `WrittenBy` | string | machine name | Display name of the device that last wrote it. Informational. |
 | `Apps` | array of `SyncApp` | `[]` | Tracked apps. |
@@ -107,36 +107,12 @@ The item's identity key is **not stored**. It is computed: `source:owner/repo`, 
 | `Platform` | string | `"Windows"` | `"Windows"`, `"Mac"`, `"Android"`, `"iPhone"`… free text, shown to the user. |
 | `AppVersion` | string | `""` | |
 | `LastSeen` | timestamp | — | When that device last synced. |
-| `Online` | boolean, optional | omitted | Whether the device says it is running ReleaseSync right now. Omitted by devices that predate version 3. See [Presence](#presence-and-installed-programs). |
-| `Installed` | array of `SyncInstall`, optional | omitted | What the device has installed, as it knows it (see below). Omitted by devices that predate version 3 or that don't report it. |
-
-### `SyncInstall` (entry of a device's `Installed`)
-
-| Property | Type | Default | Meaning |
-|---|---|---|---|
-| `Key` | string | `""` | The identity key of the tracked app, as in [4](#4-keys-and-tombstones) (`github:owner/repo`). Entries with an empty `Key` are ignored. |
-| `Version` | string | `""` | The version installed on that device. |
-| `InstalledAt` | timestamp, optional | omitted | When it was installed there. |
-| `Latest` | string, optional | omitted | The newest version that device has seen for the app. Together with `Version` this says whether an update is waiting there. |
-
-This is a report by the device about itself, so only that device writes its own entry. Other devices keep it as it is and show it; they never edit it. It carries no paths, file names, user names or anything else about the machine.
-
-### Presence and installed programs
-
-There is no direct link between devices: they meet in the shared file. So "connected" can only mean "said recently that it is running":
-
-- A device writes `Online = true` when ReleaseSync starts and keeps `LastSeen` fresh while it runs (the [heartbeat](#7-a-sync-round), every 2 hours when nothing else changed). On a normal exit it writes `Online = false`.
-- A reader shows a device as **online** when `Online` is `true`, **and** `LastSeen` is no more than **150 minutes** before the reader's current time, **and** no more than **10 minutes** after it (clocks differ a little). Anything else is shown as offline. So a device that stopped without saying so (a crash, a closed laptop lid) turns grey by itself within 150 minutes.
-- A reader uses a device's `Installed` list like this: ignore entries with an empty `Key`; if a `Key` appears more than once the last entry wins; order by `Key` (ordinal); use at most the first **1000** entries.
-- An entry has an **update waiting** when `Latest` and `Version` are both non-empty and `Latest` is a newer version than `Version` (the version comparison used for release data).
-
-The fixtures in `presence.json` cover these rules.
 
 ### Small example (fake data)
 
 ```json
 {
-  "Version": 3,
+  "Version": 2,
   "UpdatedAt": "2026-01-01T12:00:00Z",
   "WrittenBy": "Example Mac",
   "Apps": [
@@ -166,16 +142,7 @@ The fixtures in `presence.json` cover these rules.
       "Name": "Example Mac",
       "Platform": "Mac",
       "AppVersion": "0.1",
-      "LastSeen": "2026-01-01T12:00:00Z",
-      "Online": true,
-      "Installed": [
-        {
-          "Key": "github:example/sample-app",
-          "Version": "1.0",
-          "InstalledAt": "2026-01-01T10:30:00Z",
-          "Latest": "1.1"
-        }
-      ]
+      "LastSeen": "2026-01-01T12:00:00Z"
     }
   }
 }
@@ -230,7 +197,7 @@ The result starts as: `Version = max(a.Version, b.Version)`, `UpdatedAt = now`, 
 
 Note that deleting a group here does not touch apps; the deleting device already cleared `Group` on its apps, and those edits arrive as newer app versions.
 
-**Step 5: devices.** Union by `Id`, skipping empty ids; for the same `Id` keep `Newer(x, y, LastSeen)`. The whole entry of the winner is kept as it is, including `Online` and `Installed`: nothing is combined inside a device entry. (At an equal `LastSeen` the tie-break compares the entry's JSON text, so these fields take part.) Devices are never expired or deleted.
+**Step 5: devices.** Union by `Id`, skipping empty ids; for the same `Id` keep `Newer(x, y, LastSeen)`. Devices are never expired or deleted.
 
 **Step 6: finish.**
 - Keep only tombstones with `time >= now - 90 days` (a tombstone exactly 90 days old is kept).
@@ -254,7 +221,7 @@ Note that deleting a group here does not touch apps; the deleting device already
 - `CustomGroups` as a set, ignoring case;
 - `GroupStamps` with names lower-cased, times in UTC;
 - `Tombstones` as given, times in UTC;
-- `Devices`: for each id, only `Id`, `Name`, `Platform`, `AppVersion`, `Online`, and `Installed` with its entries ordered by `Key` (ordinal). So a change to what a device reports counts as a change and is written, but a plain refresh of `LastSeen` does not.
+- `Devices`: for each id, only `Id`, `Name`, `Platform`, `AppVersion`.
 
 ### Known defect: notes on Try later items
 
@@ -265,7 +232,7 @@ When the C# engine reads a `TryLaterItem` that has a `Note`, the `Note` setter a
 `SyncService.RunAsync(transport, local, passphrase, self, now)`:
 
 1. **Read** the file text from the transport. `null` or blank means "nothing stored yet".
-2. If there is text: if it [looks encrypted](#8-encryption), decrypt it with the passphrase (a missing or wrong passphrase stops the round with a "locked" message). Parse the JSON as a `SyncDoc`. If it cannot be parsed, stop with "The sync file isn't readable, so nothing was changed." (nothing is written). If `Version > 3`, stop with "made by a newer version".
+2. If there is text: if it [looks encrypted](#8-encryption), decrypt it with the passphrase (a missing or wrong passphrase stops the round with a "locked" message). Parse the JSON as a `SyncDoc`. If it cannot be parsed, stop with "The sync file isn't readable, so nothing was changed." (nothing is written). If `Version > 2`, stop with "made by a newer version".
 3. Set `self.LastSeen = now` and put `self` into `local.Devices[self.Id]`.
 4. `merged = Merge(local, remote ?? empty, now)`, then `merged.WrittenBy = self.Name`.
 5. `changed` = a remote file existed **and** `Signature(merged) != Signature(local)`. When true the app applies `merged` to its library: it adds, updates and removes things so the library matches. It only removes items that were part of what it sent, so edits made during the sync survive.
@@ -273,7 +240,7 @@ When the C# engine reads a `TryLaterItem` that has a `Note`, the `Note` setter a
    - there was no remote file;
    - `Signature(merged) != Signature(remote)`;
    - the remote file's encryption state differs from what this device wants (locked vs not locked);
-   - this device is not in `remote.Devices`, or its `LastSeen` there is more than **2 hours** old (the "heartbeat"; it keeps the device's [online light](#presence-and-installed-programs) green).
+   - this device is not in `remote.Devices`, or its `LastSeen` there is more than **6 hours** old (the "heartbeat").
 7. If pushing, serialize `merged` and write it, encrypted if a passphrase is set (an empty string counts as none; whitespace is a passphrase, it is not trimmed).
 
 Reading and writing are not atomic. If two devices sync at the same moment, one write can overwrite the other. Nothing is lost for good: the device that lost still has its own changes, and its next sync merges and writes them again.
@@ -312,12 +279,7 @@ Sizes and wording of the user messages are in `SyncCrypto.cs`; reuse them so the
 - Keep new fields optional with a default that means "same as before".
 - Do not rename fields, change types, change the key rules, or change the timestamp format. A change that older readers cannot handle needs `Version` raised, which makes older devices refuse to sync (that is deliberate and should be a rare decision).
 
-**Versions.**
-- `1`: the first format.
-- `2`: current until version 3 (the same fields as 3 without `Online` and `Installed`; readers of 2 refuse a file marked 3).
-- `3`: devices report `Online` and `Installed` ([Presence](#presence-and-installed-programs)); the heartbeat went from 6 hours to 2. Older apps refuse a version 3 file, so **update every device before any device writes version 3**; the shared file moves to version 3 the first time an updated device writes it, and older apps then stop with "made by a newer version". `Merge` keeps the higher `Version`, so the file does not go back. Reading a version 2 file is fine, and the result is version 3.
-
-**Platform-aware library.** `SyncApp` has no `Platform`; `TryLaterItem` has one (default `"Windows"`). The library itself is the same on every device: one entry per repository. What differs per device (which build is installed, which version, whether an update is waiting) is not stored on the app but in each device's `Installed` list, so the same repository can be installed on a PC and a Mac at different versions without a `Platform` on `SyncApp`.
+**Platform-aware library.** `SyncApp` has no `Platform`; `TryLaterItem` has one (default `"Windows"`). A shared library of Windows, Mac, Android and iPhone builds needs a `Platform` on `SyncApp`, and the C# engine has to carry it before another platform writes it. Until then the same repository cannot be tracked separately per platform, because the app's identity is `source:owner/repo`.
 
 **Exactness needed for the tie-break.** When two versions of an item have exactly equal stamps and different content, the winner is the one whose JSON text compares ordinally greater. "JSON text" is that single item (an app, Try later item or device) serialized with the rules in [2](#2-json-conventions): PascalCase names in the order of the tables above, nulls omitted, enums as names, `\uXXXX` escapes with uppercase hex, 7-digit-trimmed timestamps, indented with two spaces. "Ordinal" compares UTF-16 code units. Another implementation must reproduce this text exactly, or two devices could pick different winners for a tie. (The line ending does not change the outcome.) Equal stamps with different content are rare but possible, for example after a bulk import.
 
