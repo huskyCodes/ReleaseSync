@@ -2,9 +2,9 @@
 
 **Status: DRAFT, revised after the PC review. Nothing here is implemented yet.** The protocol (sections 5 to 7) was designed and reviewed by AI assistants only; **it needs a review by a human with cryptography experience before any public release.** Both the Windows side (C#, `ReleaseSync.Core`) and the Mac side (Swift, `ReleaseSyncKit`) follow this one document. Later: Android, then iPhone.
 
-This replaces the file-based presence that was added in sync format 3 (`Online`, `Installed`, `SyncPresence`). See [Open questions](#14-open-questions) for what that removal means for each side.
+This replaces the file-based presence that was added in sync format 3 (`Online`, `Installed`, `SyncPresence`). See [Open questions](#15-open-questions) for what that removal means for each side.
 
-Contents: [1 Goal](#1-goal-and-non-goals) · [2 Threats](#2-who-we-defend-against) · [3 Constants](#3-constants) · [4 Discovery](#4-discovery) · [5 Pairing](#5-pairing) · [6 Link handshake](#6-link-handshake) · [7 Records](#7-records) · [8 Messages](#8-messages) · [9 Liveness](#9-liveness-and-reconnecting) · [10 Forgetting](#10-forgetting-a-device) · [11 Limits](#11-limits) · [12 Consent and UI](#12-consent-network-behaviour-and-wording) · [13 Fixtures and structure](#13-fixtures-and-code-structure) · [14 Open questions](#14-open-questions)
+Contents: [1 Goal](#1-goal-and-non-goals) · [2 Threats](#2-who-we-defend-against) · [3 Constants](#3-constants) · [4 Discovery](#4-discovery) · [5 Pairing](#5-pairing) · [6 Link handshake](#6-link-handshake) · [7 Records](#7-records) · [8 Messages](#8-messages) · [9 Liveness](#9-liveness-and-reconnecting) · [10 Forgetting](#10-forgetting-a-device) · [11 Limits](#11-limits) · [12 Blocking and safety](#12-blocking-and-safety) · [13 Consent and UI](#13-consent-network-behaviour-and-wording) · [14 Fixtures and structure](#14-fixtures-and-code-structure) · [14 Open questions](#15-open-questions)
 
 ---
 
@@ -17,7 +17,7 @@ Contents: [1 Goal](#1-goal-and-non-goals) · [2 Threats](#2-who-we-defend-agains
 - Not internet presence. Away from the shared network, lights are grey. That is accepted.
 - No accounts, no tokens, no GitHub requests, no telemetry, no servers of ours.
 
-**Out of scope, but not made impossible.** Connecting across the internet or through VPN/overlay networks. "Connect to a known host and port" is a separate, replaceable step after discovery (section 13), so a later version can add a manually entered address.
+**Out of scope, but not made impossible.** Connecting across the internet or through VPN/overlay networks. "Connect to a known host and port" is a separate, replaceable step after discovery (section 14), so a later version can add a manually entered address.
 
 **Only paired devices recognise each other.** A stranger on the same Wi-Fi learns nothing useful (no device names, no app lists, no stable identifier) and cannot pretend to be one of the user's devices.
 
@@ -57,7 +57,7 @@ Contents: [1 Goal](#1-goal-and-non-goals) · [2 Threats](#2-who-we-defend-agains
 | Pairing confirmation wait (people compare digits) | 60 s |
 | Declined or failed pairing sessions | 3, then pairing mode ends |
 | Replay memory | 5 min |
-| Failed-handshake limit | more than 10 from one address in 60 s: ignore that address for 5 min |
+| Failed-handshake limit | more than 10 from one address in 60 s: blocked, see [section 12](#12-blocking-and-safety) |
 | Max paired devices | 16 |
 | Max simultaneous connections | 16 |
 
@@ -244,7 +244,7 @@ It replaces what it knew about that device with the new list (applying the limit
 - **Green** means: the handshake is complete and something (any record) has arrived within the last 5 seconds.
 - A device sends `ping` whenever it has sent nothing for 2 seconds (a `state` or `pong` counts as sending). The peer answers `pong`. So records flow both ways at least every ~2 s while healthy.
 - **Grey** when nothing arrives for 5 seconds, the socket closes or errors, or a `goodbye` arrives. The connection is closed and the redial rules apply. TCP keep-alive is also turned on as a backstop; it is not what the 5 seconds rely on.
-- **Redial.** While the other device's service is still visible in DNS-SD, the dialer retries with the backoff in section 3. When DNS-SD says the service is gone, it stops. On a network change, wake from sleep, or the feature being turned on, it browses again and dials at once.
+- **Redial.** (A device that is paused, or under a delay after misbehaving, is not dialled at all: [section 12](#12-blocking-and-safety).) While the other device's service is still visible in DNS-SD, the dialer retries with the backoff in section 3. When DNS-SD says the service is gone, it stops. On a network change, wake from sleep, or the feature being turned on, it browses again and dials at once.
 - **Duplicate links.** Both devices may dial each other at once. When a second connection for the same pair finishes its handshake, the device keeps the one **the Joiner dialled** and closes the other, without a `goodbye`.
 - **Handshake time.** A connection that has not finished the handshake and received the peer's `hello` after 5 seconds is closed.
 - **Backgrounded phones** (later) may use longer intervals; they would need a protocol change and are not designed here.
@@ -282,7 +282,57 @@ If the other device was not reachable, it finds out later: its dials are closed 
 
 ---
 
-## 12. Consent, network behaviour and wording
+## 12. Blocking and safety
+
+Two kinds of peer are handled differently. Nothing here is written to disk except the user's own "Pause" choices.
+
+### 12.1 Unknown peers (they do not authenticate)
+
+An unknown peer is anyone whose first message does not work with any paired secret. There is no identity to block, only an address, so blocks are **by address, temporary, and kept in memory only**.
+
+**Triggers** (any one):
+- more than 10 failed handshakes from one address within 60 s;
+- a malformed handshake message: wrong length, or a first message that is not a 65-byte point starting `04` followed by the tag (the point itself is only checked against the curve after the peer has authenticated, because no elliptic-curve work is done for strangers);
+- a connection that sends nothing for the handshake timeout (5 s);
+- more than 4 connections open at once from one address.
+
+**Effect.** Close at once and send nothing. Ignore that address for **5 minutes**. Each time the same address earns another block, the time doubles: 5, 10, 20, 40, then 60 minutes, which is the cap. An address that has not triggered anything for 24 hours starts again at 5 minutes. A block ends by waiting; there is no permanent block list.
+
+**Never blocked.** This device's own addresses and loopback.
+
+### 12.2 Paired peers that misbehave (they authenticated, then broke a rule)
+
+We cannot tell a bug from an attack, so the pairing is **never deleted automatically**.
+
+**Triggers** (any one):
+- a record with a bad authentication tag;
+- a record or message over the size limits (section 11);
+- a message that does not parse;
+- `state` messages faster than one per second for 10 seconds (more than 10 in any 10-second window);
+- an `Installed` list over the limit, more than once within 10 minutes.
+
+**Effect.** Close the link at once. Do not redial that device, and close without a reply anything it opens, for **10 minutes**; each repeat doubles that (10, 20, 40, then 60 minutes, the cap); a device that has been clean for 24 hours starts again at 10 minutes. Whatever it sent in the record that broke the rule is discarded. The last good state it sent may stay shown, greyed.
+
+The user sees, in plain words: *"<Name> sent data ReleaseSync could not trust, so the connection was closed."* with two buttons: **Remove this device** (section 10) and **Allow it again** (clears the delay and dials at once).
+
+**One difference from the list above.** A device whose `hello` shows a `Proto` this version does not support is not misbehaving: it is probably newer. It is closed and not redialled for the same delay, but the message is *"<Name> uses a newer version of ReleaseSync. Update this device to connect."* and no "could not trust" wording is used.
+
+### 12.3 What the user can do
+
+On the "Find my devices" screen, in plain words:
+- Per paired device: **Pause** (do not connect to it, and close anything it opens, until the user resumes; the pairing is kept) and **Remove** (section 10). Pause is the one choice that is saved, in ordinary app preferences.
+- A counter such as *"3 unknown connection attempts were blocked in the last hour"* (every connection that closed without authenticating counts, including those turned away because the address was blocked), with a **Show** link that lists the time and address of each. The list is held in memory only and is cleared when the app quits.
+- **Remove all paired devices.**
+- The master switch **Find my devices on this network**. Off closes every link and stops listening, announcing and browsing at once.
+
+### 12.4 Networks
+
+- Never listen, announce or browse on a network the platform marks as public or untrusted. On Windows that is the Public network category (the PC side implements this and shows *"This network is set to Public in Windows. Change it to Private to find your devices."*). The Mac has no such label, so the Mac does not invent one. Whenever nothing is happening because of this, say why instead of failing silently.
+- On a network change (a different network, wake from sleep, an interface going away), drop every link and every address block that belongs to the old network and start fresh. Pauses and delays for paired devices are kept, because they belong to the device, not the address.
+
+---
+
+## 13. Consent, network behaviour and wording
 
 **Off by default.** Setting: **Find my devices on this network**. Off means: no listener, no browser, no advertisement, no open port.
 
@@ -313,9 +363,9 @@ If the user declines the macOS prompt, the Mac shows "macOS is blocking local ne
 
 ---
 
-## 13. Fixtures and code structure
+## 14. Fixtures and code structure
 
-### 13.1 Structure
+### 14.1 Structure
 
 The shared logic lives in the platform-neutral cores (`ReleaseSync.Core` in C#, `ReleaseSyncKit` in Swift) with **no networking in them**. The core is "sans-IO": a link object takes bytes that arrived and the current time, and returns what to send and what happened.
 
@@ -335,7 +385,7 @@ A platform provides: listening, DNS-SD advertise/browse, sockets or `NWConnectio
 
 "Connect to a known host and port" is its own small step in each platform (`dial(host, port)`), kept separate from discovery.
 
-### 13.2 Fixtures (generated by the C# core, checked by the Swift package, like the sync fixtures)
+### 14.2 Fixtures (generated by the C# core, checked by the Swift package, like the sync fixtures)
 
 `ReleaseSync.Core.Tests/Fixtures/lan/`:
 
@@ -347,12 +397,13 @@ A platform provides: listening, DNS-SD advertise/browse, sockets or `NWConnectio
 | `records.json` | Record framing and nonce counters, size limits, a bad tag, a skipped or repeated counter. |
 | `liveness.json` | Scenarios for the sans-IO link with a fake clock: ping after 2 s of silence, grey at 5 s, goodbye, duplicate links, backoff times. |
 | `limits.json` | The limits in section 11, applied to `state` messages. |
+| `blocking.json` | Scenarios on a fake clock for every trigger in section 12: the link closes and sends nothing, the stated delay applies, repeats double (5, 10, 20, 40, 60, 60 minutes for unknown addresses; 10, 20, 40, 60 for paired devices), and a block ends by waiting. Also: a paused device is never dialled and anything it opens is closed; this device's own addresses and loopback are never blocked; a `Proto` this version does not support gets the "newer version" outcome, not the "could not trust" one; a network change clears address blocks but not device delays or pauses. |
 
 The usual rules apply: nothing from a real machine, no real names, paths, keys or secrets. All keys and secrets in fixtures are fixed, made-up values.
 
 ---
 
-## 14. Open questions
+## 15. Open questions
 
 **Settled (PC review, and the Mac side's answers).**
 
@@ -365,7 +416,7 @@ The usual rules apply: nothing from a real machine, no real names, paths, keys o
 5. **A short authentication string rather than a PAKE: agreed only with two-sided confirmation**, which section 5 now has.
 6. **Names shown in the pairing service for at most 120 s: agreed.**
 7. **No padding of records in version 1: agreed.**
-8. **Windows firewall behaviour:** settled in section 12.
+8. **Windows firewall behaviour:** settled in section 13.
 
 **Still open.**
 
