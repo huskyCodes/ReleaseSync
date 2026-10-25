@@ -1,11 +1,23 @@
 import ReleaseSyncKit
 import SwiftUI
 
-/// The panel that slides in from the right with an app's details (the Windows `DetailDrawer`). Everything here is read-only for now.
+/// The panel that slides in from the right with an app's details (the Windows `DetailDrawer`). Organizing (favorite, hidden, group, notes, removing)
+/// can be changed here once the person has let this Mac change their library; the rest is read-only for now.
 struct DetailDrawer: View {
     @Environment(LibraryModel.self) private var model
-    let app: SyncApp
+    @Environment(Toasts.self) private var toasts
+    let opened: SyncApp
     let close: () -> Void
+    @State private var noteText = ""
+    @State private var noteLoadedFor = ""
+    @State private var newGroup = ""
+    @State private var askNewGroup = false
+    @State private var askRemove = false
+
+    init(app: SyncApp, close: @escaping () -> Void) { self.opened = app; self.close = close }
+
+    /// The app as it is now (the panel keeps showing it after a change is saved).
+    private var app: SyncApp { model.apps.first { $0.key == opened.key } ?? opened }
 
     var body: some View {
         let facts = ReleaseFacts(app, model.releases[app.key])
@@ -26,20 +38,9 @@ struct DetailDrawer: View {
                     if facts.hasRelease { notes(facts) }
                     if let releases = facts.info?.releases, !releases.isEmpty { versions(releases, latest: facts.latestTag) }
                     if facts.hasRelease { download(facts) }
-                    if !isBlankText(app.note) { label("YOUR NOTES"); notesCard }
+                    if model.canEdit { notesEditor } else if !isBlankText(app.note) { label("YOUR NOTES"); notesCard }
                     label("ORGANIZE")
-                    card {
-                        row("Group", isBlankText(app.group) ? "Automatic" : app.group!)
-                        row("Favorite", app.pinned ? "Yes" : "No")
-                        row("Hidden", app.hidden ? "Yes" : "No", last: app.tagList.isEmpty)
-                        if !app.tagList.isEmpty {
-                            HStack(alignment: .top) {
-                                Text("Tags").font(.dim).foregroundStyle(Theme.dim)
-                                Spacer(minLength: 12)
-                                ChipFlow { ForEach(app.tagList, id: \.self) { Pill(text: $0) } }.frame(maxWidth: 240, alignment: .trailing)
-                            }.padding(.vertical, 9)
-                        }
-                    }
+                    if model.canEdit { organizeEditable } else { organizeReadOnly }
                     label("OPTIONS")
                     card {
                         row("Install", app.mode.friendlyName)
@@ -51,13 +52,96 @@ struct DetailDrawer: View {
                         if let a = app.customArgs, !a.isEmpty { row("Installer arguments", a) }
                         row("Unsigned apps", app.trustUnsigned ? "Trusted" : "Not trusted", last: true)
                     }
-                    Text("To change any of this, use ReleaseSync on your other device for now. The Mac app only reads your library.")
+                    Text(model.canEdit ? "Favorite, hidden, group and notes are saved to your library. For the other options, use ReleaseSync on your other device for now."
+                                       : "To change any of this, use ReleaseSync on your other device for now. The Mac app only reads your library (you can allow changes in Settings).")
                         .font(.faint).foregroundStyle(Theme.faint).fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 24).padding(.bottom, 28)
             }
         }
     }
+
+    // MARK: changing the library
+
+    private func change(_ what: @escaping (inout SyncDoc, Timestamp) -> Bool) {
+        Task { if let problem = await model.edit(what) { toasts.show(problem, .error) } }
+    }
+
+    private var organizeReadOnly: some View {
+        card {
+            row("Group", isBlankText(app.group) ? "Automatic" : app.group!)
+            row("Favorite", app.pinned ? "Yes" : "No")
+            row("Hidden", app.hidden ? "Yes" : "No", last: app.tagList.isEmpty)
+            tags
+        }
+    }
+
+    @ViewBuilder private var tags: some View {
+        if !app.tagList.isEmpty {
+            HStack(alignment: .top) {
+                Text("Tags").font(.dim).foregroundStyle(Theme.dim)
+                Spacer(minLength: 12)
+                ChipFlow { ForEach(app.tagList, id: \.self) { Pill(text: $0) } }.frame(maxWidth: 240, alignment: .trailing)
+            }.padding(.vertical, 9)
+        }
+    }
+
+    private var organizeEditable: some View {
+        let key = app.key
+        return VStack(alignment: .leading, spacing: 0) {
+            card {
+                HStack {
+                    Text("Group").font(.dim).foregroundStyle(Theme.dim)
+                    Spacer(minLength: 12)
+                    Menu {
+                        Button("Automatic") { change { LibraryEdits.setGroup(key, nil, in: &$0, now: $1) } }
+                        Divider()
+                        ForEach(model.customGroups, id: \.self) { g in Button(g) { change { LibraryEdits.setGroup(key, g, in: &$0, now: $1) } } }
+                        Divider()
+                        Button("New group…") { newGroup = ""; askNewGroup = true }
+                    } label: { Text(isBlankText(app.group) ? "Automatic" : app.group!).font(.system(size: 13, weight: .semibold)) }
+                    .menuStyle(.button).buttonStyle(.plain).fixedSize()
+                }.padding(.vertical, 9)
+                Divider().overlay(Theme.line.opacity(0.6))
+                Toggle("Favorite", isOn: Binding(get: { app.pinned }, set: { on in change { LibraryEdits.setFavorite(key, on, in: &$0, now: $1) } }))
+                    .toggleStyle(.switch).font(.dim).padding(.vertical, 9)
+                Divider().overlay(Theme.line.opacity(0.6))
+                Toggle("Hidden", isOn: Binding(get: { app.hidden }, set: { on in change { LibraryEdits.setHidden(key, on, in: &$0, now: $1) } }))
+                    .toggleStyle(.switch).font(.dim).padding(.vertical, 9)
+                tags
+            }
+            Button(role: .destructive) { askRemove = true } label: { Label("Remove from my library", systemImage: "trash") }
+                .buttonStyle(OutlineButtonStyle()).padding(.bottom, 22)
+        }
+        .alert("New group", isPresented: $askNewGroup) {
+            TextField("Group name", text: $newGroup)
+            Button("Create") { let name = newGroup; change { LibraryEdits.setGroup(key, name, in: &$0, now: $1) } }
+            Button("Cancel", role: .cancel) {}
+        }
+        .confirmationDialog("Remove \(app.title) from your library?", isPresented: $askRemove, titleVisibility: .visible) {
+            Button("Remove", role: .destructive) { change { LibraryEdits.removeApp(key, in: &$0, now: $1) } }
+            Button("Cancel", role: .cancel) {}
+        } message: { Text("It is removed on all your devices. You can add it again later.") }
+    }
+
+    private var notesEditor: some View {
+        let key = app.key
+        return VStack(alignment: .leading, spacing: 0) {
+            label("YOUR NOTES")
+            TextEditor(text: $noteText).font(.system(size: 12.5)).scrollContentBackground(.hidden).frame(minHeight: 70, maxHeight: 140)
+                .padding(10).background(Theme.input, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
+            HStack {
+                Spacer()
+                Button("Save note") { let text = noteText; change { LibraryEdits.setNote(key, text, in: &$0, now: $1) } }
+                    .buttonStyle(OutlineButtonStyle(height: 30)).disabled(noteText.trimmingCharacters(in: .whitespacesAndNewlines) == (app.note ?? ""))
+            }.padding(.top, 8).padding(.bottom, 22)
+        }
+        .onAppear { loadNote() }
+        .onChange(of: opened.key) { _, _ in loadNote() }
+    }
+
+    private func loadNote() { noteText = app.note ?? ""; noteLoadedFor = app.key }
 
     // MARK: pieces
 

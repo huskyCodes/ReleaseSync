@@ -33,6 +33,9 @@ final class ViewPrefs {
     var discoverMacOnly = true { didSet { save("DiscoverMacOnly", discoverMacOnly) } }
     /// Light mode asks GitHub for about a third as much.
     var discoverLight = false { didSet { save("DiscoverLight", discoverLight) } }
+    /// Whether this Mac may change the library in the sync file. Off until the person turns it on: older versions of ReleaseSync on other
+    /// devices stop syncing once a device writes the newer file format.
+    var allowLibraryChanges = false { didSet { save("AllowLibraryChanges", allowLibraryChanges) } }
     var discoverIntroSeen = false { didSet { save("DiscoverIntroSeen", discoverIntroSeen) } }
 
     init(defaults: UserDefaults = .standard) {
@@ -51,6 +54,7 @@ final class ViewPrefs {
         discoverMacOnly = defaults.object(forKey: "DiscoverMacOnly") as? Bool ?? true
         discoverLight = defaults.object(forKey: "DiscoverLight") as? Bool ?? false
         discoverIntroSeen = defaults.object(forKey: "DiscoverIntroSeen") as? Bool ?? false
+        allowLibraryChanges = defaults.object(forKey: "AllowLibraryChanges") as? Bool ?? false
         loading = false
     }
 

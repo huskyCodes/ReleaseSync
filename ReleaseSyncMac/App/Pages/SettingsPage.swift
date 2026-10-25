@@ -6,6 +6,7 @@ struct SettingsPage: View {
     @Environment(LibraryModel.self) private var model
     @Environment(ViewPrefs.self) private var prefs
     @Environment(Toasts.self) private var toasts
+    @State private var confirmChanges = false
 
     var body: some View {
         ScrollView {
@@ -35,6 +36,7 @@ struct SettingsPage: View {
                         }
                     }
                     devices
+                    changesSwitch
                 }
 
                 SettingsCard {
@@ -67,6 +69,24 @@ struct SettingsPage: View {
 
     private static var version: String { (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "" }
 
+    /// Off by default. Turning it on is the moment this Mac starts writing to the sync file, so it asks first.
+    @ViewBuilder private var changesSwitch: some View {
+        Divider().overlay(Theme.line.opacity(0.6))
+        Toggle(isOn: Binding(get: { prefs.allowLibraryChanges }, set: { on in if on { confirmChanges = true } else { prefs.allowLibraryChanges = false } })) {
+            Text("Let this Mac change my library").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
+        }
+        .toggleStyle(.switch)
+        Text(prefs.allowLibraryChanges ? "On: favorites, groups, notes and removals you make here are saved to your library, and this Mac is listed as a device."
+                                       : "Off: this Mac only reads your library. Turn it on once ReleaseSync on your other devices has been updated.")
+            .font(.faint).foregroundStyle(Theme.faint).fixedSize(horizontal: false, vertical: true)
+        .alert("Let this Mac change your library?", isPresented: $confirmChanges) {
+            Button("Turn on") { prefs.allowLibraryChanges = true; Task { await model.refresh() } }
+            Button("Not now", role: .cancel) {}
+        } message: {
+            Text("This Mac will save your changes to your private Gist and show up in your list of devices. The file moves to a newer format, so any other device running an older ReleaseSync stops syncing until it is updated. Update those first.")
+        }
+    }
+
     @ViewBuilder private var devices: some View {
         if model.phase == .loaded, !model.devices.isEmpty {
             VStack(spacing: 0) {
@@ -93,7 +113,7 @@ struct SettingsPage: View {
             .padding(.horizontal, 14)
             .background(Theme.input, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
-            Text("A green light means the device said recently that ReleaseSync is open there. This Mac isn't in the list yet: for now it only reads your library and never changes it.").font(.faint).foregroundStyle(Theme.faint)
+            Text("A green light means the device said recently that ReleaseSync is open there." + (prefs.allowLibraryChanges ? "" : " This Mac isn't in the list yet: it only reads your library and never changes it.")).font(.faint).foregroundStyle(Theme.faint)
         }
     }
 }

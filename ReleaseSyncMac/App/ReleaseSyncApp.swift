@@ -35,6 +35,8 @@ struct ReleaseSyncApp: App {
         if CommandLine.arguments.contains("--drawer") { nav.drawerApp = model.apps.first }
         if let i = CommandLine.arguments.firstIndex(of: "--page"), i + 1 < CommandLine.arguments.count, let page = Page(rawValue: CommandLine.arguments[i + 1]) { nav = Navigator(page: page) }
         #endif
+        model.thisDevice = DeviceIdentity.make()
+        model.editingAllowed = { [prefs] in prefs.allowLibraryChanges }
         _prefs = State(initialValue: prefs)
         _discover = State(initialValue: discover)
         _model = State(initialValue: model)

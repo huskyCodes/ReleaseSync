@@ -2,7 +2,8 @@ import Foundation
 import Observation
 import ReleaseSyncKit
 
-/// What the app knows about the person's synced library, and how it got it. This version only reads: it never changes the sync file.
+/// What the app knows about the person's synced library, and how it got it. It only changes the sync file when the person has switched
+/// "Let this Mac change my library" on in Settings (off by default), and then only through `edit` and `syncThisDevice`.
 @MainActor
 @Observable
 final class LibraryModel {
@@ -18,6 +19,13 @@ final class LibraryModel {
         /// macOS wouldn't let this app use what it saved in the Keychain (the question was declined, or this build isn't trusted for the item).
         case keychainBlocked(String)
     }
+
+    /// Whether this Mac may change the library. The person decides, in Settings; it is off until they turn it on.
+    var editingAllowed: () -> Bool = { false }
+    /// How this Mac is listed among the person's devices.
+    var thisDevice = SyncDevice()
+    /// A change is being saved; further changes wait until it is done.
+    private(set) var isSaving = false
 
     private(set) var phase: Phase = .needsToken
     private(set) var doc: SyncDoc?
@@ -88,9 +96,12 @@ final class LibraryModel {
 
     var isBusy: Bool { phase == .loading }
 
+    /// Edits are possible: switched on, a library is showing, and nothing is being saved right now.
+    var canEdit: Bool { !isDemo && phase == .loaded && !isSaving && editingAllowed() }
+
     /// Fetches the library from the person's private Gist. If called again while a fetch is running, the newest call wins.
     func refresh() async {
-        guard !isDemo else { return }
+        guard !isDemo, !isSaving else { return }
         generation += 1
         let mine = generation
         do {
@@ -114,6 +125,7 @@ final class LibraryModel {
             case .success(let result):
                 lastFetched = Date()
                 if let fetched = result.doc { doc = fetched; phase = .loaded } else { doc = nil; phase = .noLibrary }
+                if let message = await registerThisDeviceIfNeeded() { phase = .loaded; saveProblem = message }
             case .failure(let error as SyncError) where error.kind == .passphrase:
                 doc = nil
                 phase = .needsPassphrase(wrong: !(passphrase ?? "").isEmpty)
@@ -126,6 +138,64 @@ final class LibraryModel {
             doc = nil
             if let keychain = error as? KeychainError, keychain.isAccessDenied { phase = .keychainBlocked(keychain.localizedDescription) }
             else { phase = .failed(error.localizedDescription) }
+        }
+    }
+
+    // MARK: changing the library
+
+    /// Why the last save didn't work (nil when it did), in plain words.
+    private(set) var saveProblem: String?
+
+    /// Applies a change to the library and saves it. The change shows at once; if saving fails the library goes back to how it was.
+    /// Returns a plain-words problem, or nil. `change` returns whether it did anything (nothing is saved when it didn't).
+    @discardableResult
+    func edit(_ change: (inout SyncDoc, Timestamp) -> Bool) async -> String? {
+        guard canEdit, let before = doc else { return "Changes on this Mac are switched off in Settings." }
+        var after = before
+        guard change(&after, .now()) else { return nil }
+        doc = after
+        return await save(after, revertingTo: before)
+    }
+
+    /// Lists this Mac among the person's devices (and keeps its "last seen" fresh) when that is due. A round that has nothing to write writes nothing.
+    private func registerThisDeviceIfNeeded() async -> String? {
+        guard canEdit, let current = doc else { return nil }
+        let now = Timestamp.now()
+        if let me = current.devices[thisDevice.id], me.online == true, now.ticks - me.lastSeen.ticks <= SyncService.heartbeat, me.name == thisDevice.name, me.appVersion == thisDevice.appVersion { return nil }
+        return await save(current, revertingTo: nil)
+    }
+
+    private func save(_ local: SyncDoc, revertingTo before: SyncDoc?) async -> String? {
+        isSaving = true
+        defer { isSaving = false }
+        generation += 1
+        do {
+            guard let token = try await secret(SecretTarget.gitHubToken), !token.isEmpty else { throw SyncError(.general, "Add your GitHub token in Settings first.") }
+            var passphrase = cache[SecretTarget.syncPassphrase] ?? nil
+            var me = thisDevice
+            me.online = true
+            func round(_ pass: String?) async -> Result<SyncResult, Error> {
+                do { return .success(try await SyncService.run(transport: makeTransport(token), local: local, passphrase: pass, device: me, now: .now())) }
+                catch { return .failure(error) }
+            }
+            var outcome = await round(passphrase)
+            if case .failure(let error as SyncError) = outcome, error.kind == .passphrase, cache[SecretTarget.syncPassphrase] == nil {
+                passphrase = try await secret(SecretTarget.syncPassphrase)
+                if let p = passphrase, !p.isEmpty { outcome = await round(p) }
+            }
+            switch outcome {
+            case .success(let result):
+                doc = result.doc; lastFetched = Date(); saveProblem = nil
+                return nil
+            case .failure(let error):
+                if let before { doc = before }
+                saveProblem = error.localizedDescription
+                return saveProblem
+            }
+        } catch {
+            if let before { doc = before }
+            saveProblem = error.localizedDescription
+            return saveProblem
         }
     }
 
