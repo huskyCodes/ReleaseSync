@@ -168,6 +168,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         try { VM?.SaveAll(); } catch { }
+        try { VM?.SyncOnExit(); } catch { }
         try { mutex?.ReleaseMutex(); } catch { }
         base.OnExit(e);
     }

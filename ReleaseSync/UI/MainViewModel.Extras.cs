@@ -418,7 +418,7 @@ public sealed partial class MainViewModel
     }
 
     // ===================== library sync (a shared folder or a private GitHub Gist) =====================
-    bool syncApplying, syncBusy, syncAgain, syncQuiet;
+    bool syncApplying, syncBusy, syncAgain, syncQuiet, syncedThisSession;
     readonly DispatcherTimer syncTimer = new() { Interval = TimeSpan.FromSeconds(2.5) };
     readonly DispatcherTimer syncPollTimer = new() { Interval = TimeSpan.FromMinutes(15) };
     FileSystemWatcher? syncWatcher;
@@ -462,7 +462,7 @@ public sealed partial class MainViewModel
         });
         ClearSyncFolderCommand = new RelayCommand(() => Settings.SyncFolder = null);
         syncTimer.Tick += (_, _) => { syncTimer.Stop(); SyncNow(); };
-        syncPollTimer.Tick += (_, _) => { if (SyncReady && Settings.SyncUsesGist) SyncNow(); };
+        syncPollTimer.Tick += (_, _) => { if (SyncReady) SyncNow(); };      // also keeps this device's "online" light fresh
         Settings.PropertyChanged += (_, e) => { if (e.PropertyName is nameof(AppSettings.GitHubToken) or nameof(AppSettings.HasToken)) { Raise(nameof(SyncReady)); Raise(nameof(SyncNeedsToken)); } };
         ConfigureSync();
     }
@@ -479,7 +479,8 @@ public sealed partial class MainViewModel
         syncWatcher?.Dispose(); syncWatcher = null; syncPollTimer.Stop();
         Raise(nameof(SyncReady)); Raise(nameof(SyncNeedsToken));
         if (!SyncReady) { SyncStatus = SyncNeedsToken ? "Add your GitHub token in Settings to sync through a private Gist." : ""; return; }
-        if (Settings.SyncUsesGist) { syncPollTimer.Start(); return; }
+        syncPollTimer.Start();
+        if (Settings.SyncUsesGist) return;
         var file = SyncFile;
         if (file == null) { SyncStatus = ""; return; }
         try
@@ -511,9 +512,9 @@ public sealed partial class MainViewModel
             ISyncTransport transport;
             if (Settings.SyncUsesGist) { http = GistTransport.CreateClient(Settings.GitHubToken); transport = new GistTransport(http, Settings.GistId); }
             else { transport = new FolderTransport(SyncFile!); lastSyncWrite = DateTime.UtcNow; }
-            var self = new SyncDevice { Id = Settings.DeviceId, Name = Settings.DeviceName, Platform = "Windows", AppVersion = AppVersion };
+            var self = BuildSelf(online: true);
             var result = await SyncService.RunAsync(transport, sent, Settings.HasSyncPassphrase ? Settings.SyncPassphrase : null, self, DateTime.UtcNow);
-            lastSyncWrite = DateTime.UtcNow;
+            lastSyncWrite = DateTime.UtcNow; syncedThisSession = true;
             if (transport is GistTransport g && g.GistId != Settings.GistId) { syncQuiet = true; try { Settings.GistId = g.GistId; } finally { syncQuiet = false; } ScheduleSaveSettings(); }
 
             int before = Apps.Count;
@@ -533,13 +534,57 @@ public sealed partial class MainViewModel
         }
     }
 
+    /// <summary>This device as the others see it: its name, whether ReleaseSync is open, and which tracked apps are installed here (key, version, when, newest known version). No paths or file names.</summary>
+    SyncDevice BuildSelf(bool online) => new()
+    {
+        Id = Settings.DeviceId, Name = Settings.DeviceName, Platform = "Windows", AppVersion = AppVersion, Online = online,
+        Installed = Apps.Where(a => a.IsInstalled)
+            .Select(a => new SyncInstall { Key = a.Key, Version = a.InstalledVersion!, InstalledAt = a.InstalledAt?.ToUniversalTime(), Latest = string.IsNullOrEmpty(a.LatestVersion) ? null : a.LatestVersion })
+            .OrderBy(i => i.Key, StringComparer.Ordinal).Take(SyncPresence.MaxInstalled).ToList(),
+    };
+
+    /// <summary>
+    /// As ReleaseSync quits, says "closed" in the sync file so the other devices' light for this one turns grey right away. Waits at most about 3 seconds
+    /// and ignores any failure, so quitting is never held up. Does nothing if sync never worked in this session.
+    /// </summary>
+    public void SyncOnExit()
+    {
+        if (!syncedThisSession || !SyncReady) return;
+        System.Net.Http.HttpClient? http = null;
+        try
+        {
+            var sent = BuildLocalDoc(); var self = BuildSelf(online: false);
+            var pass = Settings.HasSyncPassphrase ? Settings.SyncPassphrase : null;
+            ISyncTransport transport = Settings.SyncUsesGist
+                ? new GistTransport(http = GistTransport.CreateClient(Settings.GitHubToken), Settings.GistId)
+                : new FolderTransport(SyncFile!);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            Task.Run(() => SyncService.RunAsync(transport, sent, pass, self, DateTime.UtcNow, cts.Token)).Wait(TimeSpan.FromSeconds(3.5));
+        }
+        catch { }
+        finally { http?.Dispose(); }
+    }
+
     void ShowSyncDevices(SyncDoc doc)
     {
+        var now = DateTime.UtcNow;
         SyncDevices.Clear();
-        foreach (var d in doc.Devices.Values.OrderByDescending(d => d.Id == Settings.DeviceId).ThenByDescending(d => d.LastSeen))
+        foreach (var d in doc.Devices.Values.OrderByDescending(d => d.Id == Settings.DeviceId).ThenByDescending(d => SyncPresence.IsOnline(d, now)).ThenByDescending(d => d.LastSeen))
         {
             bool me = d.Id == Settings.DeviceId;
-            SyncDevices.Add(new SyncDeviceRow { Name = me ? d.Name + " (this device)" : d.Name, Detail = $"{d.Platform}  ·  ReleaseSync {d.AppVersion}  ·  " + (me ? "just now" : "last seen " + Fmt.Ago(d.LastSeen)) });
+            string? inventory = null;
+            if (d.Installed != null)
+            {
+                var inv = SyncPresence.Inventory(d);
+                int updates = inv.Count(SyncPresence.HasUpdate);
+                inventory = $"{inv.Count} app{(inv.Count == 1 ? "" : "s")} installed, {updates} update{(updates == 1 ? "" : "s")} waiting";
+            }
+            SyncDevices.Add(new SyncDeviceRow
+            {
+                Name = me ? d.Name + " (this device)" : d.Name,
+                Detail = $"{d.Platform}  ·  ReleaseSync {d.AppVersion}  ·  " + (me ? "just now" : SyncPresence.IsOnline(d, now) ? "online now" : "last seen " + Fmt.Ago(d.LastSeen)),
+                Inventory = inventory ?? "", IsOnline = me || SyncPresence.IsOnline(d, now),
+            });
         }
         Raise(nameof(HasSyncDevices));
     }
@@ -755,4 +800,9 @@ public sealed class SyncDeviceRow
 {
     public string Name { get; init; } = "";
     public string Detail { get; init; } = "";
+    /// <summary>"3 apps installed, 1 update waiting", or empty when that device doesn't report what it has.</summary>
+    public string Inventory { get; init; } = "";
+    public bool HasInventory => Inventory.Length > 0;
+    /// <summary>The green light: ReleaseSync is open there right now.</summary>
+    public bool IsOnline { get; init; }
 }
