@@ -17,7 +17,7 @@ final class LibraryEditingTests: XCTestCase {
 
     func library() -> SyncDoc {
         var d = LibraryModelTests.library()
-        d.devices[mac.id] = SyncDevice(id: mac.id, name: mac.name, platform: "Mac", appVersion: "0.1", lastSeen: Timestamp.now(), online: true)     // already listed and fresh
+        d.devices[mac.id] = SyncDevice(id: mac.id, name: mac.name, platform: "Mac", appVersion: "0.1", lastSeen: Timestamp.now())     // already listed and fresh
         return d
     }
 
@@ -41,7 +41,7 @@ final class LibraryEditingTests: XCTestCase {
         XCTAssertEqual(writes, 0)
     }
 
-    func testAnEditIsSavedAndShownAndThisMacIsListedOnline() async throws {
+    func testAnEditIsSavedAndShownAndThisMacIsListedAsADevice() async throws {
         var start = library(); start.devices[mac.id] = nil
         let t = MemoryTransport(text: start.text())
         let m = try model(t, allowed: true)
@@ -54,7 +54,6 @@ final class LibraryEditingTests: XCTestCase {
         let text = await t.text
         let saved = try SyncDoc(text: try XCTUnwrap(text))
         XCTAssertTrue(saved.apps[0].pinned)
-        XCTAssertEqual(saved.devices[mac.id]?.online, true)
         XCTAssertEqual(saved.devices[mac.id]?.platform, "Mac")
         XCTAssertEqual(saved.devices["d1"]?.name, "Example PC", "the other devices are kept")
         XCTAssertFalse(m.isSaving)

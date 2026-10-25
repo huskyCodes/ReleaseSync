@@ -24,6 +24,9 @@ final class LibraryModel {
     var editingAllowed: () -> Bool = { false }
     /// How this Mac is listed among the person's devices.
     var thisDevice = SyncDevice()
+    /// What the local-network link says about the other devices, by their id in the sync file (docs/LAN-PRESENCE.md). Held in memory only;
+    /// nothing fills it until the link exists, so lights are grey and no per-device lists are shown. Nothing here comes from the sync file.
+    var peers: [String: PeerState] = [:]
     /// A change is being saved; further changes wait until it is done.
     private(set) var isSaving = false
 
@@ -63,7 +66,8 @@ final class LibraryModel {
     }
 
     /// A library to show without any account (made-up data).
-    init(showing doc: SyncDoc, releases: [String: AppRelease] = [:], secrets: SecretStore, meter: RateMeter? = nil) {
+    init(showing doc: SyncDoc, releases: [String: AppRelease] = [:], peers: [String: PeerState] = [:], secrets: SecretStore, meter: RateMeter? = nil) {
+        self.peers = peers
         self.meter = meter ?? RateMeter(RateStatus(limit: 5000, remaining: 4962))
         self.secrets = secrets
         self.makeTransport = { _ in MemoryTransport() }
@@ -161,7 +165,7 @@ final class LibraryModel {
     private func registerThisDeviceIfNeeded() async -> String? {
         guard canEdit, let current = doc else { return nil }
         let now = Timestamp.now()
-        if let me = current.devices[thisDevice.id], me.online == true, now.ticks - me.lastSeen.ticks <= SyncService.heartbeat, me.name == thisDevice.name, me.appVersion == thisDevice.appVersion { return nil }
+        if let me = current.devices[thisDevice.id], now.ticks - me.lastSeen.ticks <= SyncService.heartbeat, me.name == thisDevice.name, me.appVersion == thisDevice.appVersion { return nil }
         return await save(current, revertingTo: nil)
     }
 
@@ -172,8 +176,7 @@ final class LibraryModel {
         do {
             guard let token = try await secret(SecretTarget.gitHubToken), !token.isEmpty else { throw SyncError(.general, "Add your GitHub token in Settings first.") }
             var passphrase = cache[SecretTarget.syncPassphrase] ?? nil
-            var me = thisDevice
-            me.online = true
+            let me = thisDevice
             func round(_ pass: String?) async -> Result<SyncResult, Error> {
                 do { return .success(try await SyncService.run(transport: makeTransport(token), local: local, passphrase: pass, device: me, now: .now())) }
                 catch { return .failure(error) }

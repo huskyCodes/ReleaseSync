@@ -13,15 +13,15 @@ struct LibraryPage: View {
     @State private var folded = Set<String>()
 
     /// Devices that report what they have installed. A device that has since left the file can no longer be chosen.
-    private var reporting: [SyncDevice] { DeviceInventory.reporting(model.devices) }
+    private var reporting: [SyncDevice] { DeviceInventory.reporting(model.devices, peers: model.peers) }
     private var chosenDevice: String? { reporting.contains { $0.id == deviceFilter } ? deviceFilter : nil }
 
     private var result: LibraryLayout.Result {
         let devices = reporting
         return LibraryLayout.layout(apps: model.apps, customGroups: model.customGroups, releases: model.releases, status: status, groupFilter: groupFilter, query: query,
                                     sort: prefs.sort, groupItems: prefs.groupItems, autoGroups: prefs.autoGroups,
-                                    installedOnDevice: chosenDevice == nil ? nil : DeviceInventory.keys(on: devices, only: chosenDevice),
-                                    updatesWaiting: DeviceInventory.updatesWaiting(on: devices, only: chosenDevice))
+                                    installedOnDevice: chosenDevice == nil ? nil : DeviceInventory.keys(on: devices, peers: model.peers, only: chosenDevice),
+                                    updatesWaiting: DeviceInventory.updatesWaiting(on: devices, peers: model.peers, only: chosenDevice))
     }
 
     var body: some View {
@@ -75,9 +75,8 @@ struct LibraryPage: View {
                     Text("On").font(.label).foregroundStyle(Theme.faint)
                     ChipStrip {
                         Chip(title: "Any device", selected: chosenDevice == nil) { deviceFilter = nil }
-                        let now = Timestamp.now()
                         ForEach(reporting, id: \.id) { d in
-                            Chip(title: d.name.isEmpty ? "Unnamed device" : d.name, light: d.isOnline(at: now), selected: chosenDevice == d.id) { deviceFilter = (chosenDevice == d.id ? nil : d.id) }
+                            Chip(title: d.name.isEmpty ? "Unnamed device" : d.name, light: DeviceInventory.isOnline(d, peers: model.peers), selected: chosenDevice == d.id) { deviceFilter = (chosenDevice == d.id ? nil : d.id) }
                         }
                     }
                 }

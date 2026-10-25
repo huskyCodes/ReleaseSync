@@ -7,7 +7,6 @@ enum DemoLibrary {
     static func make() -> SyncDoc {
         let now = Timestamp.now()
         func ago(hours: Int64) -> Timestamp { now - Timestamp.hours(hours) }
-        func ago(minutes: Int64) -> Timestamp { now - minutes * 60 * Timestamp.ticksPerSecond }
 
         func app(_ owner: String, _ repo: String, name: String? = nil, group: String? = nil, pinned: Bool = false, hidden: Bool = false,
                  tags: String? = nil, note: String? = nil, source: String = "github", days: Int64 = 30, edit: ((inout SyncApp) -> Void)? = nil) -> SyncApp {
@@ -51,20 +50,30 @@ enum DemoLibrary {
             later("fake-labs", "text-lens", "Copy text out of any picture on your screen.", stars: 56_300, language: "Python", topics: ["ocr", "utility"], hours: 24 * 12, source: "codeberg"),
         ]
         doc.devices = [
-            "demo-pc": SyncDevice(id: "demo-pc", name: "Demo PC", platform: "Windows", appVersion: "1.9.1", lastSeen: ago(minutes: 20), online: true, installed: [
-                SyncInstall(key: "github:example-org/pixel-player", version: "2.3.0", installedAt: ago(hours: 24 * 20), latest: "2.4.1"),
-                SyncInstall(key: "github:example-org/quick-notes", version: "1.8.2", latest: "1.8.2"),
-                SyncInstall(key: "github:sample-dev/retro-launcher", version: "0.9.0", latest: "0.10.0"),
-                SyncInstall(key: "github:fake-labs/disk-peek", version: "3.1.0", latest: "3.1.0"),
-            ]),
-            "demo-handheld": SyncDevice(id: "demo-handheld", name: "Demo Handheld", platform: "Android", appVersion: "0.3", lastSeen: ago(hours: 40), online: true, installed: [
-                SyncInstall(key: "github:example-org/quick-notes", version: "1.7.0", latest: "1.8.2"),
-            ]),
-            "demo-laptop": SyncDevice(id: "demo-laptop", name: "Demo Laptop", platform: "Windows", appVersion: "1.9.0", lastSeen: ago(hours: 24 * 9), online: false, installed: [
-                SyncInstall(key: "github:example-org/pixel-player", version: "2.4.1", latest: "2.4.1"),
-            ]),
+            "demo-pc": SyncDevice(id: "demo-pc", name: "Demo PC", platform: "Windows", appVersion: "1.9.1", lastSeen: ago(hours: 2)),
+            "demo-handheld": SyncDevice(id: "demo-handheld", name: "Demo Handheld", platform: "Android", appVersion: "0.3", lastSeen: ago(hours: 40)),
+            "demo-laptop": SyncDevice(id: "demo-laptop", name: "Demo Laptop", platform: "Windows", appVersion: "1.9.0", lastSeen: ago(hours: 24 * 9)),
         ]
         return doc
+    }
+
+    /// What the local-network link would say about the made-up devices (made-up, in memory): one on this network, two not.
+    static func peers() -> [String: PeerState] {
+        let now = Timestamp.now()
+        return [
+            "demo-pc": PeerState(online: true, installed: [
+                PeerInstall(key: "github:example-org/pixel-player", version: "2.3.0", installedAt: now - Timestamp.days(20), latest: "2.4.1"),
+                PeerInstall(key: "github:example-org/quick-notes", version: "1.8.2", latest: "1.8.2"),
+                PeerInstall(key: "github:sample-dev/retro-launcher", version: "0.9.0", latest: "0.10.0"),
+                PeerInstall(key: "github:fake-labs/disk-peek", version: "3.1.0", latest: "3.1.0"),
+            ], asOf: now),
+            "demo-handheld": PeerState(online: false, installed: [
+                PeerInstall(key: "github:example-org/quick-notes", version: "1.7.0", latest: "1.8.2"),
+            ], asOf: now - Timestamp.hours(40)),
+            "demo-laptop": PeerState(online: false, installed: [
+                PeerInstall(key: "github:example-org/pixel-player", version: "2.4.1", latest: "2.4.1"),
+            ], asOf: now - Timestamp.days(9)),
+        ]
     }
 
     /// Made-up release information for the made-up apps: some with Mac downloads, some Windows-only, one never checked, a couple with problems.

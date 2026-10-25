@@ -77,28 +77,27 @@ struct SettingsPage: View {
         }
         .toggleStyle(.switch)
         Text(prefs.allowLibraryChanges ? "On: favorites, groups, notes and removals you make here are saved to your library, and this Mac is listed as a device."
-                                       : "Off: this Mac only reads your library. Turn it on once ReleaseSync on your other devices has been updated.")
+                                       : "Off: this Mac only reads your library.")
             .font(.faint).foregroundStyle(Theme.faint).fixedSize(horizontal: false, vertical: true)
         .alert("Let this Mac change your library?", isPresented: $confirmChanges) {
             Button("Turn on") { prefs.allowLibraryChanges = true; Task { await model.refresh() } }
             Button("Not now", role: .cancel) {}
         } message: {
-            Text("This Mac will save your changes to your private Gist and show up in your list of devices. The file moves to a newer format, so any other device running an older ReleaseSync stops syncing until it is updated. Update those first.")
+            Text("This Mac will save your changes to your private Gist and show up in your list of devices. Your other devices keep working as they do now.")
         }
     }
 
     @ViewBuilder private var devices: some View {
         if model.phase == .loaded, !model.devices.isEmpty {
             VStack(spacing: 0) {
-                let now = Timestamp.now()
                 ForEach(Array(model.devices.enumerated()), id: \.element.id) { i, d in
-                    let online = d.isOnline(at: now)
+                    let online = DeviceInventory.isOnline(d, peers: model.peers)
                     HStack(spacing: 14) {
                         Image(systemName: d.symbolName).font(.system(size: 17)).foregroundStyle(Theme.dim).frame(width: 28)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(d.name.isEmpty ? "Unnamed device" : d.name).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
                             Text(d.appVersion.isEmpty ? d.platform : "\(d.platform)  ·  ReleaseSync \(d.appVersion)").font(.faint).foregroundStyle(Theme.faint)
-                            if let summary = DeviceInventory.summary(of: d) { Text(summary).font(.faint).foregroundStyle(Theme.faint) }
+                            if let summary = DeviceInventory.summary(of: model.peers[d.id]) { Text(summary).font(.faint).foregroundStyle(Theme.faint) }
                         }
                         Spacer()
                         HStack(spacing: 7) {
@@ -113,7 +112,7 @@ struct SettingsPage: View {
             .padding(.horizontal, 14)
             .background(Theme.input, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
-            Text("A green light means the device said recently that ReleaseSync is open there." + (prefs.allowLibraryChanges ? "" : " This Mac isn't in the list yet: it only reads your library and never changes it.")).font(.faint).foregroundStyle(Theme.faint)
+            Text("The list comes from your library. A green light will show a device that is on this network right now (coming soon)." + (prefs.allowLibraryChanges ? "" : " This Mac isn't in the list yet: it only reads your library and never changes it.")).font(.faint).foregroundStyle(Theme.faint)
         }
     }
 }

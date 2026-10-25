@@ -147,15 +147,14 @@ struct DetailDrawer: View {
 
     /// Where this app is installed on the person's other devices, as those devices report it.
     @ViewBuilder private var onDevices: some View {
-        let now = Timestamp.now()
-        let installs = DeviceInventory.installs(of: app.key, on: model.devices, now: now)
+        let installs = DeviceInventory.installs(of: app.key, on: model.devices, peers: model.peers)
         if !installs.isEmpty {
             label("ON YOUR DEVICES")
             VStack(spacing: 0) {
                 ForEach(Array(installs.enumerated()), id: \.element.id) { i, item in
                     VStack(spacing: 0) {
                         HStack(spacing: 10) {
-                            StatusLight(on: item.device.isOnline(at: now))
+                            StatusLight(on: item.online)
                             Text(item.device.name.isEmpty ? "Unnamed device" : item.device.name).font(.dim).foregroundStyle(Theme.dim)
                             Spacer(minLength: 12)
                             if item.install.hasUpdate, let latest = item.install.latest { Pill(text: "Update to \(latest)", kind: .warn) }

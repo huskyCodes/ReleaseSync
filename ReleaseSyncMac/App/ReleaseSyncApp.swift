@@ -24,7 +24,7 @@ struct ReleaseSyncApp: App {
         #if DEBUG
         // `--demo` shows a made-up library, so the app can be tried and photographed without an account; `--page <name>` opens a page
         if CommandLine.arguments.contains("--demo") {
-            model = LibraryModel(showing: DemoLibrary.make(), releases: DemoLibrary.releases(), secrets: InMemorySecrets())
+            model = LibraryModel(showing: DemoLibrary.make(), releases: DemoLibrary.releases(), peers: DemoLibrary.peers(), secrets: InMemorySecrets())
             discover = DiscoverModel(showing: DemoLibrary.discover(), client: client, prefs: prefs, meter: RateMeter(RateStatus(limit: 5000, remaining: 4962)))
         }
         if let i = CommandLine.arguments.firstIndex(of: "--status"), i + 1 < CommandLine.arguments.count {
