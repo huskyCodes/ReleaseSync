@@ -17,6 +17,8 @@ Contents: [1 Goal](#1-goal-and-non-goals) · [2 Threats](#2-who-we-defend-agains
 - Not internet presence. Away from the shared network, lights are grey. That is accepted.
 - No accounts, no tokens, no GitHub requests, no telemetry, no servers of ours.
 
+**No remote control.** The link carries *state* only (who is here, what it has installed). No message asks another device to do anything: not to install, update, uninstall, open or change a setting, and a receiver ignores any message type it does not know. If "ask that device to update" is ever added, it needs its own design in which the target device shows the request to its own user and acts only if they approve.
+
 **Out of scope, but not made impossible.** Connecting across the internet or through VPN/overlay networks. "Connect to a known host and port" is a separate, replaceable step after discovery (section 14), so a later version can add a manually entered address.
 
 **Only paired devices recognise each other.** A stranger on the same Wi-Fi learns nothing useful (no device names, no app lists, no stable identifier) and cannot pretend to be one of the user's devices.
@@ -253,12 +255,16 @@ It replaces what it knew about that device with the new list (applying the limit
 
 ## 10. Forgetting a device
 
+**Any device can remove any device.** Removal needs no permission from the other device, and the other device does not have to be reachable. Either side of a pairing can remove it from its own screen at any time. Pairings are between two devices, so removing a device on one device does not remove it from a third device that is also paired with it: the user does that on each remaining device (or uses "Remove all paired devices"). That is also how a lost or stolen device is cut off.
+
 "Forget this device" on either side:
 1. If a link is alive, send `forget`, then close it.
 2. Delete the `psk` from the secret store and remove the pair's record.
 3. The peer, on receiving `forget`, does the same and shows "<Name> removed this pairing."
 
 If the other device was not reachable, it finds out later: its dials are closed without a reply (the forgotten side has no matching secret). After 3 failures in a row while that device's service is visible, it shows "<Name> no longer recognises this device. Pair again or remove it." and stops dialling it until the user acts.
+
+**Final messages can be lost.** `goodbye` and `forget` are best effort: the connection can die before they arrive. Nothing depends on them. A lost `goodbye` just means the light goes grey after 5 seconds of silence like any dead link ([section 9](#9-liveness-and-reconnecting)). A lost `forget` is covered by the "no longer recognises this device" path above. A `forget` is never sent again on a later connection, because the secret is already gone.
 
 ---
 
@@ -296,9 +302,9 @@ An unknown peer is anyone whose first message does not work with any paired secr
 - a connection that sends nothing for the handshake timeout (5 s);
 - more than 4 connections open at once from one address.
 
-**Effect.** Close at once and send nothing. Ignore that address for **5 minutes**. Each time the same address earns another block, the time doubles: 5, 10, 20, 40, then 60 minutes, which is the cap. An address that has not triggered anything for 24 hours starts again at 5 minutes. A block ends by waiting; there is no permanent block list.
+**Effect.** Close at once and send nothing. Ignore that address for **5 minutes**. For IPv6 the block covers the whole **/64 prefix** the address is in, because one host can use any address in its /64 for free; for IPv4 it is the single address. (The list shown to the user names the prefix.) Each time the same address earns another block, the time doubles: 5, 10, 20, 40, then 60 minutes, which is the cap. An address that has not triggered anything for 24 hours starts again at 5 minutes. A block ends by waiting; there is no permanent block list.
 
-**Never blocked.** This device's own addresses and loopback.
+**Never blocked.** This device's own addresses and prefixes, and loopback.
 
 ### 12.2 Paired peers that misbehave (they authenticated, then broke a rule)
 
