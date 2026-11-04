@@ -82,7 +82,7 @@ public sealed class FolderMoveTests : IDisposable
         Assert.False(Directory.Exists(Dst));
     }
 
-    [Fact]
+    [WindowsFact]
     public void An_original_that_cant_be_removed_is_reported_but_the_app_has_still_moved()
     {
         Write("a.txt", "first"); Write("b.txt", "second");
@@ -128,7 +128,15 @@ public sealed class FolderMoveTests : IDisposable
     public void A_folder_whose_name_only_starts_the_same_is_not_inside_it() =>
         Assert.Null(FolderMove.Problem(Src, Src + "-backup"));
 
-    [Theory]
+    [Fact]
+    public void Paths_inside_the_folder_follow_a_move_and_others_dont()
+    {
+        Assert.Equal(Path.Combine(Dst, "sub", "app.exe"), FolderMove.Rebase(Path.Combine(Src, "sub", "app.exe"), Src, Dst));
+        Assert.Equal(Dst, FolderMove.Rebase(Src, Src, Dst));
+        Assert.Null(FolderMove.Rebase(Path.Combine(Src + "-backup", "app.exe"), Src, Dst));
+    }
+
+    [WindowsTheory]
     [InlineData(@"C:\Old\app.exe", @"C:\New\app.exe")]
     [InlineData(@"c:\old\sub\app.exe", @"C:\New\sub\app.exe")]            // Windows paths ignore case
     [InlineData(@"C:\Old", @"C:\New")]
