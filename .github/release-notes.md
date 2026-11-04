@@ -2,9 +2,11 @@
 
 **New in this version**
 
-- See file location: a new item in each app's menu opens the folder it's installed in.
-- When an installer fails, ReleaseSync now says why in plain words instead of showing only an error code.
-- ReleaseSync can be uninstalled from Windows' Installed apps or from Settings → Data.
-- A full privacy policy now lists everything the app connects to.
+- Fixed error 1603 when updating apps that were installed for everyone on the PC.
+- Reinstall: a new item in each app's menu removes the old version and installs the newest in one step. A failed update offers it too.
+- Move to another folder: moves an unpacked app safely, and updates your shortcuts to it.
+- A new setting chooses whether new apps install just for you or for everyone on the PC.
+- See file location now finds apps wherever they were installed.
+- ReleaseSync notices its own updates much sooner, and the routine check uses none of your GitHub requests.
 
 See the [project status](https://github.com/huskyCodes/ReleaseSync#project-status) for what's working and what's in progress.

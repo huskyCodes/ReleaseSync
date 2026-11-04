@@ -35,6 +35,7 @@ ReleaseSync is young and made by one person with an AI assistant. It's been used
 | Scan this PC for apps you already have | Working |
 | Rollback and backups | Working |
 | Uninstall, including apps in a folder you chose (removes only what it installed) | Working |
+| Reinstall in one step, and moving unpacked apps to another folder | Working. Apps set up by their own installer can't be moved, because Windows has them registered where they are. |
 | ReleaseSync updating itself (the **Update available** button at the bottom left) | Working. If an update ever fails, your current version keeps running. |
 
 **Early, use with care**
