@@ -2,6 +2,6 @@
 
 **New in this version**
 
-- The version you're on now shows at the bottom of the left sidebar.
+- The version you're on now shows at the bottom right of the left sidebar.
 
 See the [project status](https://github.com/huskyCodes/ReleaseSync#project-status) for what's working and what's in progress.

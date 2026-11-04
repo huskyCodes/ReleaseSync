@@ -115,7 +115,7 @@
                             <Button Grid.Column="1" Style="{StaticResource IconButton}" Content="&#xE700;" ToolTip="Collapse or expand sidebar" Command="{Binding ToggleSidebarCommand}"
                                     Visibility="{Binding IsCompact, Converter={StaticResource InvBoolVis}}" Margin="4,0,0,0"/>
                         </Grid>
-                        <TextBlock Text="{Binding AppVersionShort}" Style="{StaticResource Faint}" FontSize="11" HorizontalAlignment="Center" Margin="0,6,0,0"
+                        <TextBlock Text="{Binding AppVersionShort}" Style="{StaticResource Faint}" FontSize="11" HorizontalAlignment="Right" Margin="0,6,8,0"
                                    Visibility="{Binding IsCompact, Converter={StaticResource InvBoolVis}}"/>
                     </StackPanel>
                 </Grid>
