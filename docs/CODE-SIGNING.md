@@ -1,6 +1,6 @@
 # Code signing policy
 
-**Status: ReleaseSync's downloads are not code-signed yet.** The project intends to apply to [SignPath Foundation](https://signpath.org)'s free program for open-source software. This page says how signing will work if that's approved.
+**Status: ReleaseSync's downloads are not code-signed yet.** The project is applying to [SignPath Foundation](https://signpath.org)'s free program for open-source software. This page says how signing will work if that's approved.
 
 Once approved, this page will carry the line: Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
 

@@ -21,6 +21,8 @@ To remove it, use Windows' Installed apps or Settings → Data. Apps you install
 
 Needs Windows 10 (version 1903) or later, on a 64-bit PC.
 
+Code signing: ReleaseSync is applying to use SignPath Foundation. See the [code signing policy](#code-signing-policy).
+
 ## Project status
 
 ReleaseSync is young and made by one person with an AI assistant. It's been used on one PC so far, so expect the odd rough edge, and please [report anything that goes wrong](../../issues).
@@ -85,7 +87,7 @@ The full [privacy policy](docs/PRIVACY.md) lists everything the app connects to 
 
 ## Code signing policy
 
-Downloads aren't code-signed yet. See the [code signing policy](docs/CODE-SIGNING.md).
+ReleaseSync is applying to use [SignPath Foundation](https://signpath.org) for free code signing of its Windows downloads. Until that's approved, downloads aren't signed. See the [code signing policy](docs/CODE-SIGNING.md).
 
 ## For developers
 
