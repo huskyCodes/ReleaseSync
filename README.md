@@ -17,6 +17,8 @@ It works straight away without a GitHub account. Browsing is limited to 60 reque
 
 The version you're on is shown at the bottom of the left sidebar.
 
+To remove it, use Windows' Installed apps or Settings → Data. Apps you installed with it stay installed.
+
 Needs Windows 10 (version 1903) or later, on a 64-bit PC.
 
 ## Project status
@@ -74,9 +76,15 @@ ReleaseSync is young and made by one person with an AI assistant. It's been used
 
 ## Privacy
 
+The full [privacy policy](docs/PRIVACY.md) lists everything the app connects to and how to turn it off.
+
 - **No accounts, no telemetry, no analytics.** ReleaseSync talks only to the sites hosting the projects you track, to this project's GitHub page to check for a newer ReleaseSync (you can clear that in Settings), and, if you turn it on, VirusTotal.
 - **A GitHub token is optional.** If you add one, it's stored in Windows Credential Manager, never in ReleaseSync's files, backups or exports.
 - **Your data stays on your PC.** The library and settings live in `%APPDATA%\ReleaseSync`; downloaded installers go to `%LOCALAPPDATA%\ReleaseSync\Downloads` and are removed after installing; portable apps unpack to `%LOCALAPPDATA%\Programs\ReleaseSync Apps`. Nothing is uploaded unless you turn on sync yourself. Sync shares your list of apps, groups, notes and Try later list (to a private Gist in your own GitHub account, or a folder you choose), and never your token, passphrase or installed files.
+
+## Code signing policy
+
+Downloads aren't code-signed yet. See the [code signing policy](docs/CODE-SIGNING.md).
 
 ## For developers
 

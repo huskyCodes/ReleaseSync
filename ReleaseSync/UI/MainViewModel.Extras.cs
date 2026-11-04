@@ -402,6 +402,7 @@ public sealed partial class MainViewModel
             case "update-all": Navigate("Updates"); _ = UpdateAllAsync(); break;
             case "updates": Navigate("Updates"); break;
             case "selfupdate": _ = AskSelfUpdateAsync(); break;
+            case "uninstall": AskUninstallSelf(); break;
             case "add":
                 var repo = System.Web.HttpUtility.ParseQueryString(u.Query)["repo"];
                 if (SourceClient.TryParse(repo, out var rr) && rr != null) _ = OpenAddPreviewAsync(rr.Owner, rr.Repo, null, rr.Source, rr.FullPath);
@@ -455,6 +456,7 @@ public sealed partial class MainViewModel
         CheckSelfCommand = new RelayCommand(async () => await CheckSelfUpdateAsync(true));
         UpdateSelfCommand = new RelayCommand(async () => await AskSelfUpdateAsync());
         AskSelfUpdateCommand = UpdateSelfCommand;
+        UninstallSelfCommand = new RelayCommand(AskUninstallSelf);
         SyncNowCommand = new RelayCommand(() =>
         {
             if (!Settings.SyncIsOn) Toast("Choose how to sync first", "info");
@@ -753,7 +755,7 @@ public sealed partial class MainViewModel
         Prompt = new PromptVM
         {
             Title = "Install ReleaseSync on this PC?",
-            Message = "This gives ReleaseSync its own folder and adds it to your Start menu, so it keeps working if you tidy up your Downloads. Your library stays as it is. It takes a moment and needs no password.",
+            Message = "This gives ReleaseSync its own folder and adds it to your Start menu, so it keeps working if you tidy up your Downloads. Your library stays as it is, and you can uninstall it any time. ReleaseSync checks GitHub for new versions of itself; you can turn that off in Settings → Updates.",
             ShowCheck = true, CheckText = "Also add a shortcut to my desktop", Checked = true,
             OkText = "Install", CancelText = "Keep it here",
             OnOk = p => { installing = true; InstallSelf(p.Checked); return null; },
@@ -773,6 +775,35 @@ public sealed partial class MainViewModel
             if (ExitRequest != null) ExitRequest(); else Application.Current.Shutdown();
         }
         catch (Exception ex) { Toast("ReleaseSync couldn't install: " + ex.Message + " It still works from where it is.", "error"); }
+    }
+
+    public bool CanUninstallSelf => SelfInstall.RunningInstalled;
+    public ICommand UninstallSelfCommand { get; private set; } = null!;
+
+    void AskUninstallSelf()
+    {
+        if (!CanUninstallSelf) { Toast("This copy isn't installed, so there's nothing to uninstall. You can just delete the file.", "info"); return; }
+        Prompt = new PromptVM
+        {
+            Title = "Uninstall ReleaseSync?",
+            Message = "This removes ReleaseSync, its shortcuts and its background checks from this PC. Apps you installed with it stay installed.",
+            ShowCheck = true, CheckText = "Also delete my library, settings and backups", Checked = false,
+            OkText = "Uninstall", IsDanger = true,
+            OnOk = p => { _ = UninstallSelfAsync(p.Checked); return null; },
+        };
+    }
+
+    async Task UninstallSelfAsync(bool deleteData)
+    {
+        try
+        {
+            Settings.StartWithWindows = false; Settings.BackgroundChecks = false;
+            await Platform.ApplyBackgroundTaskAsync(Settings);
+            SaveAll();
+            SelfInstall.Remove(deleteData);
+            if (ExitRequest != null) ExitRequest(); else Application.Current.Shutdown();
+        }
+        catch (Exception ex) { Toast("ReleaseSync couldn't uninstall: " + ex.Message, "error"); }
     }
 
     /// <summary>The first start of the installed copy: shortcuts are made here, so they point at this copy and carry no "from the web" mark.</summary>
@@ -848,6 +879,7 @@ public sealed partial class MainViewModel
         if (Settings.BackgroundChecks) _ = Platform.ApplyBackgroundTaskAsync(Settings);
         if (SyncReady) SyncNow();
         if (!string.IsNullOrWhiteSpace(Settings.SelfUpdateRepo)) _ = CheckSelfUpdateAsync(false);
+        SelfInstall.RegisterInWindows(AppVersion);
         if (Environment.GetCommandLineArgs().Contains("--installed")) FinishSelfInstall();
         else if (SelfInstall.ShouldOffer(Settings.InstallDeclinedPath)) AskSelfInstall();
     }
