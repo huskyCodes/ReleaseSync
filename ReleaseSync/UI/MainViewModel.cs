@@ -472,6 +472,7 @@ public sealed partial class MainViewModel : Observable
     public ICommand RemoveCommand { get; private set; } = null!;
     public ICommand LaunchCommand { get; private set; } = null!;
     public ICommand LocationCommand { get; private set; } = null!;
+    public ICommand MoveCommand { get; private set; } = null!;
     public ICommand MarkInstalledCommand { get; private set; } = null!;
     public ICommand ReinstallCommand { get; private set; } = null!;
     public ICommand UninstallCommand { get; private set; } = null!;
@@ -539,6 +540,7 @@ public sealed partial class MainViewModel : Observable
         RemoveCommand = new RelayCommand(p => { if (p is TrackedApp a) AskRemove(a); });
         LaunchCommand = new RelayCommand(p => { if (p is TrackedApp a && a.CanLaunch) Shell.Open(a.InstallPath); });
         LocationCommand = new RelayCommand(async p => { if (p is TrackedApp a) await ShowLocationAsync(a); });
+        MoveCommand = new RelayCommand(async p => { if (p is TrackedApp a) await MoveAppAsync(a); });
         MarkInstalledCommand = new RelayCommand(p =>
         {
             if (p is TrackedApp a && a.HasRelease) { a.InstalledVersion = a.LatestVersion; ScheduleSaveApps(); Toast($"{a.Title} marked as installed ({a.LatestVersion})", "success"); AddLog($"Marked {a.FullName} as installed at {a.LatestVersion}", "info"); }
@@ -1746,6 +1748,76 @@ public sealed partial class MainViewModel : Observable
         }
         catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast("Couldn't read the file list, so nothing was deleted: " + ex.Message, "error"); }
         finally { app.IsBusy = false; app.BusyText = ""; app.NotifyAll(); }
+    }
+
+    /// <summary>The folder an unpacked app lives in, whichever way it got there.</summary>
+    string? AppFolder(TrackedApp app)
+    {
+        if (string.IsNullOrEmpty(app.InstallPath)) return null;
+        foreach (var dir in new[] { InstallService.PortableTarget(app), Path.Combine(Settings.InstallRoot, Fmt.SafeName(app.Repo)) })
+            if (app.InstallPath.StartsWith(dir.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)) return dir.TrimEnd('\\');
+        return null;
+    }
+
+    /// <summary>Moves an unpacked app and everything in its folder somewhere else. Apps set up by their own installer can't be moved safely: Windows has them registered where they are.</summary>
+    public async Task MoveAppAsync(TrackedApp app, string? destination = null)
+    {
+        if (app.IsBusy) return;
+        var source = IsPortableInstall(app) ? AppFolder(app) : null;
+        if (source == null)
+        {
+            Prompt = new PromptVM
+            {
+                Title = $"{app.Title} can't be moved",
+                Message = $"It was set up by its own installer, and Windows has it registered where it is, so moving its files would break it. To put it somewhere else, uninstall it, then install it again and choose a new folder.",
+                OkText = "OK", CancelText = "Close",
+            };
+            return;
+        }
+        // a folder shared with other things: only what the release installed moves. ReleaseSync's own folder for the app moves whole, including settings and saves
+        bool ownFolder = source.StartsWith(Settings.InstallRoot.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase);
+        var onlyThese = ownFolder ? null : InstallService.OwnedFiles(app);
+        if (!ownFolder && onlyThese == null)
+        {
+            Toast($"ReleaseSync doesn't have a list of {app.Title}'s files, and that folder may hold your own, so it can't be moved safely.", "warn");
+            return;
+        }
+        destination ??= PickInstallFolder(app.Title, app.Repo, Path.GetDirectoryName(source));
+        if (destination == null) return;
+        if (FolderMove.Problem(source, destination, FolderMove.Size(source, onlyThese)) is { } problem) { Toast(problem, "warn"); return; }
+
+        if (!await ShowPromptAsync(new PromptVM
+        {
+            Title = $"Move {app.Title}?",
+            Message = $"From {source}\nTo {destination}\n\n" + (ownFolder ? "Everything in its folder moves, including settings and saves stored there." : "Only the files it installed move. Anything else in that folder stays.")
+                      + " The old copy is only removed once everything is safely in the new place.",
+            OkText = "Move",
+        })) return;
+
+        var running = RunningApps.Find(app);
+        if (running.Count > 0)
+        {
+            if (!await ShowPromptAsync(new PromptVM { Title = $"{app.Title} is running", Message = "It has to be closed to be moved. Save anything you're working on first.", OkText = "Close it and move" })) return;
+            if (!await RunningApps.CloseAsync(running)) { Toast($"Couldn't close {app.Title}. Close it yourself and try again.", "error"); return; }
+        }
+
+        var list = onlyThese?.ToList();
+        app.Progress = 0; app.BusyText = "Moving…"; app.IsBusy = true;
+        try
+        {
+            var progress = new Progress<double>(p => { app.Progress = p; app.BusyText = $"Moving…  {p:0}%"; });
+            var result = await Task.Run(() => FolderMove.Move(source, destination, list, progress));
+            app.InstallPath = Path.Combine(destination, Path.GetRelativePath(source, app.InstallPath!));
+            app.CustomInstallDir = destination;
+            InstallManifest.Forget(app.Id);
+            InstallManifest.Save(app.Id, destination, list ?? InstallManifest.ListDirectory(destination));
+            AppBackups.Retarget(app, source, destination);
+            InstallService.RefreshShortcut(app);
+            AddLog($"Moved {app.Title} to {destination}", "success");
+            Toast(result.LeftBehind > 0 ? $"{app.Title} moved. {result.LeftBehind} old file{(result.LeftBehind == 1 ? "" : "s")} couldn't be removed from {source}." : $"{app.Title} moved to {destination}", result.LeftBehind > 0 ? "warn" : "success");
+        }
+        catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast($"{app.Title} wasn't moved, and is still where it was: {ex.Message}", "error"); }
+        finally { app.IsBusy = false; app.BusyText = ""; app.Progress = 0; app.NotifyAll(); ScheduleSaveApps(); ScheduleRefresh(); }
     }
 
     /// <summary>The one-step fix for an app that won't update: remove the old version, then install the newest. Offered from the menu and after a failed update.</summary>

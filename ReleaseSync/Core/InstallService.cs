@@ -391,6 +391,12 @@ public sealed class InstallService
         return Path.Combine(dir, Fmt.SafeName(app.Title) + ".lnk");
     }
 
+    /// <summary>Points the app's Start menu shortcut at its new place, if it has one.</summary>
+    public static void RefreshShortcut(TrackedApp app)
+    {
+        if (File.Exists(ShortcutPath(app)) && !string.IsNullOrEmpty(app.InstallPath)) CreateShortcut(app, app.InstallPath);
+    }
+
     static void CreateShortcut(TrackedApp app, string exe)
     {
         try
