@@ -400,7 +400,7 @@ public sealed partial class MainViewModel
         {
             case "update-all": Navigate("Updates"); _ = UpdateAllAsync(); break;
             case "updates": Navigate("Updates"); break;
-            case "selfupdate": _ = UpdateSelfAsync(); break;
+            case "selfupdate": _ = AskSelfUpdateAsync(); break;
             case "add":
                 var repo = System.Web.HttpUtility.ParseQueryString(u.Query)["repo"];
                 if (SourceClient.TryParse(repo, out var rr) && rr != null) _ = OpenAddPreviewAsync(rr.Owner, rr.Repo, null, rr.Source, rr.FullPath);
@@ -452,7 +452,8 @@ public sealed partial class MainViewModel
     void InitSync()
     {
         CheckSelfCommand = new RelayCommand(async () => await CheckSelfUpdateAsync(true));
-        UpdateSelfCommand = new RelayCommand(async () => await UpdateSelfAsync());
+        UpdateSelfCommand = new RelayCommand(async () => await AskSelfUpdateAsync());
+        AskSelfUpdateCommand = UpdateSelfCommand;
         SyncNowCommand = new RelayCommand(() =>
         {
             if (!Settings.SyncIsOn) Toast("Choose how to sync first", "info");
@@ -617,11 +618,18 @@ public sealed partial class MainViewModel
     };
 
     // ===================== ReleaseSync updating itself =====================
-    ReleaseSummary? selfRelease; AssetInfo? selfAsset;
+    ReleaseSummary? selfRelease; AssetInfo? selfAsset; string selfChanges = "";
     public bool HasSelfUpdate => selfRelease != null;
-    public string SelfUpdateText => selfRelease == null ? "" : $"ReleaseSync {selfRelease.Tag} is available";
+    public string SelfUpdateText => selfRelease == null ? "" : $"ReleaseSync {SelfVersion} is available";
+    string SelfVersion => (selfRelease?.Tag ?? "").TrimStart('v', 'V');
     string _selfStatus = ""; public string SelfStatus { get => _selfStatus; set { Set(ref _selfStatus, value); Raise(nameof(HasSelfStatus)); } }
     public bool HasSelfStatus => !string.IsNullOrEmpty(_selfStatus);
+    bool _selfUpdating; public bool SelfUpdating { get => _selfUpdating; private set { if (Set(ref _selfUpdating, value)) Raise(nameof(SelfButtonText)); } }
+    double _selfPercent;
+    public string SelfButtonText => !SelfUpdating ? "Update available" : _selfPercent >= 1 ? $"Updating…  {_selfPercent:0}%" : "Updating…";
+    public ICommand AskSelfUpdateCommand { get; private set; } = null!;
+
+    void RaiseSelfUpdate() { Raise(nameof(HasSelfUpdate)); Raise(nameof(SelfUpdateText)); Raise(nameof(SelfButtonText)); }
 
     public async Task CheckSelfUpdateAsync(bool manual)
     {
@@ -631,11 +639,13 @@ public sealed partial class MainViewModel
             if (manual) SelfStatus = "Enter the address of ReleaseSync's repository first.";
             return;
         }
+        if (SelfUpdating) return;
         try
         {
             rf = await Sources.ResolveAsync(rf);
-            var rr = await Sources.GetReleasesAsync(rf.Source, rf.Owner, rf.Repo, null);
-            var rel = rr.Releases.FirstOrDefault(r => !r.Prerelease);
+            var testReleases = Legacy.IsTestMode ? Environment.GetEnvironmentVariable("RELEASESYNC_TEST_RELEASES") : null;      // tests can't read a private repository
+            var releases = !string.IsNullOrEmpty(testReleases) ? JsonSerializer.Deserialize<List<ReleaseInfo>>(File.ReadAllText(testReleases))! : (await Sources.GetReleasesAsync(rf.Source, rf.Owner, rf.Repo, null)).Releases;
+            var rel = releases.FirstOrDefault(r => !r.Prerelease);
             if (rel == null) { SelfStatus = "That repository has no releases yet."; return; }
             var sum = ToSummary(rel);
             var asset = sum.Assets.FirstOrDefault(a => a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && a.Name.Contains("releasesync", StringComparison.OrdinalIgnoreCase))
@@ -644,44 +654,94 @@ public sealed partial class MainViewModel
             if (VersionUtil.IsNewer(rel.Tag, AppVersion) && asset != null)
             {
                 selfRelease = sum; selfAsset = asset;
+                selfChanges = SelfUpdate.ChangesSince(releases.Where(r => !r.Prerelease && VersionUtil.IsNewer(r.Tag, AppVersion)).Select(r => (r.Tag, ToSummary(r).Notes)));
                 SelfStatus = $"{rel.Tag} is available (you have {AppVersion}).";
-                Raise(nameof(HasSelfUpdate)); Raise(nameof(SelfUpdateText));
-                if (!manual) Notify("ReleaseSync update available", $"Version {rel.Tag} is ready to install.", ("Update ReleaseSync", "releasesync://selfupdate"));
+                RaiseSelfUpdate();
+                if (!manual && Settings.SelfUpdateNotified != rel.Tag)      // once per version; the button stays in the sidebar after that
+                {
+                    Settings.SelfUpdateNotified = rel.Tag; ScheduleSaveSettings();
+                    Notify("ReleaseSync update available", $"Version {SelfVersion} is ready to install.", ("See what's new", "releasesync://selfupdate"));
+                }
             }
-            else { selfRelease = null; selfAsset = null; SelfStatus = $"You're on the latest version ({AppVersion})."; Raise(nameof(HasSelfUpdate)); Raise(nameof(SelfUpdateText)); }
+            else { selfRelease = null; selfAsset = null; selfChanges = ""; SelfStatus = $"You're on the latest version ({AppVersion})."; RaiseSelfUpdate(); }
         }
         catch (Exception ex) { SelfStatus = ex.Message; }
     }
 
+    /// <summary>The update dialog: which version you have, which you'd get, what changed. Nothing happens until the user says yes.</summary>
+    public async Task AskSelfUpdateAsync()
+    {
+        if (SelfUpdating) return;
+        if (selfRelease == null) { await CheckSelfUpdateAsync(true); if (selfRelease == null) { Toast(SelfStatus, "info"); return; } }
+        Prompt = new PromptVM
+        {
+            Title = "Update ReleaseSync?",
+            Message = $"You have version {AppVersion}. This updates it to version {SelfVersion}.",
+            DetailsTitle = "What's new", Details = selfChanges,
+            Footnote = "ReleaseSync will close and reopen by itself. Your library and settings stay as they are.",
+            OkText = "Download and update", CancelText = "Not now",
+            OnOk = p => { _ = UpdateSelfAsync(); return null; },
+        };
+    }
+
+    /// <summary>Downloads the new version, checks it, puts it in place of the running program and reopens. If anything fails the current version keeps working.</summary>
     public async Task UpdateSelfAsync()
     {
+        if (SelfUpdating) return;
         if (selfRelease == null || selfAsset == null) { await CheckSelfUpdateAsync(true); if (selfRelease == null) return; }
+        if (Apps.Any(a => a.IsBusy)) { Toast("An app is installing or updating. Update ReleaseSync when that's finished.", "info"); return; }
+
         var exe = Environment.ProcessPath!;
         var dir = Path.GetDirectoryName(exe)!;
+        var release = selfRelease!; var asset = selfAsset!;
         var tmpDir = Path.Combine(Path.GetTempPath(), "releasesync-self-" + Guid.NewGuid().ToString("N")[..8]);
+        var staged = Path.Combine(dir, "ReleaseSync.new.exe");
+        var fake = new TrackedApp { Owner = "releasesync", Repo = "self" };
+        _selfPercent = 0; SelfUpdating = true;
         try
         {
             Directory.CreateDirectory(tmpDir);
             SelfStatus = "Downloading the update…";
-            var fake = new TrackedApp { Owner = "releasesync", Repo = "self" };
-            var downloaded = await Installer.DownloadAsync(fake, selfRelease!.Tag, selfAsset!, new Progress<InstallProgress>(p => SelfStatus = p.Text), CancellationToken.None);
+            var progress = new Progress<InstallProgress>(p => { SelfStatus = p.Text; _selfPercent = p.Percent; Raise(nameof(SelfButtonText)); });
+            var testFile = Legacy.IsTestMode ? Environment.GetEnvironmentVariable("RELEASESYNC_TEST_UPDATE") : null;      // tests can't download from a private repository
+            var downloaded = !string.IsNullOrEmpty(testFile) ? testFile : await Installer.DownloadAsync(fake, release.Tag, asset, progress, CancellationToken.None);
+
+            SelfStatus = "Checking the download…";
+            var expected = SelfUpdate.Sha256From(asset.Digest);
+            if (expected == null && release.Assets.FirstOrDefault(a => a.Name.Equals(asset.Name + ".sha256", StringComparison.OrdinalIgnoreCase)) is { } sum)
+                expected = SelfUpdate.Sha256From(await File.ReadAllTextAsync(await Installer.DownloadAsync(fake, release.Tag, sum, new Progress<InstallProgress>(), CancellationToken.None)));
+            if (expected == null) throw new InvalidOperationException("the download has no checksum to compare it with, so it wasn't used.");
+            if (!await Task.Run(() => SelfUpdate.FileMatches(downloaded, expected))) throw new InvalidOperationException("the download doesn't match its checksum, so it wasn't used.");
+
             string newExe = downloaded;
             if (downloaded.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
                 System.IO.Compression.ZipFile.ExtractToDirectory(downloaded, tmpDir, true);
-                newExe = Directory.GetFiles(tmpDir, "ReleaseSync.exe", SearchOption.AllDirectories).FirstOrDefault() ?? throw new InvalidOperationException("The download doesn't contain ReleaseSync.exe.");
+                newExe = Directory.GetFiles(tmpDir, "ReleaseSync.exe", SearchOption.AllDirectories).FirstOrDefault() ?? throw new InvalidOperationException("the download doesn't contain ReleaseSync.exe.");
             }
+
+            File.Copy(newExe, staged, true);          // beside the program first: if this folder can't be written to, nothing has changed yet
             var old = Path.Combine(dir, "ReleaseSync.old.exe");
             try { if (File.Exists(old)) File.Delete(old); } catch { }
             File.Move(exe, old, true);                // a running program can be renamed, not overwritten
-            File.Copy(newExe, exe, true);
+            try { File.Move(staged, exe); }
+            catch { File.Move(old, exe, true); throw; }
+
+            InstallService.ClearDownloads(fake);
             SelfStatus = "Updated. Restarting…";
-            AddLog($"ReleaseSync updated to {selfRelease.Tag}", "success");
+            AddLog($"ReleaseSync updated to {release.Tag}", "success");
             SaveAll();
-            Shell.Open(exe);
-            Application.Current.Shutdown();
+            ((App)Application.Current).ReleaseSingleInstance();      // otherwise the new version would see this one and close itself
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = false, WorkingDirectory = dir });
+            if (ExitRequest != null) ExitRequest(); else Application.Current.Shutdown();
         }
-        catch (Exception ex) { SelfStatus = "Couldn't update: " + ex.Message; Toast("ReleaseSync couldn't update itself: " + ex.Message, "error"); }
+        catch (Exception ex)
+        {
+            try { File.Delete(staged); } catch { }
+            SelfUpdating = false;
+            SelfStatus = "Couldn't update: " + ex.Message;
+            Toast("ReleaseSync couldn't update: " + ex.Message + " Your current version still works.", "error");
+        }
         finally { try { Directory.Delete(tmpDir, true); } catch { } }
     }
 
@@ -743,7 +803,9 @@ public sealed partial class MainViewModel
         _ = Task.Delay(8000).ContinueWith(_ => Application.Current?.Dispatcher.BeginInvoke(new Action(async () => await RunScheduledBackupIfDueAsync())));
         if (Settings.AutoBackupData) _ = Task.Run(() => { DataBackups.CreateIfDue(); Application.Current?.Dispatcher.BeginInvoke(new Action(RefreshDataBackups)); });
         else RefreshDataBackups();
-        try { System.IO.File.Delete(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath ?? "")!, "ReleaseSync.old.exe")); } catch { }
+        var replaced = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath ?? "")!, "ReleaseSync.old.exe");
+        _ = Task.Run(async () => { for (int i = 0; i < 5 && File.Exists(replaced); i++) { try { File.Delete(replaced); } catch { await Task.Delay(3000); } } });      // the old version may still be closing
+        if (Settings.StartWithWindows) Shell.SetStartWithWindows(true);      // keeps the entry right if the program was moved
         if (Settings.BackgroundChecks) _ = Platform.ApplyBackgroundTaskAsync(Settings);
         if (SyncReady) SyncNow();
         if (!string.IsNullOrWhiteSpace(Settings.SelfUpdateRepo)) _ = CheckSelfUpdateAsync(false);

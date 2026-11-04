@@ -2,10 +2,10 @@
 
 **New in this version**
 
-- No separate .NET download needed: everything is in the one file.
-- ReleaseSync now checks for its own updates out of the box.
-- Uninstalling an app from a folder you chose removes only what it installed, and leaves your own files alone.
-- Uninstalling also clears that app's leftover downloads.
-- Early: keep your library in step between PCs through a private GitHub Gist or a shared folder (Settings → Data).
+- An Update available button now appears at the bottom left when there's a new ReleaseSync.
+- Click it to see your version, the new version and what changed.
+- Updating is one step: ReleaseSync downloads the new version, checks it, then closes and reopens by itself.
+- If an update can't finish, your current version keeps working.
+- Start with Windows now keeps working if you move the program.
 
 See the [project status](https://github.com/huskyCodes/ReleaseSync#project-status) for what's working and what's in progress.

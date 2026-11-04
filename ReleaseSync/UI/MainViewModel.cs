@@ -65,6 +65,13 @@ public sealed class PromptVM : Observable
     public bool ShowCheck { get; set; }
     public string CheckText { get; set; } = "";
     public bool HasMessage => !string.IsNullOrEmpty(Message);
+    public string CancelText { get; set; } = "Cancel";
+    /// <summary>A longer, scrollable text under the message, such as a list of changes.</summary>
+    public string Details { get; set; } = "";
+    public string DetailsTitle { get; set; } = "";
+    public string Footnote { get; set; } = "";
+    public bool HasDetails => !string.IsNullOrEmpty(Details);
+    public bool HasFootnote => !string.IsNullOrEmpty(Footnote);
     string _text = ""; public string Text { get => _text; set { if (Set(ref _text, value)) Error = null; } }
     bool _checked; public bool Checked { get => _checked; set => Set(ref _checked, value); }
     string? _error; public string? Error { get => _error; set => Set(ref _error, value); }
@@ -312,7 +319,7 @@ public sealed partial class MainViewModel : Observable
         saveAppsTimer.Tick += (_, _) => { saveAppsTimer.Stop(); SaveAppsNow(); };
         saveSettingsTimer.Tick += (_, _) => { saveSettingsTimer.Stop(); SaveSettingsNow(); };
         refreshTimer.Tick += (_, _) => { refreshTimer.Stop(); RefreshViews(); };
-        checkTimer.Tick += async (_, _) => await CheckAllAsync(false);
+        checkTimer.Tick += async (_, _) => { await CheckAllAsync(false); await CheckSelfUpdateAsync(false); };
         GitHub.StatusChanged += () => Application.Current.Dispatcher.BeginInvoke(new Action(() => { UpdateRateText(); RaiseDiscoverRate(); }));
 
         InitCommands();

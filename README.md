@@ -10,7 +10,7 @@ ReleaseSync works with projects on GitHub, GitLab, Codeberg and self-hosted Forg
 2. **Open it.** Windows may show a blue "Windows protected your PC" box, because this free app isn't paid-signed. Click **More info**, then **Run anyway**.
 3. **Pick something.** Click **Browse apps**, choose a category, and press **Add** on anything you like. ReleaseSync finds the right download for your PC and can install it for you.
 
-From then on it tells you when your apps have updates. You can keep `ReleaseSync.exe` anywhere, such as your Desktop or Documents folder.
+From then on it tells you when your apps have updates. When ReleaseSync itself has a new version, an **Update available** button appears at the bottom left: click it to see what changed and update in one step. You can keep `ReleaseSync.exe` anywhere, such as your Desktop or Documents folder.
 
 It works straight away without a GitHub account. Browsing is limited to 60 requests an hour, though, which runs out quickly. If you browse a lot, a free GitHub token raises that to 5,000: see Settings → GitHub.
 
@@ -36,7 +36,7 @@ ReleaseSync is young and made by one person with an AI assistant. It's been used
 | Feature | State |
 |---|---|
 | Sync between PCs through a private Gist or a shared folder | Built and tested with simulated devices. Not yet tried in everyday use between two real computers. |
-| ReleaseSync updating itself | Built, but the first real test is the next release after this one. If it doesn't offer an update, download the new version by hand. |
+| ReleaseSync updating itself | An **Update available** button appears at the bottom left, shows what's new, and updates and reopens the app for you. Tested, but not yet over a real download. If it ever fails, your current version keeps working and you can download the new one by hand. |
 | Safety checks | Checksums and signatures are in use. The Windows Security scan and VirusTotal lookup haven't been tried on a real download yet. |
 
 **In progress (not in the download yet)**
@@ -87,9 +87,12 @@ Requires the .NET 8 SDK on Windows. The code is split in two: `ReleaseSync.Core`
 
 Issues and pull requests are welcome. Please don't include tokens, personal paths or personal library data in bug reports. ReleaseSync's Settings → Data → "Open folder" shows what's stored locally, so you can check before sharing anything.
 
-## Credits
+## Contributors
 
-Created by [@huskyCodes](https://github.com/huskyCodes) together with [Claude](https://www.anthropic.com/claude), an AI assistant made by Anthropic, which wrote much of the code and is credited as a co-author on the commits it contributed to.
+| Who | Role |
+|---|---|
+| [@huskyCodes](https://github.com/huskyCodes) | Creator and maintainer: the idea, the design and every decision. |
+| [Claude](https://www.anthropic.com/claude), an AI assistant made by Anthropic | AI contributor: wrote much of the code, and is credited as a co-author on the commits it contributed to. |
 
 ## Disclaimer
 

@@ -86,6 +86,13 @@ public partial class App : Application
         if (uri != null) VM.HandleCommand(uri);
     }
 
+    /// <summary>Lets go of the "only one copy" lock, for the moment when an updated version is about to start. The handle has to be closed too, or the new copy would still see it.</summary>
+    public void ReleaseSingleInstance()
+    {
+        try { mutex?.ReleaseMutex(); } catch { }
+        mutex?.Dispose(); mutex = null;
+    }
+
     [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(int processId);
 
     /// <summary>Hover tips sit centred under whatever they describe.</summary>
