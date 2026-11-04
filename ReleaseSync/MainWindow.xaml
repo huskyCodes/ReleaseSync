@@ -180,6 +180,9 @@
                     <v:ImportView Style="{StaticResource PageStyle}" Visibility="{Binding CurrentPage, Converter={StaticResource EqVis}, ConverterParameter=Import}"/>
                     <v:ActivityView Style="{StaticResource PageStyle}" Visibility="{Binding CurrentPage, Converter={StaticResource EqVis}, ConverterParameter=Activity}"/>
                     <v:SettingsView Style="{StaticResource PageStyle}" Visibility="{Binding CurrentPage, Converter={StaticResource EqVis}, ConverterParameter=Settings}"/>
+                    <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,22,10" Padding="8,3" CornerRadius="8" Background="{DynamicResource SurfaceBrush}" IsHitTestVisible="False">
+                        <TextBlock Text="{Binding AppVersionShort}" Style="{StaticResource Faint}" FontSize="11"/>
+                    </Border>
                 </Grid>
             </Grid>
         </Grid>

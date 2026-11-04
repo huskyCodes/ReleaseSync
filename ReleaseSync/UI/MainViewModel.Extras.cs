@@ -16,6 +16,7 @@ namespace ReleaseSync.UI;
 public sealed partial class MainViewModel
 {
     public string AppVersionLabel => "ReleaseSync " + AppVersion;
+    public string AppVersionShort => "Version " + AppVersion;
     public static string AppVersion { get; } = Assembly.GetExecutingAssembly().GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "1.0.0";
 
     // ===================== notifications =====================
