@@ -121,6 +121,7 @@ public sealed class InstallService
                     var exe = UninstallService.FindExe(entry);
                     if (exe != null) app.InstallPath = exe;
                 }
+                if (string.IsNullOrEmpty(app.InstallPath) || !File.Exists(app.InstallPath)) app.InstallPath = UninstallService.FindInstalledExe(app);      // many installers don't tell Windows where they went
             }
             else if (app.InstallPath != null) app.UninstallKey = null;
         }

@@ -319,7 +319,7 @@ public sealed partial class MainViewModel : Observable
         saveAppsTimer.Tick += (_, _) => { saveAppsTimer.Stop(); SaveAppsNow(); };
         saveSettingsTimer.Tick += (_, _) => { saveSettingsTimer.Stop(); SaveSettingsNow(); };
         refreshTimer.Tick += (_, _) => { refreshTimer.Stop(); RefreshViews(); };
-        checkTimer.Tick += async (_, _) => { await CheckAllAsync(false); await CheckSelfUpdateAsync(false); };
+        checkTimer.Tick += async (_, _) => await CheckAllAsync(false);
         GitHub.StatusChanged += () => Application.Current.Dispatcher.BeginInvoke(new Action(() => { UpdateRateText(); RaiseDiscoverRate(); }));
 
         InitCommands();
@@ -529,7 +529,7 @@ public sealed partial class MainViewModel : Observable
         NavigateCommand = new RelayCommand(p => Navigate(p?.ToString() ?? "Library"));
         ToggleSidebarCommand = new RelayCommand(() => { IsCompact = !IsCompact; Settings.SidebarCollapsed = IsCompact; });
         SubmitOmniboxCommand = new RelayCommand(SubmitOmnibox);
-        CheckAllCommand = new RelayCommand(async () => await CheckAllAsync(true));
+        CheckAllCommand = new RelayCommand(async () => { await CheckAllAsync(true); await CheckSelfUpdateAsync(false); });
         UpdateAllCommand = new RelayCommand(async () => await UpdateAllAsync());
         InstallCommand = new RelayCommand(async p => { if (p is TrackedApp a) await InstallAsync(a); });
         CancelCommand = new RelayCommand(p => { if (p is TrackedApp a) a.Cts?.Cancel(); });
@@ -1621,8 +1621,9 @@ public sealed partial class MainViewModel : Observable
             var folder = entry.InstallLocation?.Trim().Trim('"');
             if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder)) return folder;
         }
-        if (app.HasCustomInstallDir && Directory.Exists(app.CustomInstallDir)) return app.CustomInstallDir;
-        return UninstallService.FindLocalProgram(app)?.Exe;
+        if (UninstallService.FindInstalledExe(app) is { } found) return found;
+        var own = InstallService.PortableTarget(app);      // ReleaseSync's own apps folder, or the folder chosen for this app
+        return Directory.Exists(own) ? own : null;
     }
 
     public async Task ShowLocationAsync(TrackedApp app)

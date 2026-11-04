@@ -634,8 +634,19 @@ public sealed partial class MainViewModel
 
     void RaiseSelfUpdate() { Raise(nameof(HasSelfUpdate)); Raise(nameof(SelfUpdateText)); Raise(nameof(SelfButtonText)); }
 
+    /// <summary>Its own check is one small request, so it runs far more often than the app checks: hourly, and when the window is opened from the tray.</summary>
+    readonly DispatcherTimer selfCheckTimer = new() { Interval = TimeSpan.FromHours(1) };
+    DateTime lastSelfCheck = DateTime.MinValue;
+
+    /// <summary>The window was just opened. Closing it only hides it, so this may be the first the user has looked in hours.</summary>
+    public void CheckSelfIfStale()
+    {
+        if (DateTime.UtcNow - lastSelfCheck > TimeSpan.FromMinutes(15)) _ = CheckSelfUpdateAsync(false);
+    }
+
     public async Task CheckSelfUpdateAsync(bool manual)
     {
+        lastSelfCheck = DateTime.UtcNow;
         var text = Settings.SelfUpdateRepo;
         if (string.IsNullOrWhiteSpace(text) || !SourceClient.TryParse(text, out var rf) || rf == null)
         {
@@ -879,6 +890,8 @@ public sealed partial class MainViewModel
         if (Settings.BackgroundChecks) _ = Platform.ApplyBackgroundTaskAsync(Settings);
         if (SyncReady) SyncNow();
         if (!string.IsNullOrWhiteSpace(Settings.SelfUpdateRepo)) _ = CheckSelfUpdateAsync(false);
+        selfCheckTimer.Tick += (_, _) => _ = CheckSelfUpdateAsync(false);
+        selfCheckTimer.Start();
         SelfInstall.RegisterInWindows(AppVersion);
         if (Environment.GetCommandLineArgs().Contains("--installed")) FinishSelfInstall();
         else if (SelfInstall.ShouldOffer(Settings.InstallDeclinedPath)) AskSelfInstall();
