@@ -120,7 +120,7 @@ public static class Platform
     static bool aumidReady;
 
     /// <summary>Toasts from a desktop app need a Start menu shortcut that carries the app's AppUserModelID.</summary>
-    static bool EnsureShortcut()
+    public static bool EnsureShortcut()
     {
         if (aumidReady) return true;
         if (Skip) return false;

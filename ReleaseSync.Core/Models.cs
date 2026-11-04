@@ -387,6 +387,8 @@ public class AppSettings : Observable
     string? _selfRepo = "https://github.com/huskyCodes/ReleaseSync"; public string? SelfUpdateRepo { get => _selfRepo; set => Set(ref _selfRepo, value); }
     /// <summary>The newest version the user has been notified about, so a notification appears once per version.</summary>
     public string? SelfUpdateNotified { get; set; }
+    /// <summary>Where the user chose to keep running the program instead of installing it, so the offer isn't repeated for that copy.</summary>
+    public string? InstallDeclinedPath { get; set; }
     public Dictionary<string, DateTime> Tombstones { get; set; } = new();
     public List<string> ScanFolders { get; set; } = new();
     bool _silent; public bool SilentInstall { get => _silent; set => Set(ref _silent, value); }

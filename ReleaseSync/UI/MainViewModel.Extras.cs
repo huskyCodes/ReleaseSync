@@ -746,6 +746,44 @@ public sealed partial class MainViewModel
         finally { try { Directory.Delete(tmpDir, true); } catch { } }
     }
 
+    // ===================== installing itself from a downloaded copy =====================
+    void AskSelfInstall()
+    {
+        bool installing = false;
+        Prompt = new PromptVM
+        {
+            Title = "Install ReleaseSync on this PC?",
+            Message = "This gives ReleaseSync its own folder and adds it to your Start menu, so it keeps working if you tidy up your Downloads. Your library stays as it is. It takes a moment and needs no password.",
+            ShowCheck = true, CheckText = "Also add a shortcut to my desktop", Checked = true,
+            OkText = "Install", CancelText = "Keep it here",
+            OnOk = p => { installing = true; InstallSelf(p.Checked); return null; },
+            OnClose = () => { if (!installing) { Settings.InstallDeclinedPath = Environment.ProcessPath; ScheduleSaveSettings(); } },
+        };
+    }
+
+    void InstallSelf(bool desktopShortcut)
+    {
+        try
+        {
+            SelfInstall.CopyIntoPlace();
+            AddLog("ReleaseSync was installed on this PC", "success");
+            SaveAll();
+            ((App)Application.Current).ReleaseSingleInstance();      // otherwise the installed copy would see this one and close itself
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(SelfInstall.Target, desktopShortcut ? "--installed --desktop-shortcut" : "--installed") { UseShellExecute = false, WorkingDirectory = SelfInstall.Folder });
+            if (ExitRequest != null) ExitRequest(); else Application.Current.Shutdown();
+        }
+        catch (Exception ex) { Toast("ReleaseSync couldn't install: " + ex.Message + " It still works from where it is.", "error"); }
+    }
+
+    /// <summary>The first start of the installed copy: shortcuts are made here, so they point at this copy and carry no "from the web" mark.</summary>
+    void FinishSelfInstall()
+    {
+        Platform.EnsureShortcut();
+        var args = Environment.GetCommandLineArgs();
+        if (args.Contains("--desktop-shortcut")) SelfInstall.AddDesktopShortcut();
+        Toast("ReleaseSync is installed. Find it in your Start menu. You can delete the file you downloaded.", "success");
+    }
+
     // ===================== winget packages in Scan PC =====================
     async Task ScanWingetAsync()
     {
@@ -810,6 +848,8 @@ public sealed partial class MainViewModel
         if (Settings.BackgroundChecks) _ = Platform.ApplyBackgroundTaskAsync(Settings);
         if (SyncReady) SyncNow();
         if (!string.IsNullOrWhiteSpace(Settings.SelfUpdateRepo)) _ = CheckSelfUpdateAsync(false);
+        if (Environment.GetCommandLineArgs().Contains("--installed")) FinishSelfInstall();
+        else if (SelfInstall.ShouldOffer(Settings.InstallDeclinedPath)) AskSelfInstall();
     }
 }
 

@@ -8,9 +8,10 @@ ReleaseSync works with projects on GitHub, GitLab, Codeberg and self-hosted Forg
 
 1. **Download** [`ReleaseSync.exe`](../../releases/latest/download/ReleaseSync.exe) from the [latest release](../../releases/latest). There's nothing else to install.
 2. **Open it.** Windows may show a blue "Windows protected your PC" box, because this free app isn't paid-signed. Click **More info**, then **Run anyway**.
-3. **Pick something.** Click **Browse apps**, choose a category, and press **Add** on anything you like. ReleaseSync finds the right download for your PC and can install it for you.
+3. **Click Install** when it asks. ReleaseSync moves into its own folder, adds itself to your Start menu and offers a desktop shortcut, so there's no need to move the file. You can delete the download afterwards.
+4. **Pick something.** Click **Browse apps**, choose a category, and press **Add** on anything you like. ReleaseSync finds the right download for your PC and can install it for you.
 
-From then on it tells you when your apps have updates. When ReleaseSync itself has a new version, an **Update available** button appears at the bottom left: click it to see what changed and update in one step. You can keep `ReleaseSync.exe` anywhere, such as your Desktop or Documents folder.
+From then on it tells you when your apps have updates. When ReleaseSync itself has a new version, an **Update available** button appears at the bottom left: click it to see what changed and update in one step. To keep it on your taskbar, right-click its icon while it's open and choose **Pin to taskbar**.
 
 It works straight away without a GitHub account. Browsing is limited to 60 requests an hour, though, which runs out quickly. If you browse a lot, a free GitHub token raises that to 5,000: see Settings → GitHub.
 
@@ -56,7 +57,7 @@ ReleaseSync is young and made by one person with an AI assistant. It's been used
 
 **Known limits**
 
-- The app isn't code-signed, so Windows shows a warning the first time you open it (see above).
+- The app isn't code-signed, so Windows shows a warning the first time you open it (see above). On PCs with Smart App Control turned on, Windows can block it or a shortcut made by hand with a message about an application control policy. Use the Install button above rather than moving the file yourself. If the file itself is blocked, right-click it, choose Properties, tick Unblock and click OK.
 - Only tested on one Windows 11 PC so far.
 
 ## What it does
