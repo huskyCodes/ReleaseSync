@@ -384,7 +384,7 @@ public class AppSettings : Observable
         }
     }
     [JsonIgnore] public bool HasSyncPassphrase => SyncPassphrase.Length > 0;
-    string? _selfRepo; public string? SelfUpdateRepo { get => _selfRepo; set => Set(ref _selfRepo, value); }
+    string? _selfRepo = "https://github.com/huskyCodes/ReleaseSync"; public string? SelfUpdateRepo { get => _selfRepo; set => Set(ref _selfRepo, value); }
     public Dictionary<string, DateTime> Tombstones { get; set; } = new();
     public List<string> ScanFolders { get; set; } = new();
     bool _silent; public bool SilentInstall { get => _silent; set => Set(ref _silent, value); }
