@@ -37,6 +37,31 @@ public class MsiLogTests
     public void Some_codes_need_no_log(int code, string expected) => Assert.Contains(expected, MsiLog.Explain("X", code, null));
 
     [Fact]
+    public void An_installers_own_message_is_shown_as_it_is()
+    {
+        var log = "MSI (s): Product: FakeApp -- This app is already installed for everyone. Choose Everyone to update it.\r\n\r\nAction ended: LaunchConditions. Return value 3.\r\nMSI (s): Product: FakeApp -- Installation failed.\r\n";
+        Assert.Equal("FakeApp couldn't be installed: This app is already installed for everyone. Choose Everyone to update it.", MsiLog.Explain("FakeApp", 1603, log));
+    }
+
+    [Theory]
+    [InlineData("Product: FakeApp -- Installation failed.")]
+    [InlineData("Product: FakeApp -- Installation completed successfully.")]
+    public void The_generic_result_lines_are_not_a_reason(string log) => Assert.Contains("error 1603", MsiLog.Explain("FakeApp", 1603, log));
+
+    [Fact]
+    public void A_numbered_error_is_still_explained_in_plain_words() =>
+        Assert.Contains("administrator", MsiLog.Explain("FakeApp", 1603, "Product: FakeApp -- Error 1925. You do not have sufficient privileges"));
+
+    [Theory]
+    [InlineData("LocalMachine|Registry64|{6D0C3F9E}", null, true)]
+    [InlineData("LocalMachine|Registry32|Something", "/foo", true)]
+    [InlineData("CurrentUser|Registry64|Something", null, false)]      // installed just for this user: leave it that way
+    [InlineData(null, null, false)]                                    // a first install: the installer's own default
+    [InlineData("LocalMachine|Registry64|X", "ALLUSERS=2", false)]     // the user set it themselves
+    public void An_update_matches_how_the_old_copy_was_installed(string? id, string? args, bool expected) =>
+        Assert.Equal(expected, MsiLog.NeedsAllUsers(id, args));
+
+    [Fact]
     public void No_log_still_explains_what_to_try()
     {
         var text = MsiLog.Explain("DeckCraft", 1603, null);

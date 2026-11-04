@@ -176,7 +176,10 @@ public sealed class InstallService
         var log = Path.Combine(Paths.LocalDir, "Logs", Fmt.SafeName(app.Repo) + "-install.log");
         Directory.CreateDirectory(Path.GetDirectoryName(log)!);
         args += $" /L*V \"{log}\"";
-        var psi = new ProcessStartInfo("msiexec.exe", args) { UseShellExecute = true, Verb = s.SilentInstall ? "runas" : "" };
+        // an update must match how the installed copy was installed, or the installer refuses (error 1603)
+        bool forEveryone = MsiLog.NeedsAllUsers(UninstallService.Resolve(app).Entry?.Id, app.CustomArgs);
+        if (forEveryone) args += " ALLUSERS=1";
+        var psi = new ProcessStartInfo("msiexec.exe", args) { UseShellExecute = true, Verb = s.SilentInstall || forEveryone ? "runas" : "" };
         return RunProcessAsync(psi, ct, code =>
         {
             switch (code)

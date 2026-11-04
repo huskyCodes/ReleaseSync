@@ -19,6 +19,14 @@ public static class MsiLog
         (@"Error 1720|Error 1721|Error 1722|Error 1723", "a step inside the app's own installer failed, which may be Windows blocking it. Try again with the app closed, or use its portable version if it has one."),
     };
 
+    /// <summary>
+    /// Many installers can install for everyone or just for the current user, and default to just the user when run quietly. They refuse to update a copy installed
+    /// for everyone that way, so an update has to ask for the same kind of install as the copy it replaces. The id is an installed-programs entry ("LocalMachine|…").
+    /// </summary>
+    public static bool NeedsAllUsers(string? installedEntryId, string? customArgs) =>
+        installedEntryId != null && installedEntryId.StartsWith("LocalMachine|", StringComparison.Ordinal)
+        && (customArgs == null || !customArgs.Contains("ALLUSERS", StringComparison.OrdinalIgnoreCase));
+
     /// <summary>A plain sentence for a failed install. The log text is optional; without it the sentence is more general.</summary>
     public static string Explain(string appName, int code, string? log)
     {
@@ -26,6 +34,12 @@ public static class MsiLog
         if (code == 1618) return start + Reasons.First(r => r.Pattern.Contains("1618")).Reason;
         if (code == 1638) return start + Reasons.First(r => r.Pattern.Contains("1638")).Reason;
         if (code == 1925 || code == 1730) return start + Reasons.First(r => r.Pattern.Contains("1925")).Reason;
+        if (!string.IsNullOrEmpty(log))
+        {
+            // an app's own installer often says exactly what's wrong: that beats anything worked out here
+            var own = Regex.Match(log, @"Product: [^\r\n]*? -- (?!Installation (?:failed|completed)|Error \d)([^\r\n]+)");
+            if (own.Success) return start + own.Groups[1].Value.Trim();
+        }
         if (!string.IsNullOrEmpty(log))
             foreach (var (pattern, reason) in Reasons)
                 if (Regex.IsMatch(log, pattern, RegexOptions.IgnoreCase)) return start + reason;
