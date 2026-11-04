@@ -172,13 +172,31 @@ public sealed class InstallService
         var args = $"/i \"{file}\" " + (s.SilentInstall ? "/qn /norestart" : "/passive /norestart") + " MSIRESTARTMANAGERCONTROL=DisableShutdown"
                    + (string.IsNullOrEmpty(installDir) ? "" : $" INSTALLDIR=\"{Platform.ToNetworkPath(installDir)}\"")
                    + (string.IsNullOrWhiteSpace(app.CustomArgs) ? "" : " " + app.CustomArgs);
+        // error 1603 only means "it failed": the log says why. It stays on this PC, and only a failed install keeps it
+        var log = Path.Combine(Paths.LocalDir, "Logs", Fmt.SafeName(app.Repo) + "-install.log");
+        Directory.CreateDirectory(Path.GetDirectoryName(log)!);
+        args += $" /L*V \"{log}\"";
         var psi = new ProcessStartInfo("msiexec.exe", args) { UseShellExecute = true, Verb = s.SilentInstall ? "runas" : "" };
-        return RunProcessAsync(psi, ct, code => code switch
+        return RunProcessAsync(psi, ct, code =>
         {
-            0 or 3010 or 1641 => null,
-            1602 or 1223 => "Installation was cancelled.",
-            _ => $"The installer finished with error code {code}."
+            switch (code)
+            {
+                case 0: case 3010: case 1641: try { File.Delete(log); } catch { } return null;
+                case 1602: case 1223: try { File.Delete(log); } catch { } return "Installation was cancelled.";
+                default: return MsiLog.Explain(app.Title, code, ReadLog(log)) + $" (Details: {log})";
+            }
         });
+    }
+
+    static string? ReadLog(string file)
+    {
+        try
+        {
+            using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream, Encoding.UTF8, true);
+            return reader.ReadToEnd();
+        }
+        catch { return null; }
     }
 
     static Task RunExeAsync(string file, TrackedApp app, CancellationToken ct, string? installDir = null)
