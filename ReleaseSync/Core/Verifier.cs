@@ -17,7 +17,6 @@ using System.Threading.Tasks;
 namespace ReleaseSync.Core;
 
 public enum SignatureState { NotChecked, Trusted, Unsigned, Untrusted, Invalid }
-public enum DefenderState { NotRun, Clean, Threat, Unavailable }
 
 public sealed class VerifyResult
 {
@@ -64,6 +63,7 @@ public sealed class VerifyResult
         {
             var parts = new List<string>();
             if (Defender == DefenderState.Clean) parts.Add("Windows Security: clean");
+            else if (Defender == DefenderState.Unavailable) parts.Add("Windows Security: couldn't scan");
             if (ChecksumChecked) parts.Add(ChecksumMatches ? $"checksum verified ({ChecksumSource})" : "CHECKSUM MISMATCH");
             else parts.Add("no checksum published");
             if (IsExecutable)
@@ -265,19 +265,13 @@ public static class Defender
             { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true });
             if (p == null) return (DefenderState.Unavailable, null);
             var output = p.StandardOutput.ReadToEndAsync(ct);
-            p.StandardError.ReadToEndAsync(ct);
+            var errors = p.StandardError.ReadToEndAsync(ct);
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct); cts.CancelAfter(TimeSpan.FromMinutes(3));
             try { await p.WaitForExitAsync(cts.Token).ConfigureAwait(false); }
             catch (OperationCanceledException) when (!ct.IsCancellationRequested) { try { p.Kill(true); } catch { } return (DefenderState.Unavailable, null); }
-            var text = await output.ConfigureAwait(false);
+            var text = await output.ConfigureAwait(false) + await errors.ConfigureAwait(false);
             if (!File.Exists(file)) return (DefenderState.Threat, "Windows Security removed the file");
-            if (p.ExitCode == 0) return (DefenderState.Clean, null);
-            if (p.ExitCode == 2 || Regex.IsMatch(text, @"found\s+[1-9]\d*\s+threat", RegexOptions.IgnoreCase))
-            {
-                var m = Regex.Match(text, @"Threat\s*:\s*(?<n>[^\r\n]+)");
-                return (DefenderState.Threat, m.Success ? m.Groups["n"].Value.Trim() : null);
-            }
-            return (DefenderState.Unavailable, null);        // another antivirus is in charge, or the scanner couldn't run
+            return DefenderScan.Read(p.ExitCode, text);
         }
         catch (OperationCanceledException) { throw; }
         catch { return (DefenderState.Unavailable, null); }
