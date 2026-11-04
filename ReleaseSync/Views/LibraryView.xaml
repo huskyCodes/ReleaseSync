@@ -25,6 +25,9 @@
             <MenuItem Header="Launch" Command="{Binding LaunchCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE768;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
+            <MenuItem Header="See file location" Command="{Binding LocationCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8B7;" FontSize="14"/></MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Skip this version" Command="{Binding SkipCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding HasUpdate, Converter={StaticResource BoolVis}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE72A;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>

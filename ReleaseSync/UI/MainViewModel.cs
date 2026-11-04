@@ -471,6 +471,7 @@ public sealed partial class MainViewModel : Observable
     public ICommand CloseDrawerCommand { get; private set; } = null!;
     public ICommand RemoveCommand { get; private set; } = null!;
     public ICommand LaunchCommand { get; private set; } = null!;
+    public ICommand LocationCommand { get; private set; } = null!;
     public ICommand MarkInstalledCommand { get; private set; } = null!;
     public ICommand ReinstallCommand { get; private set; } = null!;
     public ICommand UninstallCommand { get; private set; } = null!;
@@ -537,6 +538,7 @@ public sealed partial class MainViewModel : Observable
         CloseDrawerCommand = new RelayCommand(() => SelectedApp = null);
         RemoveCommand = new RelayCommand(p => { if (p is TrackedApp a) AskRemove(a); });
         LaunchCommand = new RelayCommand(p => { if (p is TrackedApp a && a.CanLaunch) Shell.Open(a.InstallPath); });
+        LocationCommand = new RelayCommand(async p => { if (p is TrackedApp a) await ShowLocationAsync(a); });
         MarkInstalledCommand = new RelayCommand(p =>
         {
             if (p is TrackedApp a && a.HasRelease) { a.InstalledVersion = a.LatestVersion; ScheduleSaveApps(); Toast($"{a.Title} marked as installed ({a.LatestVersion})", "success"); AddLog($"Marked {a.FullName} as installed at {a.LatestVersion}", "info"); }
@@ -1603,6 +1605,30 @@ public sealed partial class MainViewModel : Observable
         MarkResultTracked(app.Owner, app.Repo, false);
         AddLog($"Stopped tracking {app.FullName}", "info");
         Toast($"Stopped tracking {app.Title}", "info");
+    }
+
+    /// <summary>Where the program really is. Many installers don't tell Windows their folder, so this also looks where the app is usually found.</summary>
+    static string? FindLocation(TrackedApp app)
+    {
+        if (!string.IsNullOrEmpty(app.InstallPath) && File.Exists(app.InstallPath)) return app.InstallPath;
+        var (entry, _) = UninstallService.Resolve(app);
+        if (entry != null)
+        {
+            if (UninstallService.FindExe(entry) is { } exe) return exe;
+            var folder = entry.InstallLocation?.Trim().Trim('"');
+            if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder)) return folder;
+        }
+        if (app.HasCustomInstallDir && Directory.Exists(app.CustomInstallDir)) return app.CustomInstallDir;
+        return UninstallService.FindLocalProgram(app)?.Exe;
+    }
+
+    public async Task ShowLocationAsync(TrackedApp app)
+    {
+        var path = await Task.Run(() => FindLocation(app));
+        if (path == null) { Toast($"Couldn't find where {app.Title} is installed", "info"); return; }
+        if (File.Exists(path) && string.IsNullOrEmpty(app.InstallPath)) { app.InstallPath = path; ScheduleSaveApps(); }      // now Launch works for it too
+        AddLog($"{app.Title} is in {path}", "info");
+        Shell.Reveal(path);
     }
 
     void AskRemove(TrackedApp app)
