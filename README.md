@@ -32,13 +32,13 @@ ReleaseSync is young and made by one person with an AI assistant. It's been used
 | Scan this PC for apps you already have | Working |
 | Rollback and backups | Working |
 | Uninstall, including apps in a folder you chose (removes only what it installed) | Working |
+| ReleaseSync updating itself (the **Update available** button at the bottom left) | Working. If an update ever fails, your current version keeps running. |
 
 **Early, use with care**
 
 | Feature | State |
 |---|---|
 | Sync between PCs through a private Gist or a shared folder | Built and tested with simulated devices. Not yet tried in everyday use between two real computers. |
-| ReleaseSync updating itself | An **Update available** button appears at the bottom left, shows what's new, and updates and reopens the app for you. Tested, but not yet over a real download. If it ever fails, your current version keeps working and you can download the new one by hand. |
 | Safety checks | Checksums and signatures are in use. The Windows Security scan and VirusTotal lookup haven't been tried on a real download yet. |
 
 **In progress (not in the download yet)**
