@@ -2,8 +2,8 @@
 
 **New in this version**
 
-- A tidier app menu: everyday actions first, Manage and Project sub-menus for the rest, and destructive actions last.
-- The menu now scrolls when space is tight instead of being cut off.
+- Fixed every download being called dangerous on PCs where the Windows Security scan can't run, such as when another antivirus is installed. A scan that fails no longer stops the install, and a real detection still does.
+- The checks shown for an app now say when Windows Security couldn't scan a download.
 
 Code signing: ReleaseSync is applying to use SignPath Foundation. See the [code signing policy](https://github.com/huskyCodes/ReleaseSync/blob/main/docs/CODE-SIGNING.md).
 
