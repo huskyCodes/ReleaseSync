@@ -2,11 +2,7 @@
 
 **New in this version**
 
-- Fixed error 1603 when updating apps that were installed for everyone on the PC.
-- Reinstall: a new item in each app's menu removes the old version and installs the newest in one step. A failed update offers it too.
-- Move to another folder: moves an unpacked app safely, and updates your shortcuts to it.
-- A new setting chooses whether new apps install just for you or for everyone on the PC.
-- See file location now finds apps wherever they were installed.
-- ReleaseSync notices its own updates much sooner, and the routine check uses none of your GitHub requests.
+- A tidier app menu: everyday actions first, Manage and Project sub-menus for the rest, and destructive actions last.
+- The menu now scrolls when space is tight instead of being cut off.
 
 See the [project status](https://github.com/huskyCodes/ReleaseSync#project-status) for what's working and what's in progress.
