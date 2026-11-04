@@ -103,6 +103,14 @@ public class BoolToVisibility : IValueConverter
     public object ConvertBack(object value, Type t, object p, CultureInfo c) => throw new NotSupportedException();
 }
 
+/// <summary>The tallest a menu may be on this screen, leaving room above and below it. Anything longer scrolls.</summary>
+public sealed class MenuHeight : IValueConverter
+{
+    public static readonly MenuHeight Instance = new();
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value is double h ? Math.Max(240, h * 0.8) : 520d;
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
 public class NullToVisibility : IValueConverter
 {
     public bool Invert { get; set; }

@@ -13,7 +13,11 @@ public partial class LibraryView : UserControl
     Point dragStart;
     bool dragging;
 
-    public LibraryView() => InitializeComponent();
+    public LibraryView()
+    {
+        InitializeComponent();
+        Loaded += (_, _) => Dispatcher.BeginInvoke(new Action(OpenMenuFromArgs), System.Windows.Threading.DispatcherPriority.ContextIdle);
+    }
 
     /// <summary>Puts the filter/sort/view controls beside the chips when there's room, or on their own row when there isn't.</summary>
     void Toolbar_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -83,6 +87,19 @@ public partial class LibraryView : UserControl
         else App.VM.MoveToGroup(app, value);
         e.Handled = true;
     }
+    /// <summary>Developer shortcut for screenshots: --app-menu=owner/repo opens an app's menu; --app-menu-height=300 limits it, as a small screen would.</summary>
+    void OpenMenuFromArgs()
+    {
+        var args = Environment.GetCommandLineArgs();
+        var arg = args.FirstOrDefault(a => a.StartsWith("--app-menu=", StringComparison.OrdinalIgnoreCase));
+        if (arg == null || !arg.Contains('/')) return;
+        var parts = arg["--app-menu=".Length..].Split('/');
+        if (App.VM.Find(parts[0], parts[1]) is not { } app) return;
+        var menu = (ContextMenu)FindResource("AppMenu");
+        if (args.FirstOrDefault(a => a.StartsWith("--app-menu-height=", StringComparison.OrdinalIgnoreCase)) is { } h && double.TryParse(h["--app-menu-height=".Length..], out var height)) menu.MaxHeight = height;
+        menu.DataContext = app; menu.PlacementTarget = this; menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Center; menu.IsOpen = true;
+    }
+
     void More_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement fe && fe.DataContext is TrackedApp)

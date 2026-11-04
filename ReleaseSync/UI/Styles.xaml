@@ -390,8 +390,11 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ContextMenu">
-                    <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="11" Padding="5" MinWidth="200">
-                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                    <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="11" Padding="5" MinWidth="220">
+                        <!-- a long menu scrolls rather than running off the bottom of a small screen -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height, Converter={x:Static ui:MenuHeight.Instance}}" Focusable="False">
+                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                        </ScrollViewer>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

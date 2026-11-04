@@ -16,9 +16,6 @@
             </Style.Triggers>
         </Style>
         <ContextMenu x:Key="AppMenu">
-            <MenuItem Header="Open details" Command="{Binding OpenCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE946;" FontSize="14"/></MenuItem.Icon>
-            </MenuItem>
             <MenuItem Header="{Binding ActionText}" Command="{Binding InstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding ShowAction, Converter={StaticResource BoolVis}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
@@ -28,17 +25,21 @@
             <MenuItem Header="See file location" Command="{Binding LocationCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8B7;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Skip this version" Command="{Binding SkipCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding HasUpdate, Converter={StaticResource BoolVis}}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE72A;" FontSize="14"/></MenuItem.Icon>
-            </MenuItem>
             <MenuItem Header="Check for updates" Command="{Binding CheckCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Favorite / unfavorite" Command="{Binding PinCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE718;" FontSize="14"/></MenuItem.Icon>
+            <MenuItem Header="Open details" Command="{Binding OpenCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE946;" FontSize="14"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="Add to favorites" Command="{Binding PinCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding Pinned, Converter={StaticResource InvBoolVis}}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE734;" FontSize="14"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Remove from favorites" Command="{Binding PinCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding Pinned, Converter={StaticResource BoolVis}}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE735;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="Move to group" ItemsSource="{Binding MoveMenuOptions, Source={x:Static app:App.VM}}" DisplayMemberPath="Label" SubmenuOpened="MoveMenu_Opened">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8B7;" FontSize="14"/></MenuItem.Icon>
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8FD;" FontSize="14"/></MenuItem.Icon>
                 <MenuItem.ItemContainerStyle>
                     <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                         <EventSetter Event="Click" Handler="MoveItem_Click"/>
@@ -46,29 +47,35 @@
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="More from this developer" Command="{Binding OwnerCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE77B;" FontSize="14"/></MenuItem.Icon>
+            <MenuItem Header="Manage">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE713;" FontSize="14"/></MenuItem.Icon>
+                <MenuItem Header="Skip this version" Command="{Binding SkipCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding HasUpdate, Converter={StaticResource BoolVis}}">
+                    <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE72A;" FontSize="14"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Reinstall" Command="{Binding ReinstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
+                    <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE895;" FontSize="14"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Move to another folder…" Command="{Binding MoveCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
+                    <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8DE;" FontSize="14"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Mark as installed" Command="{Binding MarkInstalledCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                    <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE73E;" FontSize="14"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Change repository…" Command="{Binding RelinkCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                    <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8AB;" FontSize="14"/></MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
-            <MenuItem Header="Repository details" Command="{Binding DetailsCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE946;" FontSize="14"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Open on GitHub" Command="{Binding GitHubCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8A7;" FontSize="14"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Change repository…" Command="{Binding RelinkCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8AB;" FontSize="14"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Mark as installed" Command="{Binding MarkInstalledCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE73E;" FontSize="14"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Move to another folder…" Command="{Binding MoveCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8DE;" FontSize="14"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Reinstall" Command="{Binding ReinstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="14"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Uninstall from this PC" Command="{Binding UninstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
-                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="14"/></MenuItem.Icon>
+            <MenuItem Header="Project">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE774;" FontSize="14"/></MenuItem.Icon>
+                <MenuItem Header="Repository details" Command="{Binding DetailsCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                    <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE946;" FontSize="14"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="More from this developer" Command="{Binding OwnerCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                    <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE77B;" FontSize="14"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Open on GitHub" Command="{Binding GitHubCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                    <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE8A7;" FontSize="14"/></MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <Separator/>
             <MenuItem Header="Hide from library" Command="{Binding HideCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding Hidden, Converter={StaticResource InvBoolVis}}">
@@ -78,6 +85,9 @@
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE7B3;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="Stop tracking (keeps it installed)" Command="{Binding RemoveCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE711;" FontSize="14"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Uninstall from this PC" Command="{Binding UninstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="14" Foreground="{DynamicResource DangerBrush}"/></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
