@@ -543,7 +543,7 @@ public sealed partial class MainViewModel : Observable
         {
             if (p is TrackedApp a && a.HasRelease) { a.InstalledVersion = a.LatestVersion; ScheduleSaveApps(); Toast($"{a.Title} marked as installed ({a.LatestVersion})", "success"); AddLog($"Marked {a.FullName} as installed at {a.LatestVersion}", "info"); }
         });
-        ReinstallCommand = new RelayCommand(async p => { if (p is TrackedApp a) await InstallAsync(a); });
+        ReinstallCommand = new RelayCommand(p => { if (p is TrackedApp a) AskReinstall(a); });
         UninstallCommand = new RelayCommand(p => { if (p is TrackedApp a) AskUninstall(a); });
         ToggleTryLaterCommand = new RelayCommand(p => { if (p is RepoInfo r) ToggleTryLater(r); });
         LocateExistingCommand = new RelayCommand(LocateExisting);
@@ -1433,6 +1433,7 @@ public sealed partial class MainViewModel : Observable
         var progress = new Progress<InstallProgress>(p => { app.Progress = p.Percent; app.BusyText = p.Text; });
         await installLock.WaitAsync();
         bool relaunch = false; string? relaunchExe = null;
+        string? offerReinstall = null;
         try
         {
             if (cts.IsCancellationRequested) throw new OperationCanceledException();
@@ -1551,6 +1552,7 @@ public sealed partial class MainViewModel : Observable
             app.LastError = msg;
             AddLog($"{app.Title}: {msg}", "error");
             if (!unattended || !msg.Contains("is running")) Toast($"{app.Title}: {msg}", "error");
+            if (wasUpdate && !unattended && msg.Contains("couldn't be installed:")) offerReinstall = msg;      // an update over the old version failed: starting clean usually works
         }
         finally
         {
@@ -1561,6 +1563,7 @@ public sealed partial class MainViewModel : Observable
             if (app == DrawerApp) DrawerPicker?.Refresh();
             ScheduleSaveApps(); ScheduleRefresh();
         }
+        if (offerReinstall != null) AskReinstall(app, offerReinstall);
     }
 
     /// <summary>Downloads one file from any release into the download folder and shows it in Explorer.</summary>
@@ -1742,6 +1745,49 @@ public sealed partial class MainViewModel : Observable
         }
         catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast("Couldn't read the file list, so nothing was deleted: " + ex.Message, "error"); }
         finally { app.IsBusy = false; app.BusyText = ""; app.NotifyAll(); }
+    }
+
+    /// <summary>The one-step fix for an app that won't update: remove the old version, then install the newest. Offered from the menu and after a failed update.</summary>
+    void AskReinstall(TrackedApp app, string? failure = null)
+    {
+        if (app.IsBusy) return;
+        var release = app.LatestRelease;
+        if (release == null || AssetPicker.Pick(release.Assets, app.AssetPattern) == null)
+        {
+            Toast($"No Windows download found for {app.Title}, so nothing was changed.", "warn"); return;      // never remove an app with nothing to replace it
+        }
+        var (entry, exact) = IsPortableInstall(app) ? (null, false) : UninstallService.Resolve(app);
+        var lead = failure == null ? "" : failure.Split(" (Details:")[0] + "\n\nReinstalling often fixes this. ";
+        var version = release.Tag.TrimStart('v', 'V');
+        Prompt = new PromptVM
+        {
+            Title = $"Reinstall {app.Title}?",
+            Message = entry == null
+                ? lead + $"ReleaseSync will install version {version} over the current copy."
+                : lead + $"ReleaseSync will uninstall {entry.DisplayName}{(string.IsNullOrEmpty(entry.Version) ? "" : " " + entry.Version)}, then install version {version}. Windows may ask for permission. Your own documents aren't touched."
+                  + (exact ? "" : " Check that's the right program first."),
+            OkText = "Reinstall",
+            OnOk = p => { _ = ReinstallAsync(app, entry); return null; },
+        };
+    }
+
+    async Task ReinstallAsync(TrackedApp app, UninstallEntry? entry)
+    {
+        if (entry != null)
+        {
+            if (app.IsBusy) return;
+            app.Progress = 0; app.BusyText = "Removing the old version…"; app.IsBusy = true;
+            AddLog($"Reinstalling {app.Title}: removing {entry.DisplayName}", "info");
+            try
+            {
+                var (ok, msg) = await UninstallService.RunAsync(entry, false);
+                if (!ok) { AddLog($"{app.Title}: {msg}", "warn"); Toast($"{app.Title} was left as it was: {msg}", "warn"); return; }
+                app.InstalledVersion = null; app.InstallPath = null; app.UninstallKey = null; app.NotifiedVersion = null;
+            }
+            catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast(ex.Message, "error"); return; }
+            finally { app.IsBusy = false; app.BusyText = ""; app.NotifyAll(); ScheduleSaveApps(); ScheduleRefresh(); }
+        }
+        await InstallAsync(app);
     }
 
     async Task RunUninstallAsync(TrackedApp app, UninstallEntry entry, bool thenRemove)

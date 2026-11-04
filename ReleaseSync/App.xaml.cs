@@ -162,6 +162,7 @@ public partial class App : Application
         if (Arg("page") is { } page) VM.Navigate(page);
         if (Arg("open") is { } open && open.Contains('/')) { var p = open.Split('/'); var a = VM.Find(p[0], p[1]); if (a != null) VM.SelectedApp = a; }
         if (Arg("reveal") is { } rev && rev.Contains('/')) { var p = rev.Split('/'); var a = VM.Find(p[0], p[1]); if (a != null) _ = VM.ShowLocationAsync(a); }
+        if (Arg("reinstall") is { } rei && rei.Contains('/')) { var p = rei.Split('/'); var a = VM.Find(p[0], p[1]); if (a != null) VM.ReinstallCommand.Execute(a); }
         if (Arg("add") is { } add && ReleaseSync.Core.SourceClient.TryParse(add, out var addRef) && addRef != null) _ = VM.OpenAddPreviewAsync(addRef.Owner, addRef.Repo, null, addRef.Source, addRef.FullPath);
         if (Arg("relink") is { } rl && rl.Contains('|')) { var parts = rl.Split('|', 2); var ra = parts[0].Split('/'); var target = VM.Find(ra[0], ra[1]); if (target != null && ReleaseSync.Core.SourceClient.TryParse(parts[1], out var newRef) && newRef != null) _ = VM.RelinkAsync(target, newRef, null); }
         if (args.Contains("--check")) _ = VM.CheckAllAsync(true);

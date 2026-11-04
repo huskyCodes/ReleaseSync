@@ -61,6 +61,9 @@
             <MenuItem Header="Mark as installed" Command="{Binding MarkInstalledCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE73E;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
+            <MenuItem Header="Reinstall" Command="{Binding ReinstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
+                <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="14"/></MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Uninstall from this PC" Command="{Binding UninstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE74D;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
