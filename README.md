@@ -14,7 +14,7 @@ From then on it tells you when your apps have updates. When ReleaseSync itself h
 
 It works straight away without a GitHub account. Browsing is limited to 60 requests an hour, though, which runs out quickly. If you browse a lot, a free GitHub token raises that to 5,000: see Settings → GitHub.
 
-The version you're on is shown at the bottom right of the window.
+The version you're on is shown at the bottom of the left sidebar.
 
 Needs Windows 10 (version 1903) or later, on a 64-bit PC.
 

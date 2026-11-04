@@ -1,7 +1,7 @@
 <Project>
   <!-- settings shared by every project in the repo -->
   <PropertyGroup>
-    <Version>1.11.1</Version>
+    <Version>1.11.2</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <Deterministic>true</Deterministic>
