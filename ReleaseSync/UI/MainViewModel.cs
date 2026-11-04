@@ -1759,6 +1759,21 @@ public sealed partial class MainViewModel : Observable
         return null;
     }
 
+    /// <summary>What has to close before a move. In a folder shared with other things, only the app's own files count, so nothing else running from there gets closed.</summary>
+    static List<System.Diagnostics.Process> MovingProcesses(TrackedApp app, string source, IReadOnlyList<string>? onlyThese)
+    {
+        var running = RunningApps.Find(app);
+        if (onlyThese == null) return running;
+        var mine = new List<System.Diagnostics.Process>();
+        foreach (var p in running)
+        {
+            string? path = null;
+            try { path = p.MainModule?.FileName; } catch { }
+            if (path != null && onlyThese.Any(f => string.Equals(Path.Combine(source, f.Replace('/', '\\')), path, StringComparison.OrdinalIgnoreCase))) mine.Add(p); else p.Dispose();
+        }
+        return mine;
+    }
+
     /// <summary>Moves an unpacked app and everything in its folder somewhere else. Apps set up by their own installer can't be moved safely: Windows has them registered where they are.</summary>
     public async Task MoveAppAsync(TrackedApp app, string? destination = null)
     {
@@ -1782,23 +1797,41 @@ public sealed partial class MainViewModel : Observable
             Toast($"ReleaseSync doesn't have a list of {app.Title}'s files, and that folder may hold your own, so it can't be moved safely.", "warn");
             return;
         }
+
+        // first things first: it can't be moved while it's open
+        var running = MovingProcesses(app, source, onlyThese);
+        if (running.Count > 0)
+        {
+            if (!await ShowPromptAsync(new PromptVM { Title = $"{app.Title} is open", Message = "It has to be closed before it can be moved. Save anything you're working on first: ReleaseSync asks it to close politely, and only forces it if it doesn't.", OkText = "Close it and move" }))
+            {
+                foreach (var p in running) p.Dispose();
+                return;
+            }
+            if (!await RunningApps.CloseAsync(running)) { Toast($"Couldn't close {app.Title}. Close it yourself and try again.", "error"); return; }
+        }
+
         destination ??= PickInstallFolder(app.Title, app.Repo, Path.GetDirectoryName(source));
         if (destination == null) return;
         if (FolderMove.Problem(source, destination, FolderMove.Size(source, onlyThese)) is { } problem) { Toast(problem, "warn"); return; }
 
+        var shortcuts = await Task.Run(() => ShortcutFixer.Find(source, onlyThese));
+        var shortcutNote = shortcuts.Count == 0 ? "" : $" {shortcuts.Count} shortcut{(shortcuts.Count == 1 ? "" : "s")} to it (desktop, Start menu or taskbar) will be updated too.";
         if (!await ShowPromptAsync(new PromptVM
         {
             Title = $"Move {app.Title}?",
             Message = $"From {source}\nTo {destination}\n\n" + (ownFolder ? "Everything in its folder moves, including settings and saves stored there." : "Only the files it installed move. Anything else in that folder stays.")
-                      + " The old copy is only removed once everything is safely in the new place.",
+                      + " The old copy is only removed once everything is safely in the new place." + shortcutNote
+                      + " If another program has the old location saved in its own settings, you'd need to change that there.",
             OkText = "Move",
         })) return;
 
-        var running = RunningApps.Find(app);
-        if (running.Count > 0)
+        // it may have been opened again while the questions were on screen
+        var reopened = MovingProcesses(app, source, onlyThese);
+        if (reopened.Count > 0)
         {
-            if (!await ShowPromptAsync(new PromptVM { Title = $"{app.Title} is running", Message = "It has to be closed to be moved. Save anything you're working on first.", OkText = "Close it and move" })) return;
-            if (!await RunningApps.CloseAsync(running)) { Toast($"Couldn't close {app.Title}. Close it yourself and try again.", "error"); return; }
+            foreach (var p in reopened) p.Dispose();
+            Toast($"{app.Title} is open again, so nothing was moved. Close it and try again.", "warn");
+            return;
         }
 
         var list = onlyThese?.ToList();
@@ -1813,8 +1846,10 @@ public sealed partial class MainViewModel : Observable
             InstallManifest.Save(app.Id, destination, list ?? InstallManifest.ListDirectory(destination));
             AppBackups.Retarget(app, source, destination);
             InstallService.RefreshShortcut(app);
+            int stuck = await Task.Run(() => ShortcutFixer.Repoint(shortcuts, source, destination));
             AddLog($"Moved {app.Title} to {destination}", "success");
             Toast(result.LeftBehind > 0 ? $"{app.Title} moved. {result.LeftBehind} old file{(result.LeftBehind == 1 ? "" : "s")} couldn't be removed from {source}." : $"{app.Title} moved to {destination}", result.LeftBehind > 0 ? "warn" : "success");
+            if (stuck > 0) Toast($"{stuck} shortcut{(stuck == 1 ? "" : "s")} to {app.Title} couldn't be updated, so {(stuck == 1 ? "it" : "they")} won't open it. Delete {(stuck == 1 ? "it" : "them")} and make a new one.", "warn");
         }
         catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast($"{app.Title} wasn't moved, and is still where it was: {ex.Message}", "error"); }
         finally { app.IsBusy = false; app.BusyText = ""; app.Progress = 0; app.NotifyAll(); ScheduleSaveApps(); ScheduleRefresh(); }

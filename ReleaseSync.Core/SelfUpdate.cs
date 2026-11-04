@@ -39,6 +39,16 @@ public static class SelfUpdate
         return string.Join("\n\n", list.Select(r => r.Tag + "\n" + Changes(r.Notes)));
     }
 
+    /// <summary>
+    /// The version in the address GitHub's "latest release" page redirects to (…/releases/tag/v1.2.3). Reading that is an ordinary web request, not an API call, so a routine
+    /// check costs nothing from the user's hourly allowance, with or without a token. Null if the address isn't that shape.
+    /// </summary>
+    public static string? TagFromRedirect(string? location)
+    {
+        var m = Regex.Match(location ?? "", @"/releases/tag/([^/?#]+)$");
+        return m.Success ? Uri.UnescapeDataString(m.Groups[1].Value) : null;
+    }
+
     /// <summary>The hex SHA-256 in a value like "sha256:ab12…" or a checksum file's "ab12…  ReleaseSync.exe". Null if there isn't one.</summary>
     public static string? Sha256From(string? text)
     {

@@ -128,6 +128,18 @@ public sealed class FolderMoveTests : IDisposable
     public void A_folder_whose_name_only_starts_the_same_is_not_inside_it() =>
         Assert.Null(FolderMove.Problem(Src, Src + "-backup"));
 
+    [Theory]
+    [InlineData(@"C:\Old\app.exe", @"C:\New\app.exe")]
+    [InlineData(@"c:\old\sub\app.exe", @"C:\New\sub\app.exe")]            // Windows paths ignore case
+    [InlineData(@"C:\Old", @"C:\New")]
+    [InlineData(@"C:\Old\", @"C:\New")]
+    [InlineData(@"C:\Old\app.exe,0", @"C:\New\app.exe,0")]                // an icon location
+    [InlineData(@"C:\Older\app.exe", null)]                                // only the name starts the same
+    [InlineData(@"D:\Elsewhere\app.exe", null)]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void Paths_follow_a_move(string? path, string? expected) => Assert.Equal(expected, FolderMove.Rebase(path, @"C:\Old", @"C:\New"));
+
     [Fact]
     public void Size_counts_only_what_would_move()
     {

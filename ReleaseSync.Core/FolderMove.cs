@@ -18,6 +18,15 @@ public static class FolderMove
     static string Full(string p) => Path.GetFullPath(p).TrimEnd('\\', '/');
     static bool Inside(string path, string folder) => path.StartsWith(folder + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>A path (or an icon location like "C:\app\a.exe,0") in its new place after a move, or null if it isn't inside the old folder.</summary>
+    public static string? Rebase(string? path, string oldDir, string newDir)
+    {
+        if (string.IsNullOrEmpty(path)) return null;
+        var from = Full(oldDir);
+        if (string.Equals(path.TrimEnd('\\', '/'), from, StringComparison.OrdinalIgnoreCase)) return Full(newDir);
+        return Inside(path, from) ? Full(newDir) + path[from.Length..] : null;
+    }
+
     /// <summary>Why this move can't be done, in plain words, or null if it can.</summary>
     public static string? Problem(string source, string destination, long bytesNeeded = 0)
     {

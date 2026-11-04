@@ -48,6 +48,16 @@ public class SelfUpdateTests
     [InlineData("sha256:tooshort")]
     public void Anything_else_is_not_a_checksum(string? text) => Assert.Null(SelfUpdate.Sha256From(text));
 
+    [Theory]
+    [InlineData("https://github.com/fake/app/releases/tag/v1.2.3", "v1.2.3")]
+    [InlineData("/fake/app/releases/tag/1.0", "1.0")]
+    [InlineData("https://github.com/fake/app/releases/tag/v1.0%2Bbuild", "v1.0+build")]
+    [InlineData("https://github.com/fake/app/releases", null)]        // a project with no releases redirects here
+    [InlineData("https://github.com/login", null)]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void The_version_is_read_from_the_latest_release_redirect(string? location, string? expected) => Assert.Equal(expected, SelfUpdate.TagFromRedirect(location));
+
     [Fact]
     public void A_file_must_match_its_checksum()
     {

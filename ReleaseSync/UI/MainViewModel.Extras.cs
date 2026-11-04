@@ -657,6 +657,12 @@ public sealed partial class MainViewModel
         try
         {
             rf = await Sources.ResolveAsync(rf);
+            // the routine check: free, and it uses none of the request allowance. The API is only asked once there's something new, for its notes and download
+            if (!manual && rf.Source == "github" && await LatestTagAsync(rf) is { } tag)
+            {
+                if (!VersionUtil.IsNewer(tag, AppVersion)) { selfRelease = null; selfAsset = null; selfChanges = ""; SelfStatus = $"You're on the latest version ({AppVersion})."; RaiseSelfUpdate(); return; }
+                if (selfRelease?.Tag == tag) return;      // already showing this one
+            }
             var testReleases = Legacy.IsTestMode ? Environment.GetEnvironmentVariable("RELEASESYNC_TEST_RELEASES") : null;      // tests can't read a private repository
             var releases = !string.IsNullOrEmpty(testReleases) ? JsonSerializer.Deserialize<List<ReleaseInfo>>(File.ReadAllText(testReleases))! : (await Sources.GetReleasesAsync(rf.Source, rf.Owner, rf.Repo, null)).Releases;
             var rel = releases.FirstOrDefault(r => !r.Prerelease);
@@ -680,6 +686,22 @@ public sealed partial class MainViewModel
             else { selfRelease = null; selfAsset = null; selfChanges = ""; SelfStatus = $"You're on the latest version ({AppVersion})."; RaiseSelfUpdate(); }
         }
         catch (Exception ex) { SelfStatus = ex.Message; }
+    }
+
+    static readonly System.Net.Http.HttpClient redirectClient = new(new System.Net.Http.HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(15) };
+
+    /// <summary>The newest version, read from where GitHub's plain "latest release" page redirects. Null if that can't be read; the check then falls back to the API.</summary>
+    static async Task<string?> LatestTagAsync(RepoRef repo)
+    {
+        if (Legacy.IsTestMode && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RELEASESYNC_TEST_RELEASES"))) return null;
+        try
+        {
+            using var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Head, $"https://github.com/{repo.Owner}/{repo.Repo}/releases/latest");
+            req.Headers.UserAgent.ParseAdd("ReleaseSync");
+            using var res = await redirectClient.SendAsync(req);
+            return SelfUpdate.TagFromRedirect(res.Headers.Location?.ToString());
+        }
+        catch { return null; }
     }
 
     /// <summary>The update dialog: which version you have, which you'd get, what changed. Nothing happens until the user says yes.</summary>
