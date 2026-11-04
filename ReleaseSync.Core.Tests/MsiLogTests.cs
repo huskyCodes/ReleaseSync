@@ -53,13 +53,15 @@ public class MsiLogTests
         Assert.Contains("administrator", MsiLog.Explain("FakeApp", 1603, "Product: FakeApp -- Error 1925. You do not have sufficient privileges"));
 
     [Theory]
-    [InlineData("LocalMachine|Registry64|{6D0C3F9E}", null, true)]
-    [InlineData("LocalMachine|Registry32|Something", "/foo", true)]
-    [InlineData("CurrentUser|Registry64|Something", null, false)]      // installed just for this user: leave it that way
-    [InlineData(null, null, false)]                                    // a first install: the installer's own default
-    [InlineData("LocalMachine|Registry64|X", "ALLUSERS=2", false)]     // the user set it themselves
-    public void An_update_matches_how_the_old_copy_was_installed(string? id, string? args, bool expected) =>
-        Assert.Equal(expected, MsiLog.NeedsAllUsers(id, args));
+    [InlineData("LocalMachine|Registry64|{6D0C3F9E}", false, null, true)]    // installed for everyone: stays that way, whatever the setting says
+    [InlineData("LocalMachine|Registry32|Something", false, "/foo", true)]
+    [InlineData("CurrentUser|Registry64|Something", true, null, false)]      // installed just for this user: stays that way, whatever the setting says
+    [InlineData(null, false, null, false)]                                   // a new install follows the choice: just me
+    [InlineData(null, true, null, true)]                                     // a new install follows the choice: everyone
+    [InlineData("LocalMachine|Registry64|X", true, "ALLUSERS=2", false)]     // the user set it themselves
+    [InlineData(null, true, "allusers=2", false)]
+    public void Updates_match_the_old_copy_and_new_installs_follow_the_choice(string? id, bool wanted, string? args, bool expected) =>
+        Assert.Equal(expected, MsiLog.InstallForEveryone(id, wanted, args));
 
     [Fact]
     public void No_log_still_explains_what_to_try()

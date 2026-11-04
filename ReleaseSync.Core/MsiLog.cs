@@ -21,11 +21,14 @@ public static class MsiLog
 
     /// <summary>
     /// Many installers can install for everyone or just for the current user, and default to just the user when run quietly. They refuse to update a copy installed
-    /// for everyone that way, so an update has to ask for the same kind of install as the copy it replaces. The id is an installed-programs entry ("LocalMachine|…").
+    /// for everyone that way, so an update always matches the copy it replaces ("LocalMachine|…" in the installed-programs entry id). A new install follows what the user
+    /// chose. "Just me" adds nothing, so an installer that only offers one way still works. Arguments the user set themselves win.
     /// </summary>
-    public static bool NeedsAllUsers(string? installedEntryId, string? customArgs) =>
-        installedEntryId != null && installedEntryId.StartsWith("LocalMachine|", StringComparison.Ordinal)
-        && (customArgs == null || !customArgs.Contains("ALLUSERS", StringComparison.OrdinalIgnoreCase));
+    public static bool InstallForEveryone(string? installedEntryId, bool wanted, string? customArgs)
+    {
+        if (customArgs != null && customArgs.Contains("ALLUSERS", StringComparison.OrdinalIgnoreCase)) return false;
+        return installedEntryId != null ? installedEntryId.StartsWith("LocalMachine|", StringComparison.Ordinal) : wanted;
+    }
 
     /// <summary>A plain sentence for a failed install. The log text is optional; without it the sentence is more general.</summary>
     public static string Explain(string appName, int code, string? log)

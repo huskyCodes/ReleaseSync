@@ -105,6 +105,8 @@ public class TrackedApp : Observable
     public bool LinkVerified { get; set; } = true;
     [JsonIgnore] public bool NeedsLinkConfirm => !LinkVerified;
     public bool TrustUnsigned { get; set; }
+    /// <summary>Install this app for everyone on the PC, or just this user. Empty means follow the setting. It belongs to this PC, so it isn't synced.</summary>
+    public bool? InstallForEveryone { get; set; }
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
     List<ReleaseSummary> _releases = new(); public List<ReleaseSummary> Releases { get => _releases; set => SetAll(ref _releases, value); }
     string? _skipped; public string? SkippedVersion { get => _skipped; set => SetAll(ref _skipped, value); }
@@ -391,6 +393,7 @@ public class AppSettings : Observable
     public string? InstallDeclinedPath { get; set; }
     public Dictionary<string, DateTime> Tombstones { get; set; } = new();
     public List<string> ScanFolders { get; set; } = new();
+    bool _forEveryone; public bool InstallForEveryone { get => _forEveryone; set => Set(ref _forEveryone, value); }
     bool _silent; public bool SilentInstall { get => _silent; set => Set(ref _silent, value); }
     string _silentArgs = "/S"; public string SilentArgs { get => _silentArgs; set => Set(ref _silentArgs, value); }
     string _arch = "Auto"; public string PreferredArch { get => _arch; set => Set(ref _arch, value); }

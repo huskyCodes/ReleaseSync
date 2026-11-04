@@ -177,7 +177,7 @@ public sealed class InstallService
         Directory.CreateDirectory(Path.GetDirectoryName(log)!);
         args += $" /L*V \"{log}\"";
         // an update must match how the installed copy was installed, or the installer refuses (error 1603)
-        bool forEveryone = MsiLog.NeedsAllUsers(UninstallService.Resolve(app).Entry?.Id, app.CustomArgs);
+        bool forEveryone = MsiLog.InstallForEveryone(UninstallService.Resolve(app).Entry?.Id, app.InstallForEveryone ?? s.InstallForEveryone, app.CustomArgs);
         if (forEveryone) args += " ALLUSERS=1";
         var psi = new ProcessStartInfo("msiexec.exe", args) { UseShellExecute = true, Verb = s.SilentInstall || forEveryone ? "runas" : "" };
         return RunProcessAsync(psi, ct, code =>

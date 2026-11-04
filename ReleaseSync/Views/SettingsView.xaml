@@ -149,6 +149,9 @@
                                 <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.InstallAfterAdd}"/>
                             </ui:SettingRow>
 
+                            <ui:SettingRow Title="Install apps for everyone on this PC" Description="Off: new apps install just for you. On: everyone who uses this PC gets them, and Windows asks for permission each time. Only some installers offer the choice. Updates always keep an app the way it was installed; to change one app, use Reinstall in its menu.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.InstallForEveryone}"/>
+                            </ui:SettingRow>
                             <ui:SettingRow Title="Preferred architecture" Description="Which build to pick when a release offers several. Automatic matches your PC.">
                                 <ComboBox Width="140" ItemsSource="{x:Static ui:MainViewModel.ArchChoices}" SelectedItem="{Binding Settings.PreferredArch}"/>
                             </ui:SettingRow>

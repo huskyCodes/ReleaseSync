@@ -1767,7 +1767,11 @@ public sealed partial class MainViewModel : Observable
                 : lead + $"ReleaseSync will uninstall {entry.DisplayName}{(string.IsNullOrEmpty(entry.Version) ? "" : " " + entry.Version)}, then install version {version}. Windows may ask for permission. Your own documents aren't touched."
                   + (exact ? "" : " Check that's the right program first."),
             OkText = "Reinstall",
-            OnOk = p => { _ = ReinstallAsync(app, entry); return null; },
+            // only an installer that offers the choice can honour this, so it's only offered for those
+            ShowCheck = entry != null && AssetPicker.KindOf(AssetPicker.Pick(release.Assets, app.AssetPattern)!.Name) == AssetKind.Msi,
+            CheckText = "Install for everyone on this PC",
+            Checked = entry?.Id.StartsWith("LocalMachine|", StringComparison.Ordinal) ?? false,
+            OnOk = p => { if (p.ShowCheck) app.InstallForEveryone = p.Checked; _ = ReinstallAsync(app, entry); return null; },
         };
     }
 
