@@ -2,8 +2,9 @@
 
 **New in this version**
 
-- ReleaseSync now offers to install itself the first time you open it: its own folder, a Start menu entry and a desktop shortcut.
-- No more moving the file or making shortcuts by hand, which Windows could block.
-- You can delete the file you downloaded afterwards.
+- See file location: a new item in each app's menu opens the folder it's installed in.
+- When an installer fails, ReleaseSync now says why in plain words instead of showing only an error code.
+- ReleaseSync can be uninstalled from Windows' Installed apps or from Settings → Data.
+- A full privacy policy now lists everything the app connects to.
 
 See the [project status](https://github.com/huskyCodes/ReleaseSync#project-status) for what's working and what's in progress.
