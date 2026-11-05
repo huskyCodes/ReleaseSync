@@ -2,8 +2,7 @@
 
 **New in this version**
 
-- Fixed every download being called dangerous on PCs where the Windows Security scan can't run, such as when another antivirus is installed. A scan that fails no longer stops the install, and a real detection still does.
-- The checks shown for an app now say when Windows Security couldn't scan a download.
+- ReleaseSync now opens on its pinned taskbar icon instead of showing a second icon next to it.
 
 Code signing: ReleaseSync is applying to use SignPath Foundation. See the [code signing policy](https://github.com/huskyCodes/ReleaseSync/blob/main/docs/CODE-SIGNING.md).
 
