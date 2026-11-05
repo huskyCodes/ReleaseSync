@@ -155,7 +155,13 @@ public static class Platform
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
     static extern void SHGetPropertyStoreFromParsingName(string path, IntPtr bc, int flags, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out IPropertyStore store);
 
-    static void SetAppId(string lnkPath, string appId)
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
+    static extern void SetCurrentProcessExplicitAppUserModelID(string appId);
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    static extern void SHChangeNotify(int eventId, uint flags, string path, IntPtr unused);
+
+    public static void SetAppId(string lnkPath, string appId)
     {
         var iid = new Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99");
         SHGetPropertyStoreFromParsingName(lnkPath, IntPtr.Zero, 2 /* read-write */, ref iid, out var store);
@@ -163,6 +169,53 @@ public static class Platform
         var v = new PropVariant { vt = 31 /* VT_LPWSTR */, ptr = Marshal.StringToCoTaskMemUni(appId) };
         try { store.SetValue(ref key, ref v); store.Commit(); }
         finally { Marshal.FreeCoTaskMem(v.ptr); Marshal.ReleaseComObject(store); }
+    }
+
+    static string? GetAppId(string lnkPath)
+    {
+        var iid = new Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99");
+        SHGetPropertyStoreFromParsingName(lnkPath, IntPtr.Zero, 0 /* read */, ref iid, out var store);
+        var key = new PropertyKey { fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), pid = 5 };
+        try
+        {
+            store.GetValue(ref key, out var v);
+            if (v.vt != 31) return null;
+            try { return Marshal.PtrToStringUni(v.ptr); } finally { Marshal.FreeCoTaskMem(v.ptr); }
+        }
+        finally { Marshal.ReleaseComObject(store); }
+    }
+
+    /// <summary>Says which app this process is, so its window joins the taskbar icon with the same id. Must run before the first window opens.</summary>
+    public static void DeclareAppId()
+    {
+        try { SetCurrentProcessExplicitAppUserModelID(Aumid); } catch { }
+    }
+
+    /// <summary>A shortcut pinned by hand has no app id, and Windows then shows the open window as a second taskbar icon. This gives the ones pointing at this copy the id.</summary>
+    public static void MatchShortcuts()
+    {
+        var testDir = Legacy.IsTestMode ? Environment.GetEnvironmentVariable("RELEASESYNC_TEST_SHORTCUTS") : null;
+        if (Skip && testDir == null) return;
+        try
+        {
+            var t = Type.GetTypeFromProgID("WScript.Shell")!;
+            dynamic shell = Activator.CreateInstance(t)!;
+            var pinned = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft", "Internet Explorer", "Quick Launch", "User Pinned", "TaskBar");
+            foreach (var dir in testDir != null ? new[] { testDir } : new[] { pinned, Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) })
+            {
+                if (!Directory.Exists(dir)) continue;
+                foreach (var lnk in Directory.EnumerateFiles(dir, "*.lnk"))
+                    try
+                    {
+                        string target = shell.CreateShortcut(lnk).TargetPath;
+                        if (!string.Equals(target, ExePath, StringComparison.OrdinalIgnoreCase) || GetAppId(lnk) == Aumid) continue;
+                        SetAppId(lnk, Aumid);
+                        SHChangeNotify(0x2000 /* item updated */, 5 /* path is a string */, lnk, IntPtr.Zero);
+                    }
+                    catch { }
+            }
+        }
+        catch { }
     }
 
     /// <summary>Shows a Windows toast. Buttons open releasesync:// links, which ReleaseSync handles. Returns false if toasts aren't available.</summary>

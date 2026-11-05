@@ -17,6 +17,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        ReleaseSync.Core.Platform.DeclareAppId();
         // a custom data folder (testing) gets its own instance name so it never collides with a normal copy
         var tag = Environment.GetEnvironmentVariable("RELEASESYNC_DATA") is { Length: > 0 } d ? "." + d.ToLowerInvariant().Aggregate(17u, (h, ch) => h * 31 + ch) : "";
         EventManager.RegisterClassHandler(typeof(System.Windows.Controls.ToolTip), System.Windows.Controls.ToolTip.OpenedEvent, new RoutedEventHandler(CenterTip));
@@ -63,6 +64,7 @@ public partial class App : Application
             return;
         }
 
+        ReleaseSync.Core.Platform.MatchShortcuts();      // before the window opens, so it lands on the pinned icon the first time
         try { window = new MainWindow(VM); }
         catch (Exception ex) { LogCrash(ex); MessageBox.Show("ReleaseSync couldn't open its window:\n\n" + ex.Message + "\n\nDetails were saved to " + System.IO.Path.Combine(ReleaseSync.Core.Paths.DataDir, "error.log"), "ReleaseSync", MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(); return; }
         // "start minimized" is for when Windows launches ReleaseSync at sign-in (--background); opening it yourself always shows the window

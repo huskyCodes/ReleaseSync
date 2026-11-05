@@ -94,9 +94,11 @@ public static class SelfInstall
             var exe = Environment.ProcessPath!;
             var t = Type.GetTypeFromProgID("WScript.Shell")!;
             dynamic shell = Activator.CreateInstance(t)!;
-            dynamic sc = shell.CreateShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "ReleaseSync.lnk"));
+            var lnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "ReleaseSync.lnk");
+            dynamic sc = shell.CreateShortcut(lnk);
             sc.TargetPath = exe; sc.WorkingDirectory = Path.GetDirectoryName(exe); sc.Description = "ReleaseSync";
             sc.Save();
+            Platform.SetAppId(lnk, Platform.Aumid);
         }
         catch { }
     }
