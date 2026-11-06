@@ -128,7 +128,7 @@ public sealed class ReleasePickerVM : Observable
 
     public bool HasReleases => Releases.Count > 0;
     public bool IsCurrent => _sel != null && App.InstalledVersion == _sel.Tag;
-    public bool IsOlder => _sel != null && !string.IsNullOrEmpty(App.InstalledVersion) && VersionUtil.IsNewer(App.InstalledVersion!, _sel.Tag);
+    public bool IsOlder => _sel != null && !string.IsNullOrEmpty(App.InstalledVersion) && App.IsNewer(App.InstalledVersion!, _sel.Tag);
     public string InstallText => IsCurrent ? "Reinstall this version" : IsOlder ? "Roll back to this version" : App.IsInstalled ? "Install this version" : "Install this version";
     public string NotesText => _sel?.NotesText ?? "";
     public string FileText
@@ -944,7 +944,12 @@ public sealed partial class MainViewModel : Observable
     public TrackedApp? Find(string owner, string repo) =>
         Apps.FirstOrDefault(a => a.Owner.Equals(owner, StringComparison.OrdinalIgnoreCase) && a.Repo.Equals(repo, StringComparison.OrdinalIgnoreCase));
 
-    static ReleaseInfo? SelectRelease(IEnumerable<ReleaseInfo> rels, bool pre) => rels.FirstOrDefault(r => !r.Draft && (pre || !r.Prerelease));
+    /// <summary>The newest usable release. A developer's throwaway branch build only counts when a project has nothing else, though it can still be picked by hand.</summary>
+    static ReleaseInfo? SelectRelease(IEnumerable<ReleaseInfo> rels, bool pre)
+    {
+        var usable = rels.Where(r => !r.Draft && (pre || !r.Prerelease)).ToList();
+        return usable.FirstOrDefault(r => !VersionUtil.IsOneOff(r.Tag)) ?? usable.FirstOrDefault();
+    }
 
     static void ApplyRelease(TrackedApp app, List<ReleaseInfo> rels)
     {
@@ -1428,7 +1433,7 @@ public sealed partial class MainViewModel : Observable
             return;
         }
         var wasUpdate = app.IsInstalled;
-        bool downgrade = wasUpdate && !string.IsNullOrEmpty(app.InstalledVersion) && VersionUtil.IsNewer(app.InstalledVersion!, release.Tag);
+        bool downgrade = wasUpdate && !string.IsNullOrEmpty(app.InstalledVersion) && app.IsNewer(app.InstalledVersion!, release.Tag);
         var cts = new CancellationTokenSource();
         app.Cts = cts;
         app.Progress = 0; app.BusyText = "Waiting in queue…"; app.IsBusy = true;

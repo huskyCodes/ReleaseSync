@@ -177,18 +177,23 @@ public class TrackedApp : Observable
         get
         {
             if (!IsInstalled || !HasUpdate || Releases.Count < 2) return NotesText;
-            var newer = Releases.Where(r => (IncludePrereleases || !r.Prerelease) && VersionUtil.IsNewer(r.Tag, InstalledVersion!)).Take(12).ToList();
+            var newer = Releases.Where(r => (IncludePrereleases || !r.Prerelease) && !VersionUtil.IsOneOff(r.Tag) && IsNewer(r.Tag, InstalledVersion!)).Take(12).ToList();
             if (newer.Count < 2) return NotesText;
             return string.Join("\n\n────────\n\n", newer.Select(r => $"{r.Tag}{(r.Published.HasValue ? "  ·  " + r.PublishedText : "")}\n{(string.IsNullOrWhiteSpace(r.Notes) ? "No release notes were provided." : Fmt.StripMarkdown(r.Notes, 1500))}"));
         }
     }
-    [JsonIgnore] public string NotesHeader => IsInstalled && HasUpdate && Releases.Count(r => VersionUtil.IsNewer(r.Tag, InstalledVersion!)) > 1 ? "WHAT'S NEW SINCE YOUR VERSION" : "WHAT'S NEW";
+    [JsonIgnore] public string NotesHeader => IsInstalled && HasUpdate && Releases.Count(r => !VersionUtil.IsOneOff(r.Tag) && IsNewer(r.Tag, InstalledVersion!)) > 1 ? "WHAT'S NEW SINCE YOUR VERSION" : "WHAT'S NEW";
+
+    DateTime? PublishedOf(string tag) => Releases.FirstOrDefault(r => r.Tag == tag)?.Published ?? (tag == LatestVersion ? LatestPublished : null);
+
+    /// <summary>Compares two of this app's versions, using their publish dates when their tags aren't written the same way.</summary>
+    public bool IsNewer(string a, string b) => VersionUtil.IsNewer(a, b, PublishedOf(a), PublishedOf(b));
     [JsonIgnore] public string Title => string.IsNullOrWhiteSpace(DisplayName) ? Repo : DisplayName!;
     [JsonIgnore] public string Initial => Title.Length > 0 ? char.ToUpperInvariant(Title[0]).ToString() : "?";
     public const string UngroupedName = "Ungrouped";
     [JsonIgnore] public string DisplayGroup => !string.IsNullOrWhiteSpace(Group) ? Group! : AppSettingsProvider.Current.AutoGroups ? Category : UngroupedName;
     [JsonIgnore] public bool IsInstalled => !string.IsNullOrEmpty(InstalledVersion);
-    [JsonIgnore] public bool HasUpdate => !IgnoreUpdates && !IsSkipped && IsInstalled && !string.IsNullOrEmpty(LatestVersion) && VersionUtil.IsNewer(LatestVersion!, InstalledVersion!);
+    [JsonIgnore] public bool HasUpdate => !IgnoreUpdates && !IsSkipped && IsInstalled && !string.IsNullOrEmpty(LatestVersion) && IsNewer(LatestVersion!, InstalledVersion!);
     [JsonIgnore] public bool HasRelease => !string.IsNullOrEmpty(LatestVersion);
     [JsonIgnore] public AssetInfo? ChosenAsset => AssetPicker.Pick(Assets, AssetPattern);
     [JsonIgnore] public bool CanInstall => ChosenAsset != null && !IsBusy;
@@ -235,7 +240,7 @@ public class TrackedApp : Observable
         IsBusy ? "Busy" :
         HasError && !HasRelease ? "Error" :
         HasUpdate ? "Update" :
-        IsInstalled && (IgnoreUpdates || IsSkipped) && !string.IsNullOrEmpty(LatestVersion) && VersionUtil.IsNewer(LatestVersion!, InstalledVersion!) ? "Ignored" :
+        IsInstalled && (IgnoreUpdates || IsSkipped) && !string.IsNullOrEmpty(LatestVersion) && IsNewer(LatestVersion!, InstalledVersion!) ? "Ignored" :
         IsInstalled ? (HasError ? "Error" : "UpToDate") :
         HasRelease ? "NotInstalled" : "Unchecked";
 
@@ -647,18 +652,37 @@ public static class VersionUtil
 
     public static string Clean(string v) => v.Trim().TrimStart('v', 'V');
 
-    public static bool IsNewer(string latest, string installed)
+    /// <summary>A real version number like v1.2.3 or launcher@0.2.45, as opposed to a build label like build-83.</summary>
+    static bool IsDotted(string v) => Regex.IsMatch(v, @"^(\D*\d+(\.\d+)+|[vV]?\d+\b)");
+
+    /// <summary>A tag with its numbers blanked out, so build-75 and build-83 match but nx2-build-34 doesn't.</summary>
+    static string Style(string v) => Num.Replace(Clean(v).ToLowerInvariant(), "#");
+
+    /// <summary>Throwaway builds of a developer's work in progress, which aren't what most people mean by the latest version.</summary>
+    public static bool IsOneOff(string tag) => Regex.IsMatch(tag, @"^(branch|pr|feature|test|scratch)[-_/]", RegexOptions.IgnoreCase);
+
+    static int Compare(List<long> a, List<long> b)
     {
-        if (Clean(latest) == Clean(installed)) return false;
-        var a = Parts(latest); var b = Parts(installed);
-        if (a.Count == 0 || b.Count == 0) return true; // unparsable: any difference counts as an update
-        int n = Math.Max(a.Count, b.Count);
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < Math.Max(a.Count, b.Count); i++)
         {
             long x = i < a.Count ? a[i] : 0, y = i < b.Count ? b[i] : 0;
-            if (x != y) return x > y;
+            if (x != y) return x.CompareTo(y);
         }
+        return 0;
+    }
+
+    /// <summary>
+    /// Numbers only mean something between tags written the same way. Projects change style (build-83, then nx2-build-90, or daily-20261105 beside build-212),
+    /// so across styles the publish dates decide, and with no dates any difference counts as an update.
+    /// </summary>
+    public static bool IsNewer(string latest, string installed, DateTime? latestDate = null, DateTime? installedDate = null)
+    {
+        if (Clean(latest) == Clean(installed)) return false;
+        int order;
+        if (IsDotted(latest) && IsDotted(installed)) order = Compare(Parts(latest), Parts(installed));
+        else if (Style(latest) == Style(installed)) order = Compare(Num.Matches(latest).Select(m => long.TryParse(m.Value, out var n) ? n : 0).ToList(), Num.Matches(installed).Select(m => long.TryParse(m.Value, out var n) ? n : 0).ToList());
+        else return latestDate is not { } a || installedDate is not { } b || a > b;
         // numerically equal: a release replacing a pre-release counts as newer
-        return Pre.IsMatch(installed) && !Pre.IsMatch(latest);
+        return order != 0 ? order > 0 : Pre.IsMatch(installed) && !Pre.IsMatch(latest);
     }
 }
