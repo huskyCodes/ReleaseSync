@@ -184,7 +184,17 @@ public class TrackedApp : Observable
     }
     [JsonIgnore] public string NotesHeader => IsInstalled && HasUpdate && Releases.Count(r => !VersionUtil.IsOneOff(r.Tag) && IsNewer(r.Tag, InstalledVersion!)) > 1 ? "WHAT'S NEW SINCE YOUR VERSION" : "WHAT'S NEW";
 
-    DateTime? PublishedOf(string tag) => Releases.FirstOrDefault(r => r.Tag == tag)?.Published ?? (tag == LatestVersion ? LatestPublished : null);
+    /// <summary>
+    /// When a version was published. The saved list holds the newest releases, so a tag missing from it (an old release, or a tag that was never a release,
+    /// like one left behind after an app updated itself) is treated as older than all of them.
+    /// </summary>
+    DateTime? PublishedOf(string tag)
+    {
+        if (Releases.FirstOrDefault(r => r.Tag == tag)?.Published is { } listed) return listed;
+        if (tag == LatestVersion && LatestPublished is { } latest) return latest;
+        var oldest = Releases.Where(r => r.Published.HasValue).Select(r => r.Published!.Value).DefaultIfEmpty().Min();
+        return oldest == default ? null : oldest.AddSeconds(-1);
+    }
 
     /// <summary>Compares two of this app's versions, using their publish dates when their tags aren't written the same way.</summary>
     public bool IsNewer(string a, string b) => VersionUtil.IsNewer(a, b, PublishedOf(a), PublishedOf(b));
@@ -681,7 +691,10 @@ public static class VersionUtil
         int order;
         if (IsDotted(latest) && IsDotted(installed)) order = Compare(Parts(latest), Parts(installed));
         else if (Style(latest) == Style(installed)) order = Compare(Num.Matches(latest).Select(m => long.TryParse(m.Value, out var n) ? n : 0).ToList(), Num.Matches(installed).Select(m => long.TryParse(m.Value, out var n) ? n : 0).ToList());
-        else return latestDate is not { } a || installedDate is not { } b || a > b;
+        else if (latestDate is { } a && installedDate is { } b) return a > b;
+        // no dates: a real version number outranks a label, so the two directions can never both be newer
+        else if (IsDotted(latest) != IsDotted(installed)) return IsDotted(latest);
+        else return true;
         // numerically equal: a release replacing a pre-release counts as newer
         return order != 0 ? order > 0 : Pre.IsMatch(installed) && !Pre.IsMatch(latest);
     }
