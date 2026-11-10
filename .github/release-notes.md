@@ -2,9 +2,7 @@
 
 **New in this version**
 
-- Updates are no longer missed when a project changes how it names its versions. Tags written differently, like `build-83` and `nx2-build-90`, are now compared by publish date.
-- Build labels like `nx2-build-34` are compared by all their numbers instead of just the first one.
-- A developer's throwaway branch builds no longer count as the latest version. You can still install them from the version list.
+- Fixed an app getting stuck with an update that warned it was a rollback, and an Update button that wouldn't go away. This happened when the recorded version wasn't one of the app's recent releases, for example after an app updated itself.
 
 Code signing: ReleaseSync is applying to use SignPath Foundation. See the [code signing policy](https://github.com/huskyCodes/ReleaseSync/blob/main/docs/CODE-SIGNING.md).
 
