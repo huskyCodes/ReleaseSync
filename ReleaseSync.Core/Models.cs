@@ -196,6 +196,10 @@ public class TrackedApp : Observable
         return oldest == default ? null : oldest.AddSeconds(-1);
     }
 
+    /// <summary>The installed version isn't one of the recent releases, so the app may have updated itself past what ReleaseSync knows.</summary>
+    [JsonIgnore] public bool VersionUnrecognized => IsInstalled && Releases.Count > 0 && InstalledVersion != LatestVersion && Releases.All(r => r.Tag != InstalledVersion);
+    [JsonIgnore] public string VersionUnrecognizedText => $"Your installed version, {InstalledVersion}, isn't one of this app's recent releases. If it updates itself, it may already be up to date. If so, choose Mark as installed below.";
+
     /// <summary>Compares two of this app's versions, using their publish dates when their tags aren't written the same way.</summary>
     public bool IsNewer(string a, string b) => VersionUtil.IsNewer(a, b, PublishedOf(a), PublishedOf(b));
     [JsonIgnore] public string Title => string.IsNullOrWhiteSpace(DisplayName) ? Repo : DisplayName!;
@@ -667,6 +671,29 @@ public static class VersionUtil
 
     /// <summary>A tag with its numbers blanked out, so build-75 and build-83 match but nx2-build-34 doesn't.</summary>
     static string Style(string v) => Num.Replace(Clean(v).ToLowerInvariant(), "#");
+
+    /// <summary>
+    /// The release tag a version number seen on the PC belongs to, like Windows' "2.0.11.0" for tag v2.0.11, or null. A release is preferred over its
+    /// pre-releases, and a bare "1.0.0" only matches a release really called that.
+    /// </summary>
+    public static string? MatchTag(string? seen, IEnumerable<string> tags)
+    {
+        if (string.IsNullOrWhiteSpace(seen)) return null;
+        static List<long> Trimmed(List<long> p) { while (p.Count > 1 && p[^1] == 0) p.RemoveAt(p.Count - 1); return p; }
+        var raw = Parts(seen);
+        if (raw.Count < 2) return null;
+        var want = Trimmed(raw);
+        var list = tags.Where(t => !string.IsNullOrEmpty(t)).ToList();
+        return list.FirstOrDefault(t => Clean(t).Equals(Clean(seen), StringComparison.OrdinalIgnoreCase))
+            ?? list.Where(t => IsDotted(t) && Trimmed(Parts(t)).SequenceEqual(want)).OrderBy(t => Pre.IsMatch(t) || t.Contains('-')).FirstOrDefault();
+    }
+
+    /// <summary>Every release tag mentioned in a piece of text, like an app's own version file ("version=v2.0.11").</summary>
+    public static List<string> TagsIn(string text, IEnumerable<string> tags)
+    {
+        var list = tags.ToList();
+        return Regex.Matches(text ?? "", @"(?<![\w.])v?\d+(?:\.\d+)+(?:-[\w.]+)?").Select(m => MatchTag(m.Value, list)).OfType<string>().Distinct().ToList();
+    }
 
     /// <summary>Throwaway builds of a developer's work in progress, which aren't what most people mean by the latest version.</summary>
     public static bool IsOneOff(string tag) => Regex.IsMatch(tag, @"^(branch|pr|feature|test|scratch)[-_/]", RegexOptions.IgnoreCase);

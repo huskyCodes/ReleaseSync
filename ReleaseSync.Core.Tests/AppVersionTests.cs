@@ -38,6 +38,36 @@ public class AppVersionTests
         Assert.True(app.IsNewer("v2.0.11", "v2.0.3"));
     }
 
+    static readonly string[] Tags = { "v2.0.11", "v2.0.10", "v2.0.8", "v2.0.8-rc.5", "26.06", "honest-eta" };
+
+    [Theory]
+    [InlineData("2.0.11", "v2.0.11")]
+    [InlineData("2.0.11.0", "v2.0.11")]
+    [InlineData("v2.0.11", "v2.0.11")]
+    [InlineData("2.0.8", "v2.0.8")]                 // the release, not its release candidate
+    [InlineData("26.06", "26.06")]
+    [InlineData("1.0.0", null)]                     // a placeholder file version matches nothing
+    [InlineData("2.0.12", null)]
+    [InlineData("", null)]
+    [InlineData(null, null)]
+    public void A_version_seen_on_the_PC_is_matched_to_its_release(string? seen, string? expected) => Assert.Equal(expected, VersionUtil.MatchTag(seen, Tags));
+
+    [Fact]
+    public void An_apps_own_version_file_names_its_release()
+    {
+        var text = "version=v2.0.11\nbuilder=C:\\Users\\someone\\AppData\\Local\\HookshotBuilder\\versions\\v2.0.11\\HookshotBuilder\\HookshotBuilder.exe";
+        Assert.Equal(new[] { "v2.0.11" }, VersionUtil.TagsIn(text, Tags));
+        Assert.Empty(VersionUtil.TagsIn("language=en\nbuild date 2026", Tags));
+    }
+
+    [Fact]
+    public void A_version_ReleaseSync_does_not_know_is_flagged()
+    {
+        Assert.True(Hookshot("honest-eta").VersionUnrecognized);
+        Assert.False(Hookshot("v2.0.10").VersionUnrecognized);
+        Assert.False(Hookshot("v2.0.11").VersionUnrecognized);
+    }
+
     [Theory]
     [InlineData("honest-eta", "v2.0.11")]
     [InlineData("nightly", "1.4")]

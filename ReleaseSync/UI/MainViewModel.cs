@@ -1308,6 +1308,13 @@ public sealed partial class MainViewModel : Observable
             var res = await Sources.GetReleasesAsync(app.Source, app.Owner, app.Repo, etag);
             if (!res.NotModified) { app.ETag = res.ETag; ApplyRelease(app, res.Releases); }
             else if (app.Releases.Count == 0 && app.HasRelease) { var again = await Sources.GetReleasesAsync(app.Source, app.Owner, app.Repo, null); app.ETag = again.ETag; ApplyRelease(app, again.Releases); }   // older saved library: fetch the history once
+            // an app can update itself without ReleaseSync, so a version the PC shows is recorded instead of offering it again
+            if (app.IsInstalled && !app.IsBusy && await Task.Run(() => ExternalUpdate.Detect(app)) is { } seen && seen != app.InstalledVersion)
+            {
+                AddLog($"{app.Title} was updated outside ReleaseSync, to {seen}", "info");
+                app.InstalledVersion = seen;
+                app.InstalledAt = DateTime.UtcNow;
+            }
             if (app == DrawerApp) DrawerPicker = new ReleasePickerVM(app, true);
             else app.LastError = null;
             app.LastChecked = DateTime.UtcNow;

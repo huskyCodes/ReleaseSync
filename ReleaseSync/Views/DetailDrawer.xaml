@@ -113,6 +113,11 @@
                     </Grid>
                 </Border>
 
+                <!-- the installed version isn't a recent release, so the app may have updated itself -->
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="10" Padding="14,11" Margin="0,0,0,18" Visibility="{Binding VersionUnrecognized, Converter={StaticResource BoolVis}}">
+                    <TextBlock Text="{Binding VersionUnrecognizedText}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource DimBrush}" LineHeight="19"/>
+                </Border>
+
                 <!-- notes (every release since your version when you're behind) -->
                 <Grid Margin="0,0,0,8">
                     <TextBlock Text="{Binding NotesHeader}" Style="{StaticResource Label}" VerticalAlignment="Center"/>
