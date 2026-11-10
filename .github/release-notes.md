@@ -2,7 +2,8 @@
 
 **New in this version**
 
-- Fixed an app getting stuck with an update that warned it was a rollback, and an Update button that wouldn't go away. This happened when the recorded version wasn't one of the app's recent releases, for example after an app updated itself.
+- Apps that update themselves are now noticed. ReleaseSync reads the version Windows has on record, an app's own version file, or its program file, so an update you've already installed isn't offered again.
+- When the installed version isn't one of an app's recent releases, its details now say so and point to Mark as installed.
 
 Code signing: ReleaseSync is applying to use SignPath Foundation. See the [code signing policy](https://github.com/huskyCodes/ReleaseSync/blob/main/docs/CODE-SIGNING.md).
 
