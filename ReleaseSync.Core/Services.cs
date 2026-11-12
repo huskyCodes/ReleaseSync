@@ -323,6 +323,16 @@ public sealed class GitHubService
         return text.Length > 40000 ? text[..40000] : text;
     }
 
+    /// <summary>The repository's license as plain text, or null if it has none.</summary>
+    public async Task<string?> GetLicenseAsync(string owner, string repo, CancellationToken ct = default)
+    {
+        using var r = await SendAsync($"https://api.github.com/repos/{owner}/{repo}/license", null, null, ct, "application/vnd.github.raw+json");
+        if (r.StatusCode == HttpStatusCode.NotFound) return null;
+        if (!r.IsSuccessStatusCode) throw Failure(r, $"{owner}/{repo}");
+        var text = await r.Content.ReadAsStringAsync(ct);
+        return text.Length > 60000 ? text[..60000] : text;
+    }
+
     public async Task<UserInfo> GetUserAsync(string login, CancellationToken ct = default)
     {
         using var r = await SendAsync($"https://api.github.com/users/{login}", null, null, ct);

@@ -30,6 +30,16 @@ public static class MsiLog
         return installedEntryId != null ? installedEntryId.StartsWith("LocalMachine|", StringComparison.Ordinal) : wanted;
     }
 
+    /// <summary>
+    /// The setting an installer says it needs before it will install quietly, like VeraCrypt's "passing ACCEPTLICENSE=YES". Null when the log asks for nothing.
+    /// Only a setting the installer names itself counts, so nothing is ever guessed.
+    /// </summary>
+    public static string? LicenseSetting(string? log)
+    {
+        var m = Regex.Match(log ?? "", @"passing\s+\b([A-Za-z0-9_]*(?:LICENSE|EULA)[A-Za-z0-9_]*)\s*=\s*(YES|TRUE|1)\b", RegexOptions.IgnoreCase);
+        return m.Success ? $"{m.Groups[1].Value.ToUpperInvariant()}={m.Groups[2].Value.ToUpperInvariant()}" : null;
+    }
+
     /// <summary>A plain sentence for a failed install. The log text is optional; without it the sentence is more general.</summary>
     public static string Explain(string appName, int code, string? log)
     {
@@ -48,4 +58,12 @@ public static class MsiLog
                 if (Regex.IsMatch(log, pattern, RegexOptions.IgnoreCase)) return start + reason;
         return start + $"the installer stopped with error {code}. Close the app if it's open and try again.";
     }
+}
+
+/// <summary>An installer refused to install until its license is accepted. Only the person may accept it, so this stops the install and asks them.</summary>
+public sealed class LicenseRequiredException : Exception
+{
+    public string Setting { get; }
+    public LicenseRequiredException(string appName, string setting)
+        : base($"{appName} needs you to accept its license before it installs. Open ReleaseSync and install it to read and accept the license.") => Setting = setting;
 }

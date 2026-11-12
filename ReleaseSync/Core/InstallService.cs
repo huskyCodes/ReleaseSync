@@ -187,7 +187,15 @@ public sealed class InstallService
             {
                 case 0: case 3010: case 1641: try { File.Delete(log); } catch { } return null;
                 case 1602: case 1223: try { File.Delete(log); } catch { } return "Installation was cancelled.";
-                default: return MsiLog.Explain(app.Title, code, ReadLog(log)) + $" (Details: {log})";
+                default:
+                    var text = ReadLog(log);
+                    // a license the installer wants accepted is a decision for the person, never something to pass for them
+                    if (MsiLog.LicenseSetting(text) is { } setting && !(app.CustomArgs ?? "").Contains(setting, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try { File.Delete(log); } catch { }
+                        throw new LicenseRequiredException(app.Title, setting);
+                    }
+                    return MsiLog.Explain(app.Title, code, text) + $" (Details: {log})";
             }
         });
     }

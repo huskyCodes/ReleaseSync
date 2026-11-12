@@ -1448,6 +1448,7 @@ public sealed partial class MainViewModel : Observable
         await installLock.WaitAsync();
         bool relaunch = false; string? relaunchExe = null;
         string? offerReinstall = null;
+        string? licenseSetting = null;
         try
         {
             if (cts.IsCancellationRequested) throw new OperationCanceledException();
@@ -1560,6 +1561,7 @@ public sealed partial class MainViewModel : Observable
             if (relaunch && !string.IsNullOrEmpty(relaunchExe) && System.IO.File.Exists(relaunchExe)) Shell.Open(relaunchExe);
         }
         catch (OperationCanceledException) { AddLog($"Cancelled {app.Title}", "warn"); if (!unattended) Toast($"Cancelled {app.Title}", "info"); }
+        catch (LicenseRequiredException ex) when (!unattended) { licenseSetting = ex.Setting; }
         catch (Exception ex)
         {
             var msg = ex is HttpRequestException ? "The download failed. Check your connection and try again." : ex.Message;
@@ -1578,6 +1580,30 @@ public sealed partial class MainViewModel : Observable
             ScheduleSaveApps(); ScheduleRefresh();
         }
         if (offerReinstall != null) AskReinstall(app, offerReinstall);
+        if (licenseSetting != null && await AcceptLicenseAsync(app, licenseSetting)) await InstallAsync(app, target, assetOverride);
+    }
+
+    /// <summary>Shows the project's license and asks whether to accept it. Accepting is remembered in the app's installer options, where it can be removed.</summary>
+    async Task<bool> AcceptLicenseAsync(TrackedApp app, string setting)
+    {
+        string? license = null;
+        if (app.IsGitHub) { try { license = await GitHub.GetLicenseAsync(app.Owner, app.Repo); } catch (Exception) { } }
+        var ok = await ShowPromptAsync(new PromptVM
+        {
+            Title = $"{app.Title} asks you to accept its license",
+            Message = $"{app.Title}'s installer won't install until its license is accepted. ReleaseSync installs quietly, so the installer's license window never appears.\n\nIf you agree to it, ReleaseSync will install it now and remember your choice for future updates.",
+            DetailsTitle = license == null ? "" : "License, from the project",
+            Details = license ?? "",
+            Footnote = license == null
+                ? $"The license is on the project's page: {app.Url}. Accepting adds {setting} to {app.Title}'s installer options in its details, where you can remove it."
+                : $"Accepting adds {setting} to {app.Title}'s installer options in its details, where you can remove it.",
+            OkText = "Accept and install", CancelText = "Don't accept",
+        });
+        if (!ok) { AddLog($"{app.Title}: license not accepted, so it wasn't installed", "info"); return false; }
+        app.CustomArgs = string.IsNullOrWhiteSpace(app.CustomArgs) ? setting : $"{app.CustomArgs.Trim()} {setting}";
+        AddLog($"{app.Title}: license accepted, added {setting} to its installer options", "info");
+        ScheduleSaveApps();
+        return true;
     }
 
     /// <summary>Downloads one file from any release into the download folder and shows it in Explorer.</summary>
