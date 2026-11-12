@@ -2,8 +2,8 @@
 
 **New in this version**
 
-- Apps that update themselves are now noticed. ReleaseSync reads the version Windows has on record, an app's own version file, or its program file, so an update you've already installed isn't offered again.
-- When the installed version isn't one of an app's recent releases, its details now say so and point to Mark as installed.
+- Installers that need their license accepted, like VeraCrypt's, no longer just fail. ReleaseSync shows you the project's license and asks first. If you accept, it installs and remembers your choice for future updates, and you can remove it in the app's details.
+- Automatic updates never accept a license for you.
 
 Code signing: ReleaseSync is applying to use SignPath Foundation. See the [code signing policy](https://github.com/huskyCodes/ReleaseSync/blob/main/docs/CODE-SIGNING.md).
 
