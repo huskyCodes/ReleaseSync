@@ -5,7 +5,9 @@ import SwiftUI
 struct ReleaseSyncApp: App {
     @State private var model: LibraryModel
     @State private var prefs: ViewPrefs
-    @State private var toasts = Toasts()
+    @State private var toasts: Toasts
+    @State private var activity: ActivityLog
+    @State private var install: InstallModel
     @State private var nav = Navigator()
     @State private var discover: DiscoverModel
     @State private var lan: LanModel
@@ -22,6 +24,9 @@ struct ReleaseSyncApp: App {
         var discover = DiscoverModel(client: client, prefs: prefs, meter: meter,
                                      blobs: underTest ? nil : EncryptedFileBlobStore(url: EncryptedFileBlobStore.defaultURL("discover.cache"), secrets: keychain))
         var nav = Navigator()
+        let toasts = Toasts(), activity = ActivityLog()
+        var install = underTest ? InstallModel(showing: [:], log: activity, toasts: toasts)
+                                : InstallModel(log: activity, toasts: toasts)
         var lan = LanModel(secrets: LanPairSecrets(store: underTest ? InMemorySecrets() : keychain), available: underTest ? false : LanModel.networkingBuilt)
         #if DEBUG
         // `--demo` shows a made-up library, so the app can be tried and photographed without an account; `--page <name>` opens a page
@@ -29,6 +34,7 @@ struct ReleaseSyncApp: App {
             model = LibraryModel(showing: DemoLibrary.make(), releases: DemoLibrary.releases(), peers: DemoLibrary.peers(), secrets: InMemorySecrets())
             discover = DiscoverModel(showing: DemoLibrary.discover(), client: client, prefs: prefs, meter: RateMeter(RateStatus(limit: 5000, remaining: 4962)))
             lan = DemoLibrary.lan()
+            install = InstallModel(showing: DemoLibrary.installs(), log: activity, toasts: toasts)
         }
         if let i = CommandLine.arguments.firstIndex(of: "--status"), i + 1 < CommandLine.arguments.count {
             let phases: [String: LibraryModel.Phase] = ["needsToken": .needsToken, "needsPassphrase": .needsPassphrase(wrong: false), "wrongPassphrase": .needsPassphrase(wrong: true),
@@ -43,6 +49,9 @@ struct ReleaseSyncApp: App {
         _prefs = State(initialValue: prefs)
         _discover = State(initialValue: discover)
         _lan = State(initialValue: lan)
+        _toasts = State(initialValue: toasts)
+        _activity = State(initialValue: activity)
+        _install = State(initialValue: install)
         _model = State(initialValue: model)
         _nav = State(initialValue: nav)
     }
@@ -50,7 +59,7 @@ struct ReleaseSyncApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environment(model).environment(prefs).environment(toasts).environment(nav).environment(discover).environment(lan)
+                .environment(model).environment(prefs).environment(toasts).environment(nav).environment(discover).environment(lan).environment(activity).environment(install)
                 .preferredColorScheme(prefs.appearance == .system ? nil : (prefs.appearance == .dark ? .dark : .light))
                 #if DEBUG
                 .task { await WindowSnapshot.takeIfAsked() }

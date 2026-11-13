@@ -87,6 +87,16 @@ enum DemoLibrary {
         return LanModel(showing: pairs, blocked: blocked, secrets: LanPairSecrets(store: InMemorySecrets()))
     }
 
+    /// Made-up installed apps: some current, some a version behind (so the Updates page has something to show).
+    static func installs() -> [String: InstallRecord] {
+        let now = Timestamp.now()
+        func rec(_ key: String, _ version: String, days: Int64) -> InstallRecord {
+            InstallRecord(key: key, version: version, bundlePath: "/Applications/" + key.split(separator: "/").last! + ".app", bundleVersion: version, installedAt: now - Timestamp.days(days), assetName: "Demo.dmg", notarized: true)
+        }
+        return ["github:example-org/pixel-player": rec("github:example-org/pixel-player", "v2.3.0", days: 20), "github:example-org/quick-notes": rec("github:example-org/quick-notes", "v1.8.2", days: 5),
+                "github:fake-labs/disk-peek": rec("github:fake-labs/disk-peek", "v3.1.0", days: 40)]
+    }
+
     /// Made-up release information for the made-up apps: some with Mac downloads, some Windows-only, one never checked, a couple with problems.
     static func releases() -> [String: AppRelease] {
         let now = Timestamp.now()

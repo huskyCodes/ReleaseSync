@@ -6,6 +6,8 @@ import SwiftUI
 struct DetailDrawer: View {
     @Environment(LibraryModel.self) private var model
     @Environment(Toasts.self) private var toasts
+    @Environment(InstallModel.self) private var install
+    @State private var askUninstall = false
     let opened: SyncApp
     let close: () -> Void
     @State private var noteText = ""
@@ -20,7 +22,7 @@ struct DetailDrawer: View {
     private var app: SyncApp { model.apps.first { $0.key == opened.key } ?? opened }
 
     var body: some View {
-        let facts = ReleaseFacts(app, model.releases[app.key])
+        let facts = install.facts(app, model.releases[app.key])
         VStack(spacing: 0) {
             header(facts).padding(.top, 22).padding(.leading, 24).padding(.trailing, 16).padding(.bottom, 16)
             ScrollView {
@@ -29,12 +31,13 @@ struct DetailDrawer: View {
                     if let error = facts.error, !facts.hasRelease { problem(error) }
                     label("VERSION")
                     card {
-                        row("Installed", "Not installed on this Mac")
+                        row("Installed", facts.isInstalled ? facts.installed! + (facts.versionUnrecognized ? "  (not a recent release)" : "") : "Not installed on this Mac")
                         row("Latest release", facts.hasRelease ? facts.latestTag + (facts.info?.latestPrerelease == true ? "  (pre-release)" : "") : (facts.checked ? "None found" : "Not checked yet"))
                         if let r = facts.info?.latestPublished { row("Released", r.friendlyAgo) }
                         row("Last checked", facts.info?.lastChecked?.friendlyAgo ?? "Not yet", last: true)
                     }
                     onDevices
+                    actions(facts)
                     if facts.hasRelease { notes(facts) }
                     if let releases = facts.info?.releases, !releases.isEmpty { versions(releases, latest: facts.latestTag) }
                     if facts.hasRelease { download(facts) }
@@ -59,6 +62,36 @@ struct DetailDrawer: View {
                 .padding(.horizontal, 24).padding(.bottom, 28)
             }
         }
+    }
+
+    // MARK: installing
+
+    @ViewBuilder private func actions(_ facts: ReleaseFacts) -> some View {
+        let working = install.progress(for: app.key) != nil
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                InstallButton(app: app, facts: facts)
+                if facts.isInstalled && !working {
+                    Button("Open") { install.open(app) }.buttonStyle(OutlineButtonStyle(height: 28))
+                    Button("Show in Finder") { install.reveal(app) }.buttonStyle(OutlineButtonStyle(height: 28))
+                    if facts.hasRelease, facts.macAsset != nil, !facts.hasUpdate {
+                        Button("Reinstall") { Task { await install.install(app, info: facts.info, tag: facts.installed) } }.buttonStyle(OutlineButtonStyle(height: 28))
+                            .help("Download this version again and put it back in place")
+                    }
+                    Button("Uninstall") { askUninstall = true }.buttonStyle(OutlineButtonStyle(height: 28))
+                }
+            }
+            if let why = facts.noInstallableFileText { Text(why).font(.faint).foregroundStyle(Theme.warn).fixedSize(horizontal: false, vertical: true) }
+            if let record = install.records[app.key], facts.isInstalled {
+                Text("Installed from \(record.assetName)" + (record.notarized == true ? ", signed and notarized" : ""))
+                    .font(.faint).foregroundStyle(Theme.faint)
+            }
+        }
+        .padding(.bottom, 22)
+        .confirmationDialog("Uninstall \(app.title)?", isPresented: $askUninstall, titleVisibility: .visible) {
+            Button("Move to Trash", role: .destructive) { Task { await install.uninstall(app) } }
+            Button("Cancel", role: .cancel) {}
+        } message: { Text("The app is moved to the Trash. Its settings and data are left alone.") }
     }
 
     // MARK: changing the library

@@ -1,9 +1,13 @@
 import ReleaseSyncKit
 import SwiftUI
 
-private func menu(for app: SyncApp, nav: Navigator) -> some View {
+@MainActor private func menu(for app: SyncApp, nav: Navigator, install: InstallModel) -> some View {
     Group {
         Button("Open details") { nav.open(app) }
+        if install.records[app.key] != nil {
+            Button("Show in Finder") { install.reveal(app) }
+            Button("Open") { install.open(app) }
+        }
         if let url = app.url { Link("Open on \(RepoLinks.sourceName(app.source))", destination: url) }
     }
 }
@@ -12,10 +16,11 @@ private func menu(for app: SyncApp, nav: Navigator) -> some View {
 struct AppCard: View {
     @Environment(Navigator.self) private var nav
     @Environment(LibraryModel.self) private var model
+    @Environment(InstallModel.self) private var install
     let app: SyncApp
 
     var body: some View {
-        let facts = ReleaseFacts(app, model.releases[app.key])
+        let facts = install.facts(app, model.releases[app.key])
         ClickableCard(dimmed: app.hidden, action: { nav.open(app) }) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 12) {
@@ -37,14 +42,18 @@ struct AppCard: View {
                     Pill(text: facts.statusText, kind: facts.statusKind, dot: true)
                 }
                 HStack(spacing: 8) {
-                    Text(facts.releasedText ?? "Added \(app.addedAt.friendlyDate)").font(.faint).foregroundStyle(Theme.faint).lineLimit(1)
+                    if install.progress(for: app.key) != nil || facts.actionText != nil {
+                        InstallButton(app: app, facts: facts, compact: true)
+                    } else {
+                        Text(facts.releasedText ?? "Added \(app.addedAt.friendlyDate)").font(.faint).foregroundStyle(Theme.faint).lineLimit(1)
+                    }
                     Spacer()
                     if let group = app.group, !isBlankText(group) { Pill(text: group) }
                 }
                 .frame(minHeight: Theme.buttonHeight).padding(.top, 14)
             }
         }
-        .contextMenu { menu(for: app, nav: nav) }
+        .contextMenu { menu(for: app, nav: nav, install: install) }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
     }
@@ -54,10 +63,11 @@ struct AppCard: View {
 struct AppRow: View {
     @Environment(Navigator.self) private var nav
     @Environment(LibraryModel.self) private var model
+    @Environment(InstallModel.self) private var install
     let app: SyncApp
 
     var body: some View {
-        let facts = ReleaseFacts(app, model.releases[app.key])
+        let facts = install.facts(app, model.releases[app.key])
         ClickableCard(radius: Theme.rowRadius, padding: EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16), dimmed: app.hidden, action: { nav.open(app) }) {
             HStack(spacing: 14) {
                 Avatar(name: app.title, size: Theme.rowAvatar, url: facts.avatarURL(allowed: !model.isDemo))
@@ -74,9 +84,10 @@ struct AppRow: View {
                     Pill(text: facts.statusText, kind: facts.statusKind, dot: true)
                 }
                 .frame(minWidth: 170, alignment: .leading)
+                InstallButton(app: app, facts: facts, compact: true).frame(minWidth: 70, alignment: .trailing)
             }
         }
-        .contextMenu { menu(for: app, nav: nav) }
+        .contextMenu { menu(for: app, nav: nav, install: install) }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
     }

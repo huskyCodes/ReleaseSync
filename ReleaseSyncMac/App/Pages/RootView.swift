@@ -7,6 +7,7 @@ struct RootView: View {
     @Environment(ViewPrefs.self) private var prefs
     @Environment(Toasts.self) private var toasts
     @Environment(Navigator.self) private var nav
+    @Environment(InstallModel.self) private var install
 
     var body: some View {
         NavigationSplitView {
@@ -39,9 +40,12 @@ struct RootView: View {
         .background(escapeToClose)
         .task {
             await model.loadCachedReleases()
+            await install.load(releases: model.releases)
             await model.refresh()
             await model.checkForUpdates(manual: false)
+            await install.reconcile(releases: model.releases)
         }
+        .installQuestions()
         .onChange(of: model.doc?.apps.map(\.key)) { _, keys in if let d = nav.drawerApp, keys?.contains(d.key) != true { nav.closeDrawer() } }
         .frame(minWidth: 820, minHeight: 520)
     }
@@ -64,6 +68,8 @@ struct PageHost: View {
                     if page == .library { LibraryPage() } else { TryLaterPage() }
                 } else { StatusView() }
             case .discover: DiscoverPage()
+            case .updates: UpdatesPage()
+            case .activity: ActivityPage()
             case .settings: SettingsPage()
             default: ComingPage(page: page)
             }
@@ -76,6 +82,7 @@ struct PageHost: View {
 struct Sidebar: View {
     @Environment(LibraryModel.self) private var model
     @Environment(Navigator.self) private var nav
+    @Environment(InstallModel.self) private var install
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -99,7 +106,12 @@ struct Sidebar: View {
         .frame(maxHeight: .infinity, alignment: .top)
     }
 
-    private func badge(_ item: Page) -> Int { item == .tryLater && model.phase == .loaded ? model.tryLater.count : 0 }
+    private func badge(_ item: Page) -> Int {
+        guard model.phase == .loaded else { return 0 }
+        if item == .tryLater { return model.tryLater.count }
+        if item == .updates { return model.apps.filter { !$0.hidden && install.facts($0, model.releases[$0.key]).hasUpdate }.count }
+        return 0
+    }
 }
 
 private struct NavButton: View {
