@@ -65,6 +65,13 @@ public sealed class PromptVM : Observable
     public bool ShowCheck { get; set; }
     public string CheckText { get; set; } = "";
     public bool HasMessage => !string.IsNullOrEmpty(Message);
+    public string CancelText { get; set; } = "Cancel";
+    /// <summary>A longer, scrollable text under the message, such as a list of changes.</summary>
+    public string Details { get; set; } = "";
+    public string DetailsTitle { get; set; } = "";
+    public string Footnote { get; set; } = "";
+    public bool HasDetails => !string.IsNullOrEmpty(Details);
+    public bool HasFootnote => !string.IsNullOrEmpty(Footnote);
     string _text = ""; public string Text { get => _text; set { if (Set(ref _text, value)) Error = null; } }
     bool _checked; public bool Checked { get => _checked; set => Set(ref _checked, value); }
     string? _error; public string? Error { get => _error; set => Set(ref _error, value); }
@@ -121,7 +128,7 @@ public sealed class ReleasePickerVM : Observable
 
     public bool HasReleases => Releases.Count > 0;
     public bool IsCurrent => _sel != null && App.InstalledVersion == _sel.Tag;
-    public bool IsOlder => _sel != null && !string.IsNullOrEmpty(App.InstalledVersion) && VersionUtil.IsNewer(App.InstalledVersion!, _sel.Tag);
+    public bool IsOlder => _sel != null && !string.IsNullOrEmpty(App.InstalledVersion) && App.IsNewer(App.InstalledVersion!, _sel.Tag);
     public string InstallText => IsCurrent ? "Reinstall this version" : IsOlder ? "Roll back to this version" : App.IsInstalled ? "Install this version" : "Install this version";
     public string NotesText => _sel?.NotesText ?? "";
     public string FileText
@@ -464,6 +471,8 @@ public sealed partial class MainViewModel : Observable
     public ICommand CloseDrawerCommand { get; private set; } = null!;
     public ICommand RemoveCommand { get; private set; } = null!;
     public ICommand LaunchCommand { get; private set; } = null!;
+    public ICommand LocationCommand { get; private set; } = null!;
+    public ICommand MoveCommand { get; private set; } = null!;
     public ICommand MarkInstalledCommand { get; private set; } = null!;
     public ICommand ReinstallCommand { get; private set; } = null!;
     public ICommand UninstallCommand { get; private set; } = null!;
@@ -521,7 +530,7 @@ public sealed partial class MainViewModel : Observable
         NavigateCommand = new RelayCommand(p => Navigate(p?.ToString() ?? "Library"));
         ToggleSidebarCommand = new RelayCommand(() => { IsCompact = !IsCompact; Settings.SidebarCollapsed = IsCompact; });
         SubmitOmniboxCommand = new RelayCommand(SubmitOmnibox);
-        CheckAllCommand = new RelayCommand(async () => await CheckAllAsync(true));
+        CheckAllCommand = new RelayCommand(async () => { await CheckAllAsync(true); await CheckSelfUpdateAsync(false); });
         UpdateAllCommand = new RelayCommand(async () => await UpdateAllAsync());
         InstallCommand = new RelayCommand(async p => { if (p is TrackedApp a) await InstallAsync(a); });
         CancelCommand = new RelayCommand(p => { if (p is TrackedApp a) a.Cts?.Cancel(); });
@@ -530,11 +539,13 @@ public sealed partial class MainViewModel : Observable
         CloseDrawerCommand = new RelayCommand(() => SelectedApp = null);
         RemoveCommand = new RelayCommand(p => { if (p is TrackedApp a) AskRemove(a); });
         LaunchCommand = new RelayCommand(p => { if (p is TrackedApp a && a.CanLaunch) Shell.Open(a.InstallPath); });
+        LocationCommand = new RelayCommand(async p => { if (p is TrackedApp a) await ShowLocationAsync(a); });
+        MoveCommand = new RelayCommand(async p => { if (p is TrackedApp a) await MoveAppAsync(a); });
         MarkInstalledCommand = new RelayCommand(p =>
         {
             if (p is TrackedApp a && a.HasRelease) { a.InstalledVersion = a.LatestVersion; ScheduleSaveApps(); Toast($"{a.Title} marked as installed ({a.LatestVersion})", "success"); AddLog($"Marked {a.FullName} as installed at {a.LatestVersion}", "info"); }
         });
-        ReinstallCommand = new RelayCommand(async p => { if (p is TrackedApp a) await InstallAsync(a); });
+        ReinstallCommand = new RelayCommand(p => { if (p is TrackedApp a) AskReinstall(a); });
         UninstallCommand = new RelayCommand(p => { if (p is TrackedApp a) AskUninstall(a); });
         ToggleTryLaterCommand = new RelayCommand(p => { if (p is RepoInfo r) ToggleTryLater(r); });
         LocateExistingCommand = new RelayCommand(LocateExisting);
@@ -933,7 +944,12 @@ public sealed partial class MainViewModel : Observable
     public TrackedApp? Find(string owner, string repo) =>
         Apps.FirstOrDefault(a => a.Owner.Equals(owner, StringComparison.OrdinalIgnoreCase) && a.Repo.Equals(repo, StringComparison.OrdinalIgnoreCase));
 
-    static ReleaseInfo? SelectRelease(IEnumerable<ReleaseInfo> rels, bool pre) => rels.FirstOrDefault(r => !r.Draft && (pre || !r.Prerelease));
+    /// <summary>The newest usable release. A developer's throwaway branch build only counts when a project has nothing else, though it can still be picked by hand.</summary>
+    static ReleaseInfo? SelectRelease(IEnumerable<ReleaseInfo> rels, bool pre)
+    {
+        var usable = rels.Where(r => !r.Draft && (pre || !r.Prerelease)).ToList();
+        return usable.FirstOrDefault(r => !VersionUtil.IsOneOff(r.Tag)) ?? usable.FirstOrDefault();
+    }
 
     static void ApplyRelease(TrackedApp app, List<ReleaseInfo> rels)
     {
@@ -1292,14 +1308,26 @@ public sealed partial class MainViewModel : Observable
             var res = await Sources.GetReleasesAsync(app.Source, app.Owner, app.Repo, etag);
             if (!res.NotModified) { app.ETag = res.ETag; ApplyRelease(app, res.Releases); }
             else if (app.Releases.Count == 0 && app.HasRelease) { var again = await Sources.GetReleasesAsync(app.Source, app.Owner, app.Repo, null); app.ETag = again.ETag; ApplyRelease(app, again.Releases); }   // older saved library: fetch the history once
+            // an app can update itself without ReleaseSync, so a version the PC shows is recorded instead of offering it again
+            if (app.IsInstalled && !app.IsBusy && await Task.Run(() => ExternalUpdate.Detect(app)) is { } seen && seen != app.InstalledVersion)
+            {
+                AddLog($"{app.Title} was updated outside ReleaseSync, to {seen}", "info");
+                app.InstalledVersion = seen;
+                app.InstalledAt = DateTime.UtcNow;
+            }
             if (app == DrawerApp) DrawerPicker = new ReleasePickerVM(app, true);
             else app.LastError = null;
+            app.RepoMissing = false;
             app.LastChecked = DateTime.UtcNow;
             return true;
         }
         catch (GitHubException ex)
         {
-            app.LastError = ex.Message;
+            // a project that's gone usually moved: say so, so it's clear the fix is pointing ReleaseSync at its new home
+            app.RepoMissing = ex.Status == 404;
+            app.LastError = app.RepoMissing
+                ? $"{app.FullName} can't be found on {app.SourceLabel} any more. It may have moved or been removed. If you know where it went, choose Change repository below. Your installed copy isn't affected."
+                : ex.Message;
             app.LastChecked = DateTime.UtcNow;
             return !ex.RateLimited;
         }
@@ -1417,13 +1445,15 @@ public sealed partial class MainViewModel : Observable
             return;
         }
         var wasUpdate = app.IsInstalled;
-        bool downgrade = wasUpdate && !string.IsNullOrEmpty(app.InstalledVersion) && VersionUtil.IsNewer(app.InstalledVersion!, release.Tag);
+        bool downgrade = wasUpdate && !string.IsNullOrEmpty(app.InstalledVersion) && app.IsNewer(app.InstalledVersion!, release.Tag);
         var cts = new CancellationTokenSource();
         app.Cts = cts;
         app.Progress = 0; app.BusyText = "Waiting in queue…"; app.IsBusy = true;
         var progress = new Progress<InstallProgress>(p => { app.Progress = p.Percent; app.BusyText = p.Text; });
         await installLock.WaitAsync();
         bool relaunch = false; string? relaunchExe = null;
+        string? offerReinstall = null;
+        string? licenseSetting = null;
         try
         {
             if (cts.IsCancellationRequested) throw new OperationCanceledException();
@@ -1536,12 +1566,14 @@ public sealed partial class MainViewModel : Observable
             if (relaunch && !string.IsNullOrEmpty(relaunchExe) && System.IO.File.Exists(relaunchExe)) Shell.Open(relaunchExe);
         }
         catch (OperationCanceledException) { AddLog($"Cancelled {app.Title}", "warn"); if (!unattended) Toast($"Cancelled {app.Title}", "info"); }
+        catch (LicenseRequiredException ex) when (!unattended) { licenseSetting = ex.Setting; }
         catch (Exception ex)
         {
             var msg = ex is HttpRequestException ? "The download failed. Check your connection and try again." : ex.Message;
             app.LastError = msg;
             AddLog($"{app.Title}: {msg}", "error");
             if (!unattended || !msg.Contains("is running")) Toast($"{app.Title}: {msg}", "error");
+            if (wasUpdate && !unattended && msg.Contains("couldn't be installed:")) offerReinstall = msg;      // an update over the old version failed: starting clean usually works
         }
         finally
         {
@@ -1552,6 +1584,31 @@ public sealed partial class MainViewModel : Observable
             if (app == DrawerApp) DrawerPicker?.Refresh();
             ScheduleSaveApps(); ScheduleRefresh();
         }
+        if (offerReinstall != null) AskReinstall(app, offerReinstall);
+        if (licenseSetting != null && await AcceptLicenseAsync(app, licenseSetting)) await InstallAsync(app, target, assetOverride);
+    }
+
+    /// <summary>Shows the project's license and asks whether to accept it. Accepting is remembered in the app's installer options, where it can be removed.</summary>
+    async Task<bool> AcceptLicenseAsync(TrackedApp app, string setting)
+    {
+        string? license = null;
+        if (app.IsGitHub) { try { license = await GitHub.GetLicenseAsync(app.Owner, app.Repo); } catch (Exception) { } }
+        var ok = await ShowPromptAsync(new PromptVM
+        {
+            Title = $"{app.Title} asks you to accept its license",
+            Message = $"{app.Title}'s installer won't install until its license is accepted. ReleaseSync installs quietly, so the installer's license window never appears.\n\nIf you agree to it, ReleaseSync will install it now and remember your choice for future updates.",
+            DetailsTitle = license == null ? "" : "License, from the project",
+            Details = license ?? "",
+            Footnote = license == null
+                ? $"The license is on the project's page: {app.Url}. Accepting adds {setting} to {app.Title}'s installer options in its details, where you can remove it."
+                : $"Accepting adds {setting} to {app.Title}'s installer options in its details, where you can remove it.",
+            OkText = "Accept and install", CancelText = "Don't accept",
+        });
+        if (!ok) { AddLog($"{app.Title}: license not accepted, so it wasn't installed", "info"); return false; }
+        app.CustomArgs = string.IsNullOrWhiteSpace(app.CustomArgs) ? setting : $"{app.CustomArgs.Trim()} {setting}";
+        AddLog($"{app.Title}: license accepted, added {setting} to its installer options", "info");
+        ScheduleSaveApps();
+        return true;
     }
 
     /// <summary>Downloads one file from any release into the download folder and shows it in Explorer.</summary>
@@ -1596,6 +1653,31 @@ public sealed partial class MainViewModel : Observable
         MarkResultTracked(app.Owner, app.Repo, false);
         AddLog($"Stopped tracking {app.FullName}", "info");
         Toast($"Stopped tracking {app.Title}", "info");
+    }
+
+    /// <summary>Where the program really is. Many installers don't tell Windows their folder, so this also looks where the app is usually found.</summary>
+    static string? FindLocation(TrackedApp app)
+    {
+        if (!string.IsNullOrEmpty(app.InstallPath) && File.Exists(app.InstallPath)) return app.InstallPath;
+        var (entry, _) = UninstallService.Resolve(app);
+        if (entry != null)
+        {
+            if (UninstallService.FindExe(entry) is { } exe) return exe;
+            var folder = entry.InstallLocation?.Trim().Trim('"');
+            if (!string.IsNullOrEmpty(folder) && Directory.Exists(folder)) return folder;
+        }
+        if (UninstallService.FindInstalledExe(app) is { } found) return found;
+        var own = InstallService.PortableTarget(app);      // ReleaseSync's own apps folder, or the folder chosen for this app
+        return Directory.Exists(own) ? own : null;
+    }
+
+    public async Task ShowLocationAsync(TrackedApp app)
+    {
+        var path = await Task.Run(() => FindLocation(app));
+        if (path == null) { Toast($"Couldn't find where {app.Title} is installed", "info"); return; }
+        if (File.Exists(path) && string.IsNullOrEmpty(app.InstallPath)) { app.InstallPath = path; ScheduleSaveApps(); }      // now Launch works for it too
+        AddLog($"{app.Title} is in {path}", "info");
+        Shell.Reveal(path);
     }
 
     void AskRemove(TrackedApp app)
@@ -1709,6 +1791,158 @@ public sealed partial class MainViewModel : Observable
         }
         catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast("Couldn't read the file list, so nothing was deleted: " + ex.Message, "error"); }
         finally { app.IsBusy = false; app.BusyText = ""; app.NotifyAll(); }
+    }
+
+    /// <summary>The folder an unpacked app lives in, whichever way it got there.</summary>
+    string? AppFolder(TrackedApp app)
+    {
+        if (string.IsNullOrEmpty(app.InstallPath)) return null;
+        foreach (var dir in new[] { InstallService.PortableTarget(app), Path.Combine(Settings.InstallRoot, Fmt.SafeName(app.Repo)) })
+            if (app.InstallPath.StartsWith(dir.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)) return dir.TrimEnd('\\');
+        return null;
+    }
+
+    /// <summary>What has to close before a move. In a folder shared with other things, only the app's own files count, so nothing else running from there gets closed.</summary>
+    static List<System.Diagnostics.Process> MovingProcesses(TrackedApp app, string source, IReadOnlyList<string>? onlyThese)
+    {
+        var running = RunningApps.Find(app);
+        if (onlyThese == null) return running;
+        var mine = new List<System.Diagnostics.Process>();
+        foreach (var p in running)
+        {
+            string? path = null;
+            try { path = p.MainModule?.FileName; } catch { }
+            if (path != null && onlyThese.Any(f => string.Equals(Path.Combine(source, f.Replace('/', '\\')), path, StringComparison.OrdinalIgnoreCase))) mine.Add(p); else p.Dispose();
+        }
+        return mine;
+    }
+
+    /// <summary>Moves an unpacked app and everything in its folder somewhere else. Apps set up by their own installer can't be moved safely: Windows has them registered where they are.</summary>
+    public async Task MoveAppAsync(TrackedApp app, string? destination = null)
+    {
+        if (app.IsBusy) return;
+        var source = IsPortableInstall(app) ? AppFolder(app) : null;
+        if (source == null)
+        {
+            Prompt = new PromptVM
+            {
+                Title = $"{app.Title} can't be moved",
+                Message = $"It was set up by its own installer, and Windows has it registered where it is, so moving its files would break it. To put it somewhere else, uninstall it, then install it again and choose a new folder.",
+                OkText = "OK", CancelText = "Close",
+            };
+            return;
+        }
+        // a folder shared with other things: only what the release installed moves. ReleaseSync's own folder for the app moves whole, including settings and saves
+        bool ownFolder = source.StartsWith(Settings.InstallRoot.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase);
+        var onlyThese = ownFolder ? null : InstallService.OwnedFiles(app);
+        if (!ownFolder && onlyThese == null)
+        {
+            Toast($"ReleaseSync doesn't have a list of {app.Title}'s files, and that folder may hold your own, so it can't be moved safely.", "warn");
+            return;
+        }
+
+        // first things first: it can't be moved while it's open
+        var running = MovingProcesses(app, source, onlyThese);
+        if (running.Count > 0)
+        {
+            if (!await ShowPromptAsync(new PromptVM { Title = $"{app.Title} is open", Message = "It has to be closed before it can be moved. Save anything you're working on first: ReleaseSync asks it to close politely, and only forces it if it doesn't.", OkText = "Close it and move" }))
+            {
+                foreach (var p in running) p.Dispose();
+                return;
+            }
+            if (!await RunningApps.CloseAsync(running)) { Toast($"Couldn't close {app.Title}. Close it yourself and try again.", "error"); return; }
+        }
+
+        destination ??= PickInstallFolder(app.Title, app.Repo, Path.GetDirectoryName(source));
+        if (destination == null) return;
+        if (FolderMove.Problem(source, destination, FolderMove.Size(source, onlyThese)) is { } problem) { Toast(problem, "warn"); return; }
+
+        var shortcuts = await Task.Run(() => ShortcutFixer.Find(source, onlyThese));
+        var shortcutNote = shortcuts.Count == 0 ? "" : $" {shortcuts.Count} shortcut{(shortcuts.Count == 1 ? "" : "s")} to it (desktop, Start menu or taskbar) will be updated too.";
+        if (!await ShowPromptAsync(new PromptVM
+        {
+            Title = $"Move {app.Title}?",
+            Message = $"From {source}\nTo {destination}\n\n" + (ownFolder ? "Everything in its folder moves, including settings and saves stored there." : "Only the files it installed move. Anything else in that folder stays.")
+                      + " The old copy is only removed once everything is safely in the new place." + shortcutNote
+                      + " If another program has the old location saved in its own settings, you'd need to change that there.",
+            OkText = "Move",
+        })) return;
+
+        // it may have been opened again while the questions were on screen
+        var reopened = MovingProcesses(app, source, onlyThese);
+        if (reopened.Count > 0)
+        {
+            foreach (var p in reopened) p.Dispose();
+            Toast($"{app.Title} is open again, so nothing was moved. Close it and try again.", "warn");
+            return;
+        }
+
+        var list = onlyThese?.ToList();
+        app.Progress = 0; app.BusyText = "Moving…"; app.IsBusy = true;
+        try
+        {
+            var progress = new Progress<double>(p => { app.Progress = p; app.BusyText = $"Moving…  {p:0}%"; });
+            var result = await Task.Run(() => FolderMove.Move(source, destination, list, progress));
+            app.InstallPath = Path.Combine(destination, Path.GetRelativePath(source, app.InstallPath!));
+            app.CustomInstallDir = destination;
+            InstallManifest.Forget(app.Id);
+            InstallManifest.Save(app.Id, destination, list ?? InstallManifest.ListDirectory(destination));
+            AppBackups.Retarget(app, source, destination);
+            InstallService.RefreshShortcut(app);
+            int stuck = await Task.Run(() => ShortcutFixer.Repoint(shortcuts, source, destination));
+            AddLog($"Moved {app.Title} to {destination}", "success");
+            Toast(result.LeftBehind > 0 ? $"{app.Title} moved. {result.LeftBehind} old file{(result.LeftBehind == 1 ? "" : "s")} couldn't be removed from {source}." : $"{app.Title} moved to {destination}", result.LeftBehind > 0 ? "warn" : "success");
+            if (stuck > 0) Toast($"{stuck} shortcut{(stuck == 1 ? "" : "s")} to {app.Title} couldn't be updated, so {(stuck == 1 ? "it" : "they")} won't open it. Delete {(stuck == 1 ? "it" : "them")} and make a new one.", "warn");
+        }
+        catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast($"{app.Title} wasn't moved, and is still where it was: {ex.Message}", "error"); }
+        finally { app.IsBusy = false; app.BusyText = ""; app.Progress = 0; app.NotifyAll(); ScheduleSaveApps(); ScheduleRefresh(); }
+    }
+
+    /// <summary>The one-step fix for an app that won't update: remove the old version, then install the newest. Offered from the menu and after a failed update.</summary>
+    void AskReinstall(TrackedApp app, string? failure = null)
+    {
+        if (app.IsBusy) return;
+        var release = app.LatestRelease;
+        if (release == null || AssetPicker.Pick(release.Assets, app.AssetPattern) == null)
+        {
+            Toast($"No Windows download found for {app.Title}, so nothing was changed.", "warn"); return;      // never remove an app with nothing to replace it
+        }
+        var (entry, exact) = IsPortableInstall(app) ? (null, false) : UninstallService.Resolve(app);
+        var lead = failure == null ? "" : failure.Split(" (Details:")[0] + "\n\nReinstalling often fixes this. ";
+        var version = release.Tag.TrimStart('v', 'V');
+        Prompt = new PromptVM
+        {
+            Title = $"Reinstall {app.Title}?",
+            Message = entry == null
+                ? lead + $"ReleaseSync will install version {version} over the current copy."
+                : lead + $"ReleaseSync will uninstall {entry.DisplayName}{(string.IsNullOrEmpty(entry.Version) ? "" : " " + entry.Version)}, then install version {version}. Windows may ask for permission. Your own documents aren't touched."
+                  + (exact ? "" : " Check that's the right program first."),
+            OkText = "Reinstall",
+            // only an installer that offers the choice can honour this, so it's only offered for those
+            ShowCheck = entry != null && AssetPicker.KindOf(AssetPicker.Pick(release.Assets, app.AssetPattern)!.Name) == AssetKind.Msi,
+            CheckText = "Install for everyone on this PC",
+            Checked = entry?.Id.StartsWith("LocalMachine|", StringComparison.Ordinal) ?? false,
+            OnOk = p => { if (p.ShowCheck) app.InstallForEveryone = p.Checked; _ = ReinstallAsync(app, entry); return null; },
+        };
+    }
+
+    async Task ReinstallAsync(TrackedApp app, UninstallEntry? entry)
+    {
+        if (entry != null)
+        {
+            if (app.IsBusy) return;
+            app.Progress = 0; app.BusyText = "Removing the old version…"; app.IsBusy = true;
+            AddLog($"Reinstalling {app.Title}: removing {entry.DisplayName}", "info");
+            try
+            {
+                var (ok, msg) = await UninstallService.RunAsync(entry, false);
+                if (!ok) { AddLog($"{app.Title}: {msg}", "warn"); Toast($"{app.Title} was left as it was: {msg}", "warn"); return; }
+                app.InstalledVersion = null; app.InstallPath = null; app.UninstallKey = null; app.NotifiedVersion = null;
+            }
+            catch (Exception ex) { AddLog($"{app.Title}: {ex.Message}", "error"); Toast(ex.Message, "error"); return; }
+            finally { app.IsBusy = false; app.BusyText = ""; app.NotifyAll(); ScheduleSaveApps(); ScheduleRefresh(); }
+        }
+        await InstallAsync(app);
     }
 
     async Task RunUninstallAsync(TrackedApp app, UninstallEntry entry, bool thenRemove)

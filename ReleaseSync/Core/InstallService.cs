@@ -121,6 +121,7 @@ public sealed class InstallService
                     var exe = UninstallService.FindExe(entry);
                     if (exe != null) app.InstallPath = exe;
                 }
+                if (string.IsNullOrEmpty(app.InstallPath) || !File.Exists(app.InstallPath)) app.InstallPath = UninstallService.FindInstalledExe(app);      // many installers don't tell Windows where they went
             }
             else if (app.InstallPath != null) app.UninstallKey = null;
         }
@@ -172,13 +173,42 @@ public sealed class InstallService
         var args = $"/i \"{file}\" " + (s.SilentInstall ? "/qn /norestart" : "/passive /norestart") + " MSIRESTARTMANAGERCONTROL=DisableShutdown"
                    + (string.IsNullOrEmpty(installDir) ? "" : $" INSTALLDIR=\"{Platform.ToNetworkPath(installDir)}\"")
                    + (string.IsNullOrWhiteSpace(app.CustomArgs) ? "" : " " + app.CustomArgs);
-        var psi = new ProcessStartInfo("msiexec.exe", args) { UseShellExecute = true, Verb = s.SilentInstall ? "runas" : "" };
-        return RunProcessAsync(psi, ct, code => code switch
+        // error 1603 only means "it failed": the log says why. It stays on this PC, and only a failed install keeps it
+        var log = Path.Combine(Paths.LocalDir, "Logs", Fmt.SafeName(app.Repo) + "-install.log");
+        Directory.CreateDirectory(Path.GetDirectoryName(log)!);
+        args += $" /L*V \"{log}\"";
+        // an update must match how the installed copy was installed, or the installer refuses (error 1603)
+        bool forEveryone = MsiLog.InstallForEveryone(UninstallService.Resolve(app).Entry?.Id, app.InstallForEveryone ?? s.InstallForEveryone, app.CustomArgs);
+        if (forEveryone) args += " ALLUSERS=1";
+        var psi = new ProcessStartInfo("msiexec.exe", args) { UseShellExecute = true, Verb = s.SilentInstall || forEveryone ? "runas" : "" };
+        return RunProcessAsync(psi, ct, code =>
         {
-            0 or 3010 or 1641 => null,
-            1602 or 1223 => "Installation was cancelled.",
-            _ => $"The installer finished with error code {code}."
+            switch (code)
+            {
+                case 0: case 3010: case 1641: try { File.Delete(log); } catch { } return null;
+                case 1602: case 1223: try { File.Delete(log); } catch { } return "Installation was cancelled.";
+                default:
+                    var text = ReadLog(log);
+                    // a license the installer wants accepted is a decision for the person, never something to pass for them
+                    if (MsiLog.LicenseSetting(text) is { } setting && !(app.CustomArgs ?? "").Contains(setting, StringComparison.OrdinalIgnoreCase))
+                    {
+                        try { File.Delete(log); } catch { }
+                        throw new LicenseRequiredException(app.Title, setting);
+                    }
+                    return MsiLog.Explain(app.Title, code, text) + $" (Details: {log})";
+            }
         });
+    }
+
+    static string? ReadLog(string file)
+    {
+        try
+        {
+            using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream, Encoding.UTF8, true);
+            return reader.ReadToEnd();
+        }
+        catch { return null; }
     }
 
     static Task RunExeAsync(string file, TrackedApp app, CancellationToken ct, string? installDir = null)
@@ -250,7 +280,7 @@ public sealed class InstallService
             Directory.CreateDirectory(staging);
             try
             {
-                if (kind == AssetKind.Zip) ZipFile.ExtractToDirectory(file, staging, true);
+                if (kind == AssetKind.Zip) Unpack(file, staging);
                 else File.Copy(file, Path.Combine(staging, Path.GetFileName(file)), true);
 
                 // flatten a single top-level folder
@@ -300,6 +330,19 @@ public sealed class InstallService
         }, ct).ConfigureAwait(false);
     }
 
+    /// <summary>Unpacks a .zip itself, and other archives like .7z with the tar built into Windows, which reads them.</summary>
+    static void Unpack(string archive, string folder)
+    {
+        if (archive.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { ZipFile.ExtractToDirectory(archive, folder, true); return; }
+        var tar = Path.Combine(Environment.SystemDirectory, "tar.exe");
+        if (!File.Exists(tar)) throw new IOException($"Windows can't unpack {Path.GetExtension(archive)} files on this PC. It needs Windows 11 or an up-to-date Windows 10.");
+        using var p = Process.Start(new ProcessStartInfo(tar) { ArgumentList = { "-xf", archive, "-C", folder }, UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true })
+            ?? throw new IOException("Couldn't start Windows' archive tool.");
+        var errors = p.StandardError.ReadToEnd();
+        p.WaitForExit();
+        if (p.ExitCode != 0) throw new IOException($"Couldn't unpack {Path.GetFileName(archive)}. Windows may be too old to read {Path.GetExtension(archive)} files. ({errors.Trim()})");
+    }
+
     static void CopyOver(string source, string destination, CancellationToken ct)
     {
         foreach (var dir in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
@@ -330,7 +373,7 @@ public sealed class InstallService
             var staging = Path.Combine(Path.GetTempPath(), "releasesync-" + Guid.NewGuid().ToString("N")[..8]);
             try
             {
-                ZipFile.ExtractToDirectory(file, staging, true);
+                Unpack(file, staging);
                 var entries = Directory.GetFileSystemEntries(staging);
                 var root = entries.Length == 1 && Directory.Exists(entries[0]) ? entries[0] : staging;
                 foreach (var f in Directory.GetFiles(root, "*", SearchOption.AllDirectories))
@@ -367,6 +410,12 @@ public sealed class InstallService
     {
         var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "ReleaseSync");
         return Path.Combine(dir, Fmt.SafeName(app.Title) + ".lnk");
+    }
+
+    /// <summary>Points the app's Start menu shortcut at its new place, if it has one.</summary>
+    public static void RefreshShortcut(TrackedApp app)
+    {
+        if (File.Exists(ShortcutPath(app)) && !string.IsNullOrEmpty(app.InstallPath)) CreateShortcut(app, app.InstallPath);
     }
 
     static void CreateShortcut(TrackedApp app, string exe)

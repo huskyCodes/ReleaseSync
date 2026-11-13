@@ -105,6 +105,8 @@ public class TrackedApp : Observable
     public bool LinkVerified { get; set; } = true;
     [JsonIgnore] public bool NeedsLinkConfirm => !LinkVerified;
     public bool TrustUnsigned { get; set; }
+    /// <summary>Install this app for everyone on the PC, or just this user. Empty means follow the setting. It belongs to this PC, so it isn't synced.</summary>
+    public bool? InstallForEveryone { get; set; }
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
     List<ReleaseSummary> _releases = new(); public List<ReleaseSummary> Releases { get => _releases; set => SetAll(ref _releases, value); }
     string? _skipped; public string? SkippedVersion { get => _skipped; set => SetAll(ref _skipped, value); }
@@ -137,6 +139,8 @@ public class TrackedApp : Observable
     bool _hidden; public bool Hidden { get => _hidden; set => SetAll(ref _hidden, value); }
     InstallMode _mode; public InstallMode Mode { get => _mode; set => SetAll(ref _mode, value); }
     string? _args; public string? CustomArgs { get => _args; set => SetAll(ref _args, value); }
+    /// <summary>The project's page answered "not found": it may have moved or been removed, and the user can point ReleaseSync at its new home.</summary>
+    bool _missing; public bool RepoMissing { get => _missing; set => SetAll(ref _missing, value); }
     string? _path; public string? InstallPath { get => _path; set => SetAll(ref _path, value); }
     DateTime? _checked; public DateTime? LastChecked { get => _checked; set => SetAll(ref _checked, value); }
     string? _error; public string? LastError { get => _error; set => SetAll(ref _error, value); }
@@ -175,18 +179,37 @@ public class TrackedApp : Observable
         get
         {
             if (!IsInstalled || !HasUpdate || Releases.Count < 2) return NotesText;
-            var newer = Releases.Where(r => (IncludePrereleases || !r.Prerelease) && VersionUtil.IsNewer(r.Tag, InstalledVersion!)).Take(12).ToList();
+            var newer = Releases.Where(r => (IncludePrereleases || !r.Prerelease) && !VersionUtil.IsOneOff(r.Tag) && IsNewer(r.Tag, InstalledVersion!)).Take(12).ToList();
             if (newer.Count < 2) return NotesText;
             return string.Join("\n\n────────\n\n", newer.Select(r => $"{r.Tag}{(r.Published.HasValue ? "  ·  " + r.PublishedText : "")}\n{(string.IsNullOrWhiteSpace(r.Notes) ? "No release notes were provided." : Fmt.StripMarkdown(r.Notes, 1500))}"));
         }
     }
-    [JsonIgnore] public string NotesHeader => IsInstalled && HasUpdate && Releases.Count(r => VersionUtil.IsNewer(r.Tag, InstalledVersion!)) > 1 ? "WHAT'S NEW SINCE YOUR VERSION" : "WHAT'S NEW";
+    [JsonIgnore] public string NotesHeader => IsInstalled && HasUpdate && Releases.Count(r => !VersionUtil.IsOneOff(r.Tag) && IsNewer(r.Tag, InstalledVersion!)) > 1 ? "WHAT'S NEW SINCE YOUR VERSION" : "WHAT'S NEW";
+
+    /// <summary>
+    /// When a version was published. The saved list holds the newest releases, so a tag missing from it (an old release, or a tag that was never a release,
+    /// like one left behind after an app updated itself) is treated as older than all of them.
+    /// </summary>
+    DateTime? PublishedOf(string tag)
+    {
+        if (Releases.FirstOrDefault(r => r.Tag == tag)?.Published is { } listed) return listed;
+        if (tag == LatestVersion && LatestPublished is { } latest) return latest;
+        var oldest = Releases.Where(r => r.Published.HasValue).Select(r => r.Published!.Value).DefaultIfEmpty().Min();
+        return oldest == default ? null : oldest.AddSeconds(-1);
+    }
+
+    /// <summary>The installed version isn't one of the recent releases, so the app may have updated itself past what ReleaseSync knows.</summary>
+    [JsonIgnore] public bool VersionUnrecognized => IsInstalled && Releases.Count > 0 && InstalledVersion != LatestVersion && Releases.All(r => r.Tag != InstalledVersion);
+    [JsonIgnore] public string VersionUnrecognizedText => $"Your installed version, {InstalledVersion}, isn't one of this app's recent releases. If it updates itself, it may already be up to date. If so, choose Mark as installed below.";
+
+    /// <summary>Compares two of this app's versions, using their publish dates when their tags aren't written the same way.</summary>
+    public bool IsNewer(string a, string b) => VersionUtil.IsNewer(a, b, PublishedOf(a), PublishedOf(b));
     [JsonIgnore] public string Title => string.IsNullOrWhiteSpace(DisplayName) ? Repo : DisplayName!;
     [JsonIgnore] public string Initial => Title.Length > 0 ? char.ToUpperInvariant(Title[0]).ToString() : "?";
     public const string UngroupedName = "Ungrouped";
     [JsonIgnore] public string DisplayGroup => !string.IsNullOrWhiteSpace(Group) ? Group! : AppSettingsProvider.Current.AutoGroups ? Category : UngroupedName;
     [JsonIgnore] public bool IsInstalled => !string.IsNullOrEmpty(InstalledVersion);
-    [JsonIgnore] public bool HasUpdate => !IgnoreUpdates && !IsSkipped && IsInstalled && !string.IsNullOrEmpty(LatestVersion) && VersionUtil.IsNewer(LatestVersion!, InstalledVersion!);
+    [JsonIgnore] public bool HasUpdate => !IgnoreUpdates && !IsSkipped && IsInstalled && !string.IsNullOrEmpty(LatestVersion) && IsNewer(LatestVersion!, InstalledVersion!);
     [JsonIgnore] public bool HasRelease => !string.IsNullOrEmpty(LatestVersion);
     [JsonIgnore] public AssetInfo? ChosenAsset => AssetPicker.Pick(Assets, AssetPattern);
     [JsonIgnore] public bool CanInstall => ChosenAsset != null && !IsBusy;
@@ -196,6 +219,11 @@ public class TrackedApp : Observable
     [JsonIgnore] public string ActionText => IsInstalled ? "Update" : "Install";
     [JsonIgnore] public string ActionGlyph => IsInstalled ? "" : "";
     [JsonIgnore] public string ChosenAssetText => ChosenAsset?.Name ?? "No compatible Windows file found";
+    /// <summary>A release exists but none of its files is one ReleaseSync can install, which is why Install or Update can't be clicked.</summary>
+    [JsonIgnore] public bool HasNoInstallableFile => HasRelease && (HasUpdate || !IsInstalled) && ChosenAsset == null;
+    [JsonIgnore] public string NoInstallableFileText => Assets.Count == 0
+        ? $"{LatestVersion} has no files to download yet, so there's nothing to install."
+        : $"{LatestVersion} has no file ReleaseSync can install. Its files are {string.Join(", ", Assets.Select(a => a.Name))}. If one should work, choose it under Releases.";
     [JsonIgnore] public string SizeText => ChosenAsset?.SizeText ?? "";
     [JsonIgnore] public string StarsText => Fmt.Count(Stars);
     [JsonIgnore] public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
@@ -233,7 +261,7 @@ public class TrackedApp : Observable
         IsBusy ? "Busy" :
         HasError && !HasRelease ? "Error" :
         HasUpdate ? "Update" :
-        IsInstalled && (IgnoreUpdates || IsSkipped) && !string.IsNullOrEmpty(LatestVersion) && VersionUtil.IsNewer(LatestVersion!, InstalledVersion!) ? "Ignored" :
+        IsInstalled && (IgnoreUpdates || IsSkipped) && !string.IsNullOrEmpty(LatestVersion) && IsNewer(LatestVersion!, InstalledVersion!) ? "Ignored" :
         IsInstalled ? (HasError ? "Error" : "UpToDate") :
         HasRelease ? "NotInstalled" : "Unchecked";
 
@@ -242,7 +270,7 @@ public class TrackedApp : Observable
     [JsonIgnore] public string StatusText => StatusKind switch
     {
         "Busy" => string.IsNullOrEmpty(BusyText) ? "Working…" : BusyText,
-        "Error" => LastError != null && LastError.StartsWith("No ") ? "No releases" : "Check failed",
+        "Error" => RepoMissing ? "Project not found" : LastError != null && LastError.StartsWith("No ") ? "No releases" : "Check failed",
         "Update" => "Update available",
         "Ignored" => IsSkipped ? $"Skipped {LatestVersion}" : "Update ignored",
         "UpToDate" => "Up to date",
@@ -384,9 +412,14 @@ public class AppSettings : Observable
         }
     }
     [JsonIgnore] public bool HasSyncPassphrase => SyncPassphrase.Length > 0;
-    string? _selfRepo; public string? SelfUpdateRepo { get => _selfRepo; set => Set(ref _selfRepo, value); }
+    string? _selfRepo = "https://github.com/huskyCodes/ReleaseSync"; public string? SelfUpdateRepo { get => _selfRepo; set => Set(ref _selfRepo, value); }
+    /// <summary>The newest version the user has been notified about, so a notification appears once per version.</summary>
+    public string? SelfUpdateNotified { get; set; }
+    /// <summary>Where the user chose to keep running the program instead of installing it, so the offer isn't repeated for that copy.</summary>
+    public string? InstallDeclinedPath { get; set; }
     public Dictionary<string, DateTime> Tombstones { get; set; } = new();
     public List<string> ScanFolders { get; set; } = new();
+    bool _forEveryone; public bool InstallForEveryone { get => _forEveryone; set => Set(ref _forEveryone, value); }
     bool _silent; public bool SilentInstall { get => _silent; set => Set(ref _silent, value); }
     string _silentArgs = "/S"; public string SilentArgs { get => _silentArgs; set => Set(ref _silentArgs, value); }
     string _arch = "Auto"; public string PreferredArch { get => _arch; set => Set(ref _arch, value); }
@@ -640,18 +673,63 @@ public static class VersionUtil
 
     public static string Clean(string v) => v.Trim().TrimStart('v', 'V');
 
-    public static bool IsNewer(string latest, string installed)
+    /// <summary>A real version number like v1.2.3 or launcher@0.2.45, as opposed to a build label like build-83.</summary>
+    static bool IsDotted(string v) => Regex.IsMatch(v, @"^(\D*\d+(\.\d+)+|[vV]?\d+\b)");
+
+    /// <summary>A tag with its numbers blanked out, so build-75 and build-83 match but nx2-build-34 doesn't.</summary>
+    static string Style(string v) => Num.Replace(Clean(v).ToLowerInvariant(), "#");
+
+    /// <summary>
+    /// The release tag a version number seen on the PC belongs to, like Windows' "2.0.11.0" for tag v2.0.11, or null. A release is preferred over its
+    /// pre-releases, and a bare "1.0.0" only matches a release really called that.
+    /// </summary>
+    public static string? MatchTag(string? seen, IEnumerable<string> tags)
     {
-        if (Clean(latest) == Clean(installed)) return false;
-        var a = Parts(latest); var b = Parts(installed);
-        if (a.Count == 0 || b.Count == 0) return true; // unparsable: any difference counts as an update
-        int n = Math.Max(a.Count, b.Count);
-        for (int i = 0; i < n; i++)
+        if (string.IsNullOrWhiteSpace(seen)) return null;
+        static List<long> Trimmed(List<long> p) { while (p.Count > 1 && p[^1] == 0) p.RemoveAt(p.Count - 1); return p; }
+        var raw = Parts(seen);
+        if (raw.Count < 2) return null;
+        var want = Trimmed(raw);
+        var list = tags.Where(t => !string.IsNullOrEmpty(t)).ToList();
+        return list.FirstOrDefault(t => Clean(t).Equals(Clean(seen), StringComparison.OrdinalIgnoreCase))
+            ?? list.Where(t => IsDotted(t) && Trimmed(Parts(t)).SequenceEqual(want)).OrderBy(t => Pre.IsMatch(t) || t.Contains('-')).FirstOrDefault();
+    }
+
+    /// <summary>Every release tag mentioned in a piece of text, like an app's own version file ("version=v2.0.11").</summary>
+    public static List<string> TagsIn(string text, IEnumerable<string> tags)
+    {
+        var list = tags.ToList();
+        return Regex.Matches(text ?? "", @"(?<![\w.])v?\d+(?:\.\d+)+(?:-[\w.]+)?").Select(m => MatchTag(m.Value, list)).OfType<string>().Distinct().ToList();
+    }
+
+    /// <summary>Throwaway builds of a developer's work in progress, which aren't what most people mean by the latest version.</summary>
+    public static bool IsOneOff(string tag) => Regex.IsMatch(tag, @"^(branch|pr|feature|test|scratch)[-_/]", RegexOptions.IgnoreCase);
+
+    static int Compare(List<long> a, List<long> b)
+    {
+        for (int i = 0; i < Math.Max(a.Count, b.Count); i++)
         {
             long x = i < a.Count ? a[i] : 0, y = i < b.Count ? b[i] : 0;
-            if (x != y) return x > y;
+            if (x != y) return x.CompareTo(y);
         }
+        return 0;
+    }
+
+    /// <summary>
+    /// Numbers only mean something between tags written the same way. Projects change style (build-83, then nx2-build-90, or daily-20261105 beside build-212),
+    /// so across styles the publish dates decide, and with no dates any difference counts as an update.
+    /// </summary>
+    public static bool IsNewer(string latest, string installed, DateTime? latestDate = null, DateTime? installedDate = null)
+    {
+        if (Clean(latest) == Clean(installed)) return false;
+        int order;
+        if (IsDotted(latest) && IsDotted(installed)) order = Compare(Parts(latest), Parts(installed));
+        else if (Style(latest) == Style(installed)) order = Compare(Num.Matches(latest).Select(m => long.TryParse(m.Value, out var n) ? n : 0).ToList(), Num.Matches(installed).Select(m => long.TryParse(m.Value, out var n) ? n : 0).ToList());
+        else if (latestDate is { } a && installedDate is { } b) return a > b;
+        // no dates: a real version number outranks a label, so the two directions can never both be newer
+        else if (IsDotted(latest) != IsDotted(installed)) return IsDotted(latest);
+        else return true;
         // numerically equal: a release replacing a pre-release counts as newer
-        return Pre.IsMatch(installed) && !Pre.IsMatch(latest);
+        return order != 0 ? order > 0 : Pre.IsMatch(installed) && !Pre.IsMatch(latest);
     }
 }

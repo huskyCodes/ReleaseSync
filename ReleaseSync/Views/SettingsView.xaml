@@ -149,6 +149,9 @@
                                 <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.InstallAfterAdd}"/>
                             </ui:SettingRow>
 
+                            <ui:SettingRow Title="Install apps for everyone on this PC" Description="Off: new apps install just for you. On: everyone who uses this PC gets them, and Windows asks for permission each time. Only some installers offer the choice. Updates always keep an app the way it was installed; to change one app, use Reinstall in its menu.">
+                                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Settings.InstallForEveryone}"/>
+                            </ui:SettingRow>
                             <ui:SettingRow Title="Preferred architecture" Description="Which build to pick when a release offers several. Automatic matches your PC.">
                                 <ComboBox Width="140" ItemsSource="{x:Static ui:MainViewModel.ArchChoices}" SelectedItem="{Binding Settings.PreferredArch}"/>
                             </ui:SettingRow>
@@ -399,6 +402,9 @@
                     </Border>
                     <Border Style="{StaticResource Section}">
                         <StackPanel>
+                            <ui:SettingRow Title="Uninstall ReleaseSync" Description="Removes ReleaseSync from this PC. Apps you installed with it stay installed." Visibility="{Binding CanUninstallSelf, Converter={StaticResource BoolVis}}">
+                                <Button Style="{StaticResource DangerButton}" Content="Uninstall" Height="36" Padding="16,0" Command="{Binding UninstallSelfCommand}"/>
+                            </ui:SettingRow>
                             <ui:SettingRow Title="Data folder" Description="Where your library and settings live on this PC.">
                                 <Button Content="Open folder" Height="36" Padding="16,0" Command="{Binding OpenFolderCommand}" CommandParameter="data"/>
                             </ui:SettingRow>

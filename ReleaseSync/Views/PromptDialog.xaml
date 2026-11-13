@@ -9,6 +9,13 @@
         <StackPanel DataContext="{Binding Prompt}">
             <TextBlock Text="{Binding Title}" Style="{StaticResource H2}" FontSize="19" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding Message}" Style="{StaticResource Dim}" FontSize="13" Margin="0,10,0,0" Visibility="{Binding HasMessage, Converter={StaticResource BoolVis}}"/>
+            <StackPanel Margin="0,16,0,0" Visibility="{Binding HasDetails, Converter={StaticResource BoolVis}}">
+                <TextBlock Text="{Binding DetailsTitle}" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"/>
+                <ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding Details}" Style="{StaticResource Dim}" FontSize="13" TextWrapping="Wrap" LineHeight="20"/>
+                </ScrollViewer>
+            </StackPanel>
+            <TextBlock Text="{Binding Footnote}" Style="{StaticResource Dim}" FontSize="12" TextWrapping="Wrap" Margin="0,14,0,0" Visibility="{Binding HasFootnote, Converter={StaticResource BoolVis}}"/>
             <TextBox x:Name="Input" Margin="0,18,0,0" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" ui:Ext.Hint="{Binding Placeholder}" Visibility="{Binding ShowInput, Converter={StaticResource BoolVis}}">
                 <TextBox.InputBindings><KeyBinding Key="Return" Command="{Binding PromptOkCommand, Source={x:Static app:App.VM}}"/></TextBox.InputBindings>
             </TextBox>
@@ -17,7 +24,7 @@
             </CheckBox>
             <TextBlock Text="{Binding Error}" Foreground="{DynamicResource DangerBrush}" Margin="0,10,0,0" TextWrapping="Wrap" Visibility="{Binding Error, Converter={StaticResource NullVis}}"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
-                <Button Content="Cancel" Height="38" Padding="20,0" Command="{Binding PromptCancelCommand, Source={x:Static app:App.VM}}"/>
+                <Button Content="{Binding CancelText}" Height="38" Padding="20,0" Command="{Binding PromptCancelCommand, Source={x:Static app:App.VM}}"/>
                 <Button Style="{StaticResource PrimaryButton}" Content="{Binding OkText}" Height="38" Padding="22,0" Margin="10,0,0,0" Command="{Binding PromptOkCommand, Source={x:Static app:App.VM}}"
                         Visibility="{Binding IsDanger, Converter={StaticResource InvBoolVis}}"/>
                 <Button Style="{StaticResource DangerButton}" Content="{Binding OkText}" Height="38" Padding="22,0" Margin="10,0,0,0" Command="{Binding PromptOkCommand, Source={x:Static app:App.VM}}"

@@ -90,10 +90,19 @@
                 <!-- description + error -->
                 <TextBlock Text="{Binding Description}" Style="{StaticResource Dim}" FontSize="13" Margin="0,0,0,18" Visibility="{Binding HasDescription, Converter={StaticResource BoolVis}}"/>
                 <Border Background="{DynamicResource DangerSoftBrush}" CornerRadius="10" Padding="14,11" Margin="0,0,0,18" Visibility="{Binding HasError, Converter={StaticResource BoolVis}}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Style="{StaticResource Icon}" Text="&#xE7BA;" FontSize="14" Foreground="{DynamicResource DangerBrush}" Margin="0,2,12,0" VerticalAlignment="Top"/>
-                        <TextBlock Text="{Binding LastError}" TextWrapping="Wrap" MaxWidth="330"/>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Icon}" Text="&#xE7BA;" FontSize="14" Foreground="{DynamicResource DangerBrush}" Margin="0,2,12,0" VerticalAlignment="Top"/>
+                            <TextBlock Text="{Binding LastError}" TextWrapping="Wrap" MaxWidth="330"/>
+                        </StackPanel>
+                        <!-- a project that moved: the fix is one click away -->
+                        <Button Content="Change repository…" Height="32" Padding="14,0" Margin="26,10,0,0" HorizontalAlignment="Left" Visibility="{Binding RepoMissing, Converter={StaticResource BoolVis}}"
+                                Command="{Binding RelinkCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                     </StackPanel>
+                </Border>
+                <!-- a release with no file ReleaseSync can use, which is why Install or Update can't be clicked -->
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="10" Padding="14,11" Margin="0,0,0,18" Visibility="{Binding HasNoInstallableFile, Converter={StaticResource BoolVis}}">
+                    <TextBlock Text="{Binding NoInstallableFileText}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource DimBrush}" LineHeight="19"/>
                 </Border>
 
                 <!-- versions -->
@@ -111,6 +120,11 @@
                         <TextBlock Grid.Row="3" Text="Last checked" Style="{StaticResource KeyLabel}" Margin="0,9"/>
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LastCheckedText}" Style="{StaticResource KeyValue}"/>
                     </Grid>
+                </Border>
+
+                <!-- the installed version isn't a recent release, so the app may have updated itself -->
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="10" Padding="14,11" Margin="0,0,0,18" Visibility="{Binding VersionUnrecognized, Converter={StaticResource BoolVis}}">
+                    <TextBlock Text="{Binding VersionUnrecognizedText}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource DimBrush}" LineHeight="19"/>
                 </Border>
 
                 <!-- notes (every release since your version when you're behind) -->

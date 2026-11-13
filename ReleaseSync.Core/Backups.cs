@@ -135,6 +135,22 @@ public static class AppBackups
         }
     }
 
+    /// <summary>After an app has moved: its backups restore to the new folder, not the old one.</summary>
+    public static void Retarget(TrackedApp app, string oldDir, string newDir)
+    {
+        foreach (var b in List(app))
+        {
+            try
+            {
+                var rel = string.Equals(b.TargetDir.TrimEnd('\\'), oldDir.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase) ? "" : Path.GetRelativePath(oldDir, b.TargetDir);
+                if (rel.StartsWith("..", StringComparison.Ordinal)) continue;       // it wasn't in the moved folder
+                b.TargetDir = rel.Length == 0 ? newDir : Path.Combine(newDir, rel);
+                File.WriteAllText(b.ZipPath + ".json", JsonSerializer.Serialize(b));
+            }
+            catch { }
+        }
+    }
+
     public static long TotalSize()
     {
         try { return Directory.Exists(Root) ? new DirectoryInfo(Root).EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length) : 0; } catch { return 0; }

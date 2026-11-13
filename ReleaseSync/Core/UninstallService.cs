@@ -368,6 +368,52 @@ public static class UninstallService
         return null;
     }
 
+    /// <summary>
+    /// The program for an installed app, for installers that don't tell Windows where they put it. Asks Windows' registered program paths first, then follows the app's
+    /// Start menu or desktop shortcut (which works wherever it was installed), then looks in the usual folders.
+    /// </summary>
+    public static string? FindInstalledExe(TrackedApp app)
+    {
+        var keys = new[] { Norm(app.Repo), Norm(app.Title) }.Where(k => k.Length >= 3).Distinct().ToArray();
+        if (keys.Length == 0) return null;
+        bool Usable(string? f) => !string.IsNullOrEmpty(f) && f.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(f)
+                                  && !Regex.IsMatch(Path.GetFileName(f), "unins|uninstall|setup|crash", RegexOptions.IgnoreCase);
+
+        foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
+            foreach (var name in new[] { app.Repo, app.Title }.Distinct())
+            {
+                try
+                {
+                    using var k = hive.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\App Paths\" + name + ".exe");
+                    var path = (k?.GetValue(null) as string)?.Trim().Trim('"');
+                    if (Usable(path)) return path;
+                }
+                catch { }
+            }
+
+        try
+        {
+            var t = Type.GetTypeFromProgID("WScript.Shell");
+            if (t != null)
+            {
+                dynamic shell = Activator.CreateInstance(t)!;
+                foreach (var dir in new[] { Environment.GetFolderPath(Environment.SpecialFolder.Programs), Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms),
+                                            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory) })
+                {
+                    if (!Directory.Exists(dir)) continue;
+                    foreach (var lnk in Directory.EnumerateFiles(dir, "*.lnk", SearchOption.AllDirectories).Take(1500))
+                    {
+                        var n = Norm(Path.GetFileNameWithoutExtension(lnk));
+                        if (!keys.Any(k => n == k || n.Contains(k))) continue;
+                        try { string target = shell.CreateShortcut(lnk).TargetPath; if (Usable(target)) return target; } catch { }
+                    }
+                }
+            }
+        }
+        catch { }
+        return FindLocalProgram(app)?.Exe;
+    }
+
     public static string? FindExe(UninstallEntry e)
     {
         try

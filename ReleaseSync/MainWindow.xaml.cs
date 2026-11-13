@@ -59,7 +59,7 @@ public partial class MainWindow : Window
 
     public void BringToFront()
     {
-        if (!IsVisible) Show();
+        if (!IsVisible) { Show(); vm.CheckSelfIfStale(); }
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         Activate(); Topmost = true; Topmost = false; Focus();
         // Windows only lets the foreground app take focus; if it declined, the user would just see a flashing taskbar button

@@ -17,6 +17,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        ReleaseSync.Core.Platform.DeclareAppId();
         // a custom data folder (testing) gets its own instance name so it never collides with a normal copy
         var tag = Environment.GetEnvironmentVariable("RELEASESYNC_DATA") is { Length: > 0 } d ? "." + d.ToLowerInvariant().Aggregate(17u, (h, ch) => h * 31 + ch) : "";
         EventManager.RegisterClassHandler(typeof(System.Windows.Controls.ToolTip), System.Windows.Controls.ToolTip.OpenedEvent, new RoutedEventHandler(CenterTip));
@@ -63,6 +64,7 @@ public partial class App : Application
             return;
         }
 
+        ReleaseSync.Core.Platform.MatchShortcuts();      // before the window opens, so it lands on the pinned icon the first time
         try { window = new MainWindow(VM); }
         catch (Exception ex) { LogCrash(ex); MessageBox.Show("ReleaseSync couldn't open its window:\n\n" + ex.Message + "\n\nDetails were saved to " + System.IO.Path.Combine(ReleaseSync.Core.Paths.DataDir, "error.log"), "ReleaseSync", MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(); return; }
         // "start minimized" is for when Windows launches ReleaseSync at sign-in (--background); opening it yourself always shows the window
@@ -84,6 +86,13 @@ public partial class App : Application
         _ = VM.StartAsync();
         ApplyLaunchArgs(e.Args);
         if (uri != null) VM.HandleCommand(uri);
+    }
+
+    /// <summary>Lets go of the "only one copy" lock, for the moment when an updated version is about to start. The handle has to be closed too, or the new copy would still see it.</summary>
+    public void ReleaseSingleInstance()
+    {
+        try { mutex?.ReleaseMutex(); } catch { }
+        mutex?.Dispose(); mutex = null;
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(int processId);
@@ -147,13 +156,16 @@ public partial class App : Application
         catch { }
     }
 
-    /// <summary>Developer shortcuts: --page=Settings, --section=GitHub, --open=owner/repo, --add=owner/repo, --search=text.</summary>
+    /// <summary>Developer shortcuts: --page=Settings, --section=GitHub, --open=owner/repo, --reveal=owner/repo, --add=owner/repo, --search=text.</summary>
     static void ApplyLaunchArgs(string[] args)
     {
         string? Arg(string key) => args.FirstOrDefault(a => a.StartsWith("--" + key + "=", StringComparison.OrdinalIgnoreCase))?.Split('=', 2)[1];
         if (Arg("section") is { } sec) VM.SettingsSection = sec;
         if (Arg("page") is { } page) VM.Navigate(page);
         if (Arg("open") is { } open && open.Contains('/')) { var p = open.Split('/'); var a = VM.Find(p[0], p[1]); if (a != null) VM.SelectedApp = a; }
+        if (Arg("reveal") is { } rev && rev.Contains('/')) { var p = rev.Split('/'); var a = VM.Find(p[0], p[1]); if (a != null) _ = VM.ShowLocationAsync(a); }
+        if (Arg("reinstall") is { } rei && rei.Contains('/')) { var p = rei.Split('/'); var a = VM.Find(p[0], p[1]); if (a != null) VM.ReinstallCommand.Execute(a); }
+        if (Arg("move") is { } mv && mv.Contains('|')) { var parts = mv.Split('|', 2); var ma = parts[0].Split('/'); var a = VM.Find(ma[0], ma[1]); if (a != null) _ = VM.MoveAppAsync(a, parts[1]); }
         if (Arg("add") is { } add && ReleaseSync.Core.SourceClient.TryParse(add, out var addRef) && addRef != null) _ = VM.OpenAddPreviewAsync(addRef.Owner, addRef.Repo, null, addRef.Source, addRef.FullPath);
         if (Arg("relink") is { } rl && rl.Contains('|')) { var parts = rl.Split('|', 2); var ra = parts[0].Split('/'); var target = VM.Find(ra[0], ra[1]); if (target != null && ReleaseSync.Core.SourceClient.TryParse(parts[1], out var newRef) && newRef != null) _ = VM.RelinkAsync(target, newRef, null); }
         if (args.Contains("--check")) _ = VM.CheckAllAsync(true);
