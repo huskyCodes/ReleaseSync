@@ -275,6 +275,14 @@ struct ComingPage: View {
 struct StatusView: View {
     @Environment(LibraryModel.self) private var model
     @Environment(Navigator.self) private var nav
+    @Environment(ViewPrefs.self) private var prefs
+    @Environment(Toasts.self) private var toasts
+
+    /// Starts an empty library in a new private Gist (the person pressed the button, so changes are allowed from now on).
+    private func startLibrary() async {
+        prefs.allowLibraryChanges = true
+        if let problem = await model.startNewLibrary() { toasts.show(problem, .error) } else { toasts.show("Your library is ready. Add your first app from the bar at the top.", .success) }
+    }
 
     var body: some View {
         switch model.phase {
@@ -293,9 +301,13 @@ struct StatusView: View {
                     .buttonStyle(PrimaryButtonStyle(height: 40))
             }
         case .noLibrary:
-            EmptyMessage(symbol: "tray", title: "No library found", message: "Your GitHub account doesn't have a ReleaseSync library yet. Turn on sync in ReleaseSync on your other device first, then check again.", brand: true) {
-                Button { Task { await model.refresh() } } label: { Label("Check again", systemImage: "arrow.clockwise") }
-                    .buttonStyle(PrimaryButtonStyle(height: 40))
+            EmptyMessage(symbol: "tray", title: "No library found", message: "Your GitHub account doesn't have a ReleaseSync library yet. Start one here, or turn on sync in ReleaseSync on your other device first and check again.", brand: true) {
+                HStack {
+                    Button { Task { await startLibrary() } } label: { Label("Start a new library", systemImage: "plus.circle") }
+                        .buttonStyle(PrimaryButtonStyle(height: 40))
+                    Button { Task { await model.refresh() } } label: { Label("Check again", systemImage: "arrow.clockwise") }
+                        .buttonStyle(OutlineButtonStyle(height: 40))
+                }
             }
         case .keychainBlocked(let message):
             EmptyMessage(symbol: "lock.trianglebadge.exclamationmark", title: "ReleaseSync can't use your saved details", message: message) {

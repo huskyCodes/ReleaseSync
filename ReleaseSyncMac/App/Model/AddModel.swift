@@ -23,6 +23,8 @@ final class AddModel {
         case failed(String)
         /// Changes to the library are switched off; asks the person before turning them on.
         case needsPermission
+        /// The account has no library yet; asks before starting one (a new private Gist).
+        case needsNewLibrary
     }
 
     private(set) var stage = Stage.closed
@@ -48,7 +50,6 @@ final class AddModel {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         guard !library.isDemo else { toasts.show("This is a demo, so nothing is looked up.", .info); return }
-        guard library.phase == .loaded else { toasts.show("Connect your library first (Settings).", .info); return }
         if let ref = RepoRef.parse(text) { await preview(source: ref.source, owner: ref.owner, repo: ref.repo) }
         else { await search(text) }
     }
@@ -158,7 +159,6 @@ final class AddModel {
     func importList(_ text: String, group: String, installAfter: Bool) async {
         guard !isImporting else { return }
         guard !library.isDemo else { importStatus = "This is a demo, so nothing is imported."; return }
-        guard library.phase == .loaded else { importStatus = "Connect your library first (Settings)."; return }
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { importStatus = "Paste some GitHub links or choose a file first."; return }
         let parsed = Importer.parse(text)
         let known = Set(library.apps.map(\.key))
@@ -206,9 +206,31 @@ final class AddModel {
     // MARK: asking before the first change
 
     private func withPermission(_ work: @escaping () async -> Void) async {
+        switch library.phase {
+        case .loaded: break
+        case .noLibrary: pending = work; stage = .needsNewLibrary; return
+        case .needsToken: say("Add your GitHub token in Settings first, so there's a library to save to.")
+        case .needsPassphrase: say("Enter your library's passphrase in Settings first.")
+        case .loading: say("Your library is still loading. Try again in a moment.")
+        case .keychainBlocked(let m), .failed(let m): say(m)
+        }
+        if library.phase != .loaded { return }
         if library.editingAllowed() { await work(); return }
         pending = work
         stage = .needsPermission
+    }
+
+    private func say(_ text: String) { stage = .closed; importStatus = text; toasts.show(text, .warn) }
+
+    /// The person said yes to "Start a library": this allows changes, makes the Gist, and carries on with what they were doing.
+    func startLibraryAndContinue() async {
+        allowChanges()
+        if let problem = await library.startNewLibrary() { say(problem); pending = nil; return }
+        log.add("Started a new library in your GitHub account", .success)
+        let work = pending
+        pending = nil
+        if case .needsNewLibrary = stage { stage = .closed }
+        await work?()
     }
 
     /// The person said yes to "Let this Mac change my library".

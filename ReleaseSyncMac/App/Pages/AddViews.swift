@@ -16,6 +16,8 @@ struct AddSheet: View {
                 Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(Theme.warn).fixedSize(horizontal: false, vertical: true)
             case .needsPermission:
                 permission
+            case .needsNewLibrary:
+                newLibrary
             case .results(let query, let found):
                 results(query, found)
             case .preview(let p):
@@ -35,6 +37,19 @@ struct AddSheet: View {
                 Spacer()
                 Button("Not now") { add.close() }.buttonStyle(OutlineButtonStyle())
                 Button("Turn on and continue") { Task { await add.allowChangesAndContinue() } }.buttonStyle(PrimaryButtonStyle())
+            }
+        }
+    }
+
+    private var newLibrary: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Start your library?").font(.h2).foregroundStyle(Theme.text)
+            Text("Your GitHub account doesn't have a ReleaseSync library yet. This creates one: a private Gist in your account that holds your list of apps, which ReleaseSync on your other devices can use too. Nobody else can see it, and you can delete it on GitHub any time. This Mac will also show up in your list of devices.")
+                .font(.dim).foregroundStyle(Theme.dim).fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Spacer()
+                Button("Not now") { add.close() }.buttonStyle(OutlineButtonStyle())
+                Button("Start my library") { Task { await add.startLibraryAndContinue() } }.buttonStyle(PrimaryButtonStyle())
             }
         }
     }

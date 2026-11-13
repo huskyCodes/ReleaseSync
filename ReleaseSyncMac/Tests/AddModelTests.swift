@@ -23,10 +23,10 @@ final class AddModelTests: XCTestCase {
     struct Rig { let add: AddModel; let library: LibraryModel; let transport: MemoryTransport; let allowed: Allowed }
     final class Allowed: @unchecked Sendable { var value = true }
 
-    func rig(allowed: Bool = true, asked: Asked = Asked()) async throws -> Rig {
-        let secrets = MemorySecrets(); try secrets.write(SecretTarget.gitHubToken, "fake-token")
+    func rig(allowed: Bool = true, asked: Asked = Asked(), existingLibrary: Bool = true, token: Bool = true) async throws -> Rig {
+        let secrets = MemorySecrets(); if token { try secrets.write(SecretTarget.gitHubToken, "fake-token") }
         var doc = LibraryModelTests.library(); doc.apps = []; doc.tryLater = []
-        let transport = MemoryTransport(text: doc.text())
+        let transport = MemoryTransport(text: existingLibrary ? doc.text() : nil)
         let client = SourceClient(token: "fake-token", send: send(asked: asked), sleep: { _ in })
         let library = LibraryModel(secrets: secrets, makeTransport: { _ in transport }, client: client)
         library.thisDevice = SyncDevice(id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", name: "Example Mac", platform: "Mac", appVersion: "0.1")
@@ -136,5 +136,44 @@ final class AddModelTests: XCTestCase {
         XCTAssertTrue(r.add.importStatus.contains("already in your library"), r.add.importStatus)
         await r.add.importList("   ", group: "", installAfter: false)
         XCTAssertTrue(r.add.importStatus.contains("Paste some"))
+    }
+
+    func testWithNoLibraryYetThePersonCanStartOneAndTheAppIsAddedToIt() async throws {
+        let r = try await rig(allowed: false, existingLibrary: false)
+        XCTAssertEqual(r.library.phase, .noLibrary)
+        await r.add.open("fake/cool")                       // looking things up works without a library
+        guard case .preview = r.add.stage else { return XCTFail("\(r.add.stage)") }
+        r.add.installNow = false
+        await r.add.add()
+        XCTAssertEqual(r.add.stage, .needsNewLibrary)
+        let beforeText = await r.transport.text
+        XCTAssertNil(beforeText, "nothing is created before the answer")
+        await r.add.startLibraryAndContinue()
+        XCTAssertEqual(r.library.phase, .loaded)
+        XCTAssertTrue(r.allowed.value)
+        XCTAssertEqual(r.library.apps.map(\.key), ["github:fake/cool"])
+        let text = await r.transport.text
+        let saved = try SyncDoc(text: try XCTUnwrap(text))
+        XCTAssertEqual(saved.apps.map(\.key), ["github:fake/cool"])
+        XCTAssertNotNil(saved.devices["bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"], "this Mac is listed")
+    }
+
+    func testDecliningToStartALibraryChangesNothing() async throws {
+        let r = try await rig(existingLibrary: false)
+        await r.add.open("fake/cool"); await r.add.add()
+        XCTAssertEqual(r.add.stage, .needsNewLibrary)
+        r.add.close()
+        XCTAssertEqual(r.library.phase, .noLibrary)
+        let untouched = await r.transport.text
+        XCTAssertNil(untouched)
+    }
+
+    func testWithoutATokenAddingSaysWhatToDoInsteadOfDoingNothing() async throws {
+        let r = try await rig(token: false)
+        await r.add.open("fake/cool")
+        // no token: GitHub allows a lookup, and the add then says why it can't save
+        if case .preview = r.add.stage { await r.add.add() }
+        XCTAssertEqual(r.add.stage, .closed)
+        XCTAssertTrue(r.add.importStatus.contains("token"), r.add.importStatus)
     }
 }

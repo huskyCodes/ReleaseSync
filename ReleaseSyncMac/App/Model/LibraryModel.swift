@@ -170,6 +170,15 @@ final class LibraryModel {
         return await save(current, revertingTo: nil)
     }
 
+    /// The account has no ReleaseSync library yet: start an empty one, saved to a new private Gist. (Returns a problem in plain words, or nil.)
+    func startNewLibrary() async -> String? {
+        guard !isDemo, phase == .noLibrary else { return phase == .loaded ? nil : "There's nothing to start a library from yet. Add your GitHub token in Settings first." }
+        let fresh = SyncDoc()
+        doc = fresh; phase = .loaded
+        if let problem = await save(fresh, revertingTo: nil) { doc = nil; phase = .noLibrary; return problem }
+        return nil
+    }
+
     private func save(_ local: SyncDoc, revertingTo before: SyncDoc?) async -> String? {
         isSaving = true
         defer { isSaving = false }

@@ -199,7 +199,7 @@ struct ScanPage: View {
                 }
             }
         }
-        .task { if scan.lastScan == nil, model.phase == .loaded { await scan.scan(library: model.apps) } }
+        .task { if scan.lastScan == nil { await scan.scan(library: model.apps) } }
     }
 
     private var subtitle: String {
