@@ -35,6 +35,22 @@ To look around without an account, run a Debug build with the argument `--demo`:
 
 By default the app is signed "ad hoc", for your own Mac only, so you don't need an Apple account to build it. Your own team, signing identity and bundle identifier go in `Config/Local.xcconfig` (copy `Config/Local.xcconfig.example`); that file is not committed.
 
+## Making a real app, and releasing it
+
+**For your own Mac.** Build the Release configuration and copy it to Applications, so you can launch it like any other app without Xcode:
+
+```
+xcodebuild -project ReleaseSync.xcodeproj -scheme ReleaseSync -configuration Release -destination 'generic/platform=macOS' build
+ditto "$(xcodebuild -project ReleaseSync.xcodeproj -scheme ReleaseSync -configuration Release -showBuildSettings | awk -F' = ' '/ BUILT_PRODUCTS_DIR/{print $2}')/ReleaseSync.app" /Applications/ReleaseSync.app
+```
+
+**For everyone else.** `scripts/release.sh` builds it, signs it with a Developer ID, puts it in a disk image, has Apple notarize it and staples the ticket, so it opens on any Mac with no warning. It needs, once:
+
+1. A **Developer ID Application** certificate in your Keychain (Xcode, Settings, Accounts, your team, Manage Certificates, +, Developer ID Application; only the account holder can make it).
+2. A notarization login stored in your Keychain (it asks for an app-specific password from appleid.apple.com, and keeps it there; nothing goes in this repository): `xcrun notarytool store-credentials "releasesync-notary" --apple-id "you@example.com" --team-id "YOURTEAMID"`
+
+Then: `DEVELOPER_ID="Developer ID Application: Your Name (YOURTEAMID)" NOTARY_PROFILE="releasesync-notary" scripts/release.sh`. The result is `dist/ReleaseSync-<version>.dmg` and its SHA-256, ready to attach to a GitHub release. Add `SKIP_NOTARIZE=1` (and use any signing identity) to try the steps without sending anything to Apple. The version number comes from `MARKETING_VERSION` in `project.yml`.
+
 ## Your token and passphrase
 
 Add your GitHub token (with the "gist" permission) and, if you locked your library, your sync passphrase in **Settings** (⌘,). They are stored in your Mac's login Keychain under the same names the Windows app uses (`ReleaseSync/GitHubToken`, `ReleaseSync/SyncPassphrase`, `ReleaseSync/VirusTotalKey`) and nowhere else: not in files, logs, backups or preferences. The token is sent only to `api.github.com`. The app collects nothing and has no accounts or analytics.

@@ -49,3 +49,6 @@ Local.xcconfig
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# the Mac release build (scripts/release.sh)
+ReleaseSyncMac/build/
