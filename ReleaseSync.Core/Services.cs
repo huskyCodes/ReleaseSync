@@ -18,7 +18,7 @@ namespace ReleaseSync.Core;
 
 public static class AssetPicker
 {
-    static readonly string[] InstallExt = { ".msi", ".exe", ".msix", ".msixbundle", ".appx", ".appxbundle", ".zip" };
+    static readonly string[] InstallExt = { ".msi", ".exe", ".msix", ".msixbundle", ".appx", ".appxbundle", ".zip", ".7z" };
     static readonly HashSet<string> OtherOs = new() { "linux", "darwin", "macos", "osx", "mac", "android", "ios", "freebsd", "ubuntu", "debian", "fedora", "appimage", "deb", "rpm", "snap", "flatpak", "wasm" };
     static readonly HashSet<string> WinTokens = new() { "win", "windows", "win32", "win64", "msvc", "w64" };
     static readonly string[] Junk = { "symbols", "debug", "source", "sbom", "checksum", "docs", "-src", "_src", ".src", "unins" };
@@ -28,7 +28,7 @@ public static class AssetPicker
         var n = name.ToLowerInvariant();
         if (n.EndsWith(".msi")) return AssetKind.Msi;
         if (n.EndsWith(".msix") || n.EndsWith(".msixbundle") || n.EndsWith(".appx") || n.EndsWith(".appxbundle")) return AssetKind.Msix;
-        if (n.EndsWith(".zip")) return AssetKind.Zip;
+        if (n.EndsWith(".zip") || n.EndsWith(".7z")) return AssetKind.Zip;      // any archive the app unpacks
         if (n.EndsWith(".exe")) return n.Contains("portable") ? AssetKind.Portable : AssetKind.Installer;
         return AssetKind.Unknown;
     }

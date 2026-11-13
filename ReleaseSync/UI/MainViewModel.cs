@@ -1317,12 +1317,17 @@ public sealed partial class MainViewModel : Observable
             }
             if (app == DrawerApp) DrawerPicker = new ReleasePickerVM(app, true);
             else app.LastError = null;
+            app.RepoMissing = false;
             app.LastChecked = DateTime.UtcNow;
             return true;
         }
         catch (GitHubException ex)
         {
-            app.LastError = ex.Message;
+            // a project that's gone usually moved: say so, so it's clear the fix is pointing ReleaseSync at its new home
+            app.RepoMissing = ex.Status == 404;
+            app.LastError = app.RepoMissing
+                ? $"{app.FullName} can't be found on {app.SourceLabel} any more. It may have moved or been removed. If you know where it went, choose Change repository below. Your installed copy isn't affected."
+                : ex.Message;
             app.LastChecked = DateTime.UtcNow;
             return !ex.RateLimited;
         }

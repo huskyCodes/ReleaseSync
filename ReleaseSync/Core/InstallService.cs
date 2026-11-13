@@ -280,7 +280,7 @@ public sealed class InstallService
             Directory.CreateDirectory(staging);
             try
             {
-                if (kind == AssetKind.Zip) ZipFile.ExtractToDirectory(file, staging, true);
+                if (kind == AssetKind.Zip) Unpack(file, staging);
                 else File.Copy(file, Path.Combine(staging, Path.GetFileName(file)), true);
 
                 // flatten a single top-level folder
@@ -330,6 +330,19 @@ public sealed class InstallService
         }, ct).ConfigureAwait(false);
     }
 
+    /// <summary>Unpacks a .zip itself, and other archives like .7z with the tar built into Windows, which reads them.</summary>
+    static void Unpack(string archive, string folder)
+    {
+        if (archive.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { ZipFile.ExtractToDirectory(archive, folder, true); return; }
+        var tar = Path.Combine(Environment.SystemDirectory, "tar.exe");
+        if (!File.Exists(tar)) throw new IOException($"Windows can't unpack {Path.GetExtension(archive)} files on this PC. It needs Windows 11 or an up-to-date Windows 10.");
+        using var p = Process.Start(new ProcessStartInfo(tar) { ArgumentList = { "-xf", archive, "-C", folder }, UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true })
+            ?? throw new IOException("Couldn't start Windows' archive tool.");
+        var errors = p.StandardError.ReadToEnd();
+        p.WaitForExit();
+        if (p.ExitCode != 0) throw new IOException($"Couldn't unpack {Path.GetFileName(archive)}. Windows may be too old to read {Path.GetExtension(archive)} files. ({errors.Trim()})");
+    }
+
     static void CopyOver(string source, string destination, CancellationToken ct)
     {
         foreach (var dir in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
@@ -360,7 +373,7 @@ public sealed class InstallService
             var staging = Path.Combine(Path.GetTempPath(), "releasesync-" + Guid.NewGuid().ToString("N")[..8]);
             try
             {
-                ZipFile.ExtractToDirectory(file, staging, true);
+                Unpack(file, staging);
                 var entries = Directory.GetFileSystemEntries(staging);
                 var root = entries.Length == 1 && Directory.Exists(entries[0]) ? entries[0] : staging;
                 foreach (var f in Directory.GetFiles(root, "*", SearchOption.AllDirectories))

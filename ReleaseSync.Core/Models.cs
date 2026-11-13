@@ -139,6 +139,8 @@ public class TrackedApp : Observable
     bool _hidden; public bool Hidden { get => _hidden; set => SetAll(ref _hidden, value); }
     InstallMode _mode; public InstallMode Mode { get => _mode; set => SetAll(ref _mode, value); }
     string? _args; public string? CustomArgs { get => _args; set => SetAll(ref _args, value); }
+    /// <summary>The project's page answered "not found": it may have moved or been removed, and the user can point ReleaseSync at its new home.</summary>
+    bool _missing; public bool RepoMissing { get => _missing; set => SetAll(ref _missing, value); }
     string? _path; public string? InstallPath { get => _path; set => SetAll(ref _path, value); }
     DateTime? _checked; public DateTime? LastChecked { get => _checked; set => SetAll(ref _checked, value); }
     string? _error; public string? LastError { get => _error; set => SetAll(ref _error, value); }
@@ -217,6 +219,11 @@ public class TrackedApp : Observable
     [JsonIgnore] public string ActionText => IsInstalled ? "Update" : "Install";
     [JsonIgnore] public string ActionGlyph => IsInstalled ? "" : "";
     [JsonIgnore] public string ChosenAssetText => ChosenAsset?.Name ?? "No compatible Windows file found";
+    /// <summary>A release exists but none of its files is one ReleaseSync can install, which is why Install or Update can't be clicked.</summary>
+    [JsonIgnore] public bool HasNoInstallableFile => HasRelease && (HasUpdate || !IsInstalled) && ChosenAsset == null;
+    [JsonIgnore] public string NoInstallableFileText => Assets.Count == 0
+        ? $"{LatestVersion} has no files to download yet, so there's nothing to install."
+        : $"{LatestVersion} has no file ReleaseSync can install. Its files are {string.Join(", ", Assets.Select(a => a.Name))}. If one should work, choose it under Releases.";
     [JsonIgnore] public string SizeText => ChosenAsset?.SizeText ?? "";
     [JsonIgnore] public string StarsText => Fmt.Count(Stars);
     [JsonIgnore] public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
@@ -263,7 +270,7 @@ public class TrackedApp : Observable
     [JsonIgnore] public string StatusText => StatusKind switch
     {
         "Busy" => string.IsNullOrEmpty(BusyText) ? "Working…" : BusyText,
-        "Error" => LastError != null && LastError.StartsWith("No ") ? "No releases" : "Check failed",
+        "Error" => RepoMissing ? "Project not found" : LastError != null && LastError.StartsWith("No ") ? "No releases" : "Check failed",
         "Update" => "Update available",
         "Ignored" => IsSkipped ? $"Skipped {LatestVersion}" : "Update ignored",
         "UpToDate" => "Up to date",

@@ -371,7 +371,7 @@ public sealed partial class MainViewModel
 
             Settings.Tombstones[app.Key] = DateTime.UtcNow; ScheduleSaveSettings();      // the old repository entry is gone for synced PCs
             app.Source = rf.Source; app.Owner = info.OwnerLogin; app.Repo = info.Name; app.LinkVerified = true;     // the user chose this one
-            app.ETag = null; app.AssetPattern = null; app.SkippedVersion = null; app.NotifiedVersion = null; app.LastError = null;
+            app.ETag = null; app.AssetPattern = null; app.SkippedVersion = null; app.NotifiedVersion = null; app.LastError = null; app.RepoMissing = false;
             app.LatestVersion = null; app.LatestNotes = null; app.LatestName = null; app.LatestPublished = null; app.Assets = new(); app.Releases = new(); app.ReleaseUrl = null;
             app.Description = info.Description; app.Language = info.Language; app.Stars = info.Stars; app.Topics = info.Topics ?? new();
             app.AvatarUrl = !string.IsNullOrEmpty(info.AvatarUrl) ? info.AvatarUrl : rf.Source == "github" ? $"https://github.com/{info.OwnerLogin}.png?size=96" : null;
