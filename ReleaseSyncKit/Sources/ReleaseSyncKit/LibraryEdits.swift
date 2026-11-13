@@ -118,4 +118,5 @@ public enum LibraryEdits {
         let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines)
         return edit(key, in: &doc, now: now) { $0.displayName = (trimmed?.isEmpty ?? true) ? nil : trimmed }
     }
+    public static func setAutoUpdate(_ key: String, _ on: Bool, in doc: inout SyncDoc, now: Timestamp) -> Bool { edit(key, in: &doc, now: now) { $0.autoUpdate = on } }
 }

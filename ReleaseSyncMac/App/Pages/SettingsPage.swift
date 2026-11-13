@@ -39,6 +39,20 @@ struct SettingsPage: View {
                     changesSwitch
                 }
 
+                SettingsCard {
+                    Text("Updates").font(.h2).foregroundStyle(Theme.text)
+                    Text("ReleaseSync checks for new versions of your apps while it is open. Checks that find nothing new cost nothing against GitHub's limit.").font(.dim).foregroundStyle(Theme.dim)
+                    HStack {
+                        Text("Check for new versions").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
+                        Spacer()
+                        Picker("", selection: Binding(get: { prefs.checkEveryHours }, set: { prefs.checkEveryHours = $0 })) {
+                            Text("Never").tag(0); Text("Every hour").tag(1); Text("Every 3 hours").tag(3); Text("Every 6 hours").tag(6); Text("Every 12 hours").tag(12); Text("Once a day").tag(24)
+                        }.labelsHidden().frame(width: 160)
+                    }
+                    Toggle("Tell me about new versions", isOn: Binding(get: { prefs.notifyOfUpdates }, set: { prefs.notifyOfUpdates = $0 })).toggleStyle(.switch)
+                    Text("You get one notification for each new version. Apps you set to update themselves are updated without asking.").font(.faint).foregroundStyle(Theme.faint)
+                }
+
                 SettingsCard { FindDevicesSection() }
 
                 SettingsCard {

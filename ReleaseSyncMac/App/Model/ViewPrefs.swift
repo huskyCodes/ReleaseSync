@@ -36,6 +36,10 @@ final class ViewPrefs {
     /// Whether this Mac may change the library in the sync file. Off until the person turns it on: older versions of ReleaseSync on other
     /// devices stop syncing once a device writes the newer file format.
     var allowLibraryChanges = false { didSet { save("AllowLibraryChanges", allowLibraryChanges) } }
+    /// How often to look for new versions while the app is open; 0 is never.
+    var checkEveryHours = 6 { didSet { save("CheckEveryHours", checkEveryHours) } }
+    /// Tell the person once about each new version.
+    var notifyOfUpdates = true { didSet { save("NotifyOfUpdates", notifyOfUpdates) } }
     var discoverIntroSeen = false { didSet { save("DiscoverIntroSeen", discoverIntroSeen) } }
 
     init(defaults: UserDefaults = .standard) {
@@ -54,6 +58,8 @@ final class ViewPrefs {
         discoverMacOnly = defaults.object(forKey: "DiscoverMacOnly") as? Bool ?? true
         discoverLight = defaults.object(forKey: "DiscoverLight") as? Bool ?? false
         discoverIntroSeen = defaults.object(forKey: "DiscoverIntroSeen") as? Bool ?? false
+        checkEveryHours = [0, 1, 3, 6, 12, 24].contains(defaults.object(forKey: "CheckEveryHours") as? Int ?? 6) ? (defaults.object(forKey: "CheckEveryHours") as? Int ?? 6) : 6
+        notifyOfUpdates = defaults.object(forKey: "NotifyOfUpdates") as? Bool ?? true
         allowLibraryChanges = defaults.object(forKey: "AllowLibraryChanges") as? Bool ?? false
         loading = false
     }

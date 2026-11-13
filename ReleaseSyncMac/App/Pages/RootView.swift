@@ -9,6 +9,7 @@ struct RootView: View {
     @Environment(Navigator.self) private var nav
     @Environment(InstallModel.self) private var install
     @Environment(AddModel.self) private var add
+    @Environment(UpdateScheduler.self) private var scheduler
 
     var body: some View {
         NavigationSplitView {
@@ -45,6 +46,7 @@ struct RootView: View {
             await model.refresh()
             await model.checkForUpdates(manual: false)
             await install.reconcile(releases: model.releases)
+            scheduler.start()
         }
         .installQuestions()
         .sheet(isPresented: Binding(get: { add.isOpen }, set: { if !$0 { add.close() } })) { AddSheet() }
