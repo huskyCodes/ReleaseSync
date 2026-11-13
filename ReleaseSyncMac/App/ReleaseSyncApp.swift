@@ -9,6 +9,7 @@ struct ReleaseSyncApp: App {
     @State private var activity: ActivityLog
     @State private var install: InstallModel
     @State private var add: AddModel
+    @State private var scan = ScanModel()
     @State private var nav = Navigator()
     @State private var discover: DiscoverModel
     @State private var lan: LanModel
@@ -61,7 +62,7 @@ struct ReleaseSyncApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environment(model).environment(prefs).environment(toasts).environment(nav).environment(discover).environment(lan).environment(activity).environment(install).environment(add)
+                .environment(model).environment(prefs).environment(toasts).environment(nav).environment(discover).environment(lan).environment(activity).environment(install).environment(add).environment(scan)
                 .preferredColorScheme(prefs.appearance == .system ? nil : (prefs.appearance == .dark ? .dark : .light))
                 #if DEBUG
                 .task { await WindowSnapshot.takeIfAsked() }

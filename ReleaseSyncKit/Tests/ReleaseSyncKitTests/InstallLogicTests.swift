@@ -100,3 +100,27 @@ final class InstallLogicTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.appendingPathExtension("damaged").path), "the damaged file is set aside, not deleted")
     }
 }
+
+final class AppMatcherTests: XCTestCase {
+    let library: [(key: String, repo: String, displayName: String?)] = [
+        ("github:rxhanson/rectangle", "Rectangle", nil), ("github:example/pixel-player", "pixel-player", "Pixel Player"), ("github:fake/tool", "tool", nil)]
+
+    func testUpdateAddressesNameTheProject() {
+        XCTAssertEqual(AppMatcher.repo(inFeed: "https://github.com/owner/repo/releases.atom").map { "\($0.owner)/\($0.repo)" }, "owner/repo")
+        XCTAssertEqual(AppMatcher.repo(inFeed: "https://raw.githubusercontent.com/owner/repo/main/appcast.xml").map { "\($0.owner)/\($0.repo)" }, "owner/repo")
+        XCTAssertEqual(AppMatcher.repo(inFeed: "https://owner.github.io/repo/appcast.xml").map { "\($0.owner)/\($0.repo)" }, "owner/repo")
+        XCTAssertNil(AppMatcher.repo(inFeed: "http://github.com/owner/repo/releases.atom"), "only https")
+        XCTAssertNil(AppMatcher.repo(inFeed: "https://example.test/appcast.xml"))
+        XCTAssertNil(AppMatcher.repo(inFeed: "https://github.com/owner"))
+        XCTAssertNil(AppMatcher.repo(inFeed: nil))
+    }
+
+    func testAnAppIsMatchedToTheLibraryByNameOrByItsFeed() {
+        XCTAssertEqual(AppMatcher.match(ScannedApp(name: "Rectangle.app", path: "/Applications/Rectangle.app"), library: library), .library(key: "github:rxhanson/rectangle"))
+        XCTAssertEqual(AppMatcher.match(ScannedApp(name: "Pixel Player", path: "/x"), library: library), .library(key: "github:example/pixel-player"))
+        XCTAssertEqual(AppMatcher.match(ScannedApp(name: "Whatever", path: "/x", updateFeed: "https://github.com/fake/tool/releases.atom"), library: library), .library(key: "github:fake/tool"))
+        if case .feed(let ref)? = AppMatcher.match(ScannedApp(name: "Whatever", path: "/x", updateFeed: "https://github.com/someone/else/releases.atom"), library: library) { XCTAssertEqual("\(ref.owner)/\(ref.repo)", "someone/else") } else { XCTFail() }
+        XCTAssertNil(AppMatcher.match(ScannedApp(name: "Unknown App", path: "/x"), library: library))
+        XCTAssertNil(AppMatcher.match(ScannedApp(name: "", path: "/x"), library: library))
+    }
+}

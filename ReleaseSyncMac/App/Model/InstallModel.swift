@@ -138,6 +138,19 @@ final class InstallModel {
         } catch { report("\(app.title): \((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)", .error, toast: true) }
     }
 
+    // MARK: apps that were already here
+
+    /// Starts tracking an app that is already on this Mac (found by the scan): its version is matched to the release it is, if it can be.
+    func adopt(_ scanned: ScannedApp, as app: SyncApp, info: AppRelease?) async {
+        let tags = info?.releases.map(\.tag) ?? []
+        let version = VersionUtil.matchTag(scanned.version, in: tags) ?? scanned.version ?? "unknown"
+        let record = InstallRecord(key: app.key, version: version, bundlePath: scanned.path, bundleId: scanned.bundleId, bundleVersion: scanned.version, installedAt: .now(), assetName: "(already on this Mac)")
+        try? await installer.store.set(record)
+        records[app.key] = record
+        log.add("\(app.title) was already on this Mac (\(version)), so ReleaseSync is keeping it up to date", .success)
+        toasts.show("Tracking \(app.title) \(version)", .success)
+    }
+
     // MARK: on this Mac
 
     func reveal(_ app: SyncApp) {

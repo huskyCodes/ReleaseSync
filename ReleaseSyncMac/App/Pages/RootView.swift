@@ -71,6 +71,7 @@ struct PageHost: View {
                 } else { StatusView() }
             case .discover: DiscoverPage()
             case .updates: UpdatesPage()
+            case .scan: ScanPage()
             case .activity: ActivityPage()
             case .settings: SettingsPage()
             default: ComingPage(page: page)

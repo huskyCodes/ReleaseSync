@@ -34,7 +34,7 @@ enum Page: String, CaseIterable, Identifiable {
     }
 
     /// Whether this version of the Mac app can do this page yet. The others show a plain "coming" screen.
-    var available: Bool { self == .library || self == .updates || self == .tryLater || self == .discover || self == .activity || self == .settings }
+    var available: Bool { self == .library || self == .updates || self == .tryLater || self == .discover || self == .scan || self == .activity || self == .settings }
 
     /// What a page that isn't ready says.
     var comingMessage: String {

@@ -169,3 +169,79 @@ struct ActivityPage: View {
         switch k { case .info: return Theme.faint; case .success: return Theme.success; case .warn: return Theme.warn; case .error: return Theme.danger }
     }
 }
+
+// MARK: Scan Mac
+
+struct ScanPage: View {
+    @Environment(LibraryModel.self) private var model
+    @Environment(InstallModel.self) private var install
+    @Environment(ScanModel.self) private var scan
+    @Environment(AddModel.self) private var add
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top) {
+                PageHeader(title: "Scan Mac", subtitle: subtitle)
+                Spacer()
+                Button { Task { await scan.scan(library: model.apps) } } label: { Label(scan.isScanning ? "Scanning…" : (scan.lastScan == nil ? "Scan this Mac" : "Scan again"), systemImage: "magnifyingglass") }
+                    .buttonStyle(PrimaryButtonStyle()).disabled(scan.isScanning)
+            }
+            .padding(.horizontal, Theme.pagePadding).padding(.top, 14).padding(.bottom, 16)
+            if scan.lastScan == nil {
+                EmptyMessage(symbol: "magnifyingglass", title: "Find the apps you already have",
+                             message: "ReleaseSync looks through your Applications folders and shows which apps come from projects it can keep up to date. It only reads the apps' names and versions, and asks no website.", brand: true) {
+                    Button { Task { await scan.scan(library: model.apps) } } label: { Label("Scan this Mac", systemImage: "magnifyingglass") }.buttonStyle(PrimaryButtonStyle(height: 40))
+                }
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: Theme.panelGap) { ForEach(scan.rows) { ScanRow(row: $0) } }
+                        .padding(.horizontal, Theme.pagePadding).padding(.bottom, 32)
+                }
+            }
+        }
+        .task { if scan.lastScan == nil, model.phase == .loaded { await scan.scan(library: model.apps) } }
+    }
+
+    private var subtitle: String {
+        guard scan.lastScan != nil else { return "Not scanned yet" }
+        let matches = scan.rows.filter { $0.match != nil }.count
+        return "\(scan.rows.count) apps found  ·  \(matches) from projects ReleaseSync knows"
+    }
+}
+
+private struct ScanRow: View {
+    @Environment(LibraryModel.self) private var model
+    @Environment(InstallModel.self) private var install
+    @Environment(AddModel.self) private var add
+    let row: ScanModel.Row
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: row.app.path)).resizable().frame(width: 40, height: 40)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(row.app.name).font(.h3).foregroundStyle(Theme.text).lineLimit(1)
+                Text([row.app.version, (row.app.path as NSString).deletingLastPathComponent].compactMap { $0 }.joined(separator: "  ·  ")).font(.faint).foregroundStyle(Theme.faint).lineLimit(1)
+            }
+            Spacer(minLength: 10)
+            action
+        }
+        .card(radius: Theme.rowRadius, padding: EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+    }
+
+    @ViewBuilder private var action: some View {
+        switch row.match {
+        case .library(let key):
+            if let app = model.apps.first(where: { $0.key == key }) {
+                if install.records[key]?.bundlePath == row.app.path { Pill(text: "Kept up to date", kind: .success, symbol: "checkmark") }
+                else { Button("Keep it up to date") { Task { await install.adopt(row.app, as: app, info: model.releases[key]) } }.buttonStyle(PrimaryButtonStyle(height: 28)) }
+            }
+        case .feed(let ref):
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("\(ref.owner)/\(ref.repo)").font(.faint).foregroundStyle(Theme.faint)
+                Button("Add to library") { Task { await add.open(ref.url) } }.buttonStyle(PrimaryButtonStyle(height: 28))
+            }
+        case nil:
+            Button("Search GitHub") { Task { await add.open(row.app.name) } }.buttonStyle(OutlineButtonStyle(height: 28))
+        }
+    }
+}
