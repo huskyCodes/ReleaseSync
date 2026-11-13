@@ -2,9 +2,7 @@
 
 **New in this version**
 
-- Apps that ship as `.7z` archives can now be installed and updated.
-- When a project can't be found any more, for example after it moved to another site, it shows as Project not found, with a Change repository button to point ReleaseSync at its new home. Your installed version and settings carry over.
-- When Install or Update can't be clicked because a release has no usable file, the details now say why.
+- Fixed updating an app from a `.7z` archive, which failed with "could not chdir" and wrongly blamed Windows.
 
 Code signing: ReleaseSync is applying to use SignPath Foundation. See the [code signing policy](https://github.com/huskyCodes/ReleaseSync/blob/main/docs/CODE-SIGNING.md).
 
