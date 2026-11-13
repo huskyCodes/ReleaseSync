@@ -501,12 +501,31 @@ public static class FixtureData
     static object VersionVectors()
     {
         var v = new[] { "v1.2.3", "1.2.3", "1.2", "1.2.0", "1.10", "1.9", "1.2.3-beta.1", "1.2.3-rc1", "2.0.0-rc1", "2.0.0", "2.0.0-alpha", "nightly-2026-01-01", "nightly", "build 123", "123", "",
-                        "latest", "V2", "release-1.4.2", "1.0.0+meta", "10.0", "0.9.9", "0", "v0.0.1", "3.1.4.1", "3.1.4", "2026.01.15", "2026.1.2", "r1234", "v1.2.3 (preview)", "1.2.3 dev", "1.2.3snapshot", "  v1.2.3  " };
+                        "latest", "V2", "release-1.4.2", "1.0.0+meta", "10.0", "0.9.9", "0", "v0.0.1", "3.1.4.1", "3.1.4", "2026.01.15", "2026.1.2", "r1234", "v1.2.3 (preview)", "1.2.3 dev", "1.2.3snapshot", "  v1.2.3  ",
+                        "build-75", "build-83", "nx2-build-34", "nx2-build-90", "daily-20261105", "build-212", "launcher@0.2.45", "launcher@0.2.9", "v2.0.11", "branch-fix-1", "pr-123" };
+        var d0 = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        var dated = new (string Latest, string Installed, DateTime? LatestDate, DateTime? InstalledDate)[]
+        {
+            ("build-83", "build-75", null, null), ("build-75", "build-83", null, null),
+            ("nx2-build-90", "build-83", d0, d0.AddDays(-30)), ("nx2-build-90", "build-83", d0.AddDays(-60), d0.AddDays(-30)), ("build-83", "nx2-build-90", d0.AddDays(-30), d0),
+            ("daily-20261105", "build-212", d0, d0.AddDays(-1)), ("build-212", "daily-20261105", d0.AddDays(-1), d0), ("daily-20261105", "build-212", null, d0), ("daily-20261105", "build-212", d0, null),
+            ("v2.0.11", "build-212", null, null), ("build-212", "v2.0.11", null, null), ("v2.0.11", "build-212", d0.AddDays(-5), d0),
+            ("1.2.3", "1.2.3-beta", d0, d0.AddDays(-1)), ("1.2.3", "v1.2.3", d0, d0.AddDays(-1)), ("launcher@0.2.45", "launcher@0.2.9", null, null), ("launcher@0.2.9", "launcher@0.2.45", null, null),
+        };
+        var tags = new[] { "v2.0.11", "v2.0.11-rc1", "v2.0.10", "v2.0", "1.0.0", "build-83", "release-3.1", "v3.1.0-beta", "v3.1.0" };
+        var seen = new[] { "2.0.11.0", "2.0.11", "v2.0.11", "2.0", "2.0.0", "1.0.0", "1.0", "3.1.0", "3.1", "9.9.9", "", "5", "build-83", "2.0.11-rc1" };
+        var texts = new[] { "version=v2.0.11", "v2.0.10 and 2.0.11.0", "nothing here", "1.0.0 1.0.0 v1.0.0", "app 3.1 build", "x2.0.11", "v9.9.9" };
+        var oneOff = new[] { "branch-main", "Branch/foo", "pr-12", "PR_5", "feature-x", "test-1", "scratch/a", "v1.0", "build-83", "prerelease-1", "testing", "" };
         return new
         {
-            Description = "Newer[i][j] is true when Versions[i] counts as a newer release than an installed Versions[j]. Clean[i] is Versions[i] with its leading v and spaces removed.",
+            Description = "Newer[i][j] is true when Versions[i] counts as a newer release than an installed Versions[j] (no publish dates). Clean[i] is Versions[i] with its leading v and spaces removed. Dated: the same decision when publish dates are known (or one is missing). MatchTag: which release tag a version seen on the device belongs to. TagsIn: the release tags mentioned in a piece of text. OneOff: throwaway builds.",
             Versions = v, Clean = v.Select(VersionUtil.Clean).ToArray(),
             Newer = v.Select(latest => v.Select(installed => VersionUtil.IsNewer(latest, installed)).ToArray()).ToArray(),
+            Dated = dated.Select(x => new { x.Latest, x.Installed, x.LatestDate, x.InstalledDate, Newer = VersionUtil.IsNewer(x.Latest, x.Installed, x.LatestDate, x.InstalledDate) }).ToList(),
+            Tags = tags,
+            MatchTag = seen.Select(x => new { Seen = x, Tag = VersionUtil.MatchTag(x, tags) }).ToList(),
+            TagsIn = texts.Select(x => new { Text = x, Found = VersionUtil.TagsIn(x, tags) }).ToList(),
+            OneOff = oneOff.Select(x => new { Tag = x, Value = VersionUtil.IsOneOff(x) }).ToList(),
         };
     }
 

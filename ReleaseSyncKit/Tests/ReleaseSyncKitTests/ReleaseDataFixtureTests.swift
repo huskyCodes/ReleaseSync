@@ -7,7 +7,7 @@ final class ReleaseDataFixtureTests: XCTestCase {
         let v = try Fixtures.json("releases/versions.json")
         let versions = v.list("Versions").compactMap { if case .string(let s) = $0 { s } else { nil } }
         let clean = v.list("Clean").compactMap { if case .string(let s) = $0 { s } else { nil } }
-        XCTAssertEqual(versions.count, 33)
+        XCTAssertEqual(versions.count, 44)
         let matrix = v.list("Newer")
         var pairs = 0
         for (i, latest) in versions.enumerated() {
@@ -19,7 +19,24 @@ final class ReleaseDataFixtureTests: XCTestCase {
                 pairs += 1
             }
         }
-        XCTAssertEqual(pairs, 33 * 33)
+        XCTAssertEqual(pairs, 44 * 44)
+    }
+
+    func testDatesDecideBetweenTagStylesAndTheOtherRulesMatchTheEngine() throws {
+        let v = try Fixtures.json("releases/versions.json")
+        let dated = v.list("Dated")
+        XCTAssertEqual(dated.count, 16)
+        for c in dated {
+            let date = { (name: String) in c.str(name).flatMap { Timestamp(text: $0) } }
+            XCTAssertEqual(VersionUtil.isNewer(c.str("Latest")!, than: c.str("Installed")!, latestDate: date("LatestDate"), installedDate: date("InstalledDate")), c.flag("Newer"),
+                           "\(c.str("Latest")!) vs \(c.str("Installed")!)")
+        }
+        let tags = v.list("Tags").compactMap { $0.stringValue }
+        XCTAssertEqual(tags.count, 9)
+        for c in v.list("MatchTag") { XCTAssertEqual(VersionUtil.matchTag(c.str("Seen"), in: tags), c.str("Tag"), c.str("Seen")!.debugDescription) }
+        XCTAssertEqual(v.list("MatchTag").count, 14)
+        for c in v.list("TagsIn") { XCTAssertEqual(VersionUtil.tagsIn(c.str("Text")!, tags: tags), c.list("Found").compactMap { $0.stringValue }, c.str("Text")!.debugDescription) }
+        for c in v.list("OneOff") { XCTAssertEqual(VersionUtil.isOneOff(c.str("Tag")!), c.flag("Value"), c.str("Tag")!.debugDescription) }
     }
 
     func testReleaseNotesBecomePlainTextTheSameWay() throws {

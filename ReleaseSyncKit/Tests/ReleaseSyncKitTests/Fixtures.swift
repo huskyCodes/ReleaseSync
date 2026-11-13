@@ -22,6 +22,7 @@ enum Fixtures {
 }
 
 extension JSONValue {
+    var stringValue: String? { if case .string(let s) = self { return s }; return nil }
     func str(_ name: String) -> String? { if case .string(let s)? = member(name) { return s }; return nil }
     func list(_ name: String) -> [JSONValue] { if case .array(let a)? = member(name) { return a }; return [] }
     func flag(_ name: String) -> Bool? { if case .bool(let b)? = member(name) { return b }; return nil }
