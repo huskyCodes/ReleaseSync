@@ -301,7 +301,11 @@ final class MacInstaller: @unchecked Sendable {
         let signature = Assessment.signature(exitStatus: sign.status, message: sign.combined)
         let gk = try await runner.run("/usr/sbin/spctl", ["--assess", "--type", "execute", "--verbose=4", app.path], timeout: 300)
         let verdict = Assessment.gatekeeper(exitStatus: gk.status, output: gk.combined)
-        return Assessment(signature: signature, gatekeeperAccepts: verdict.accepts, notarized: verdict.notarized, signer: verdict.signer, checksumMatched: checksumMatched)
+        var signer = verdict.signer
+        if signature == .signed, signer == nil, let display = try? await runner.run("/usr/bin/codesign", ["-dv", "--verbose=2", app.path], timeout: 60) {
+            signer = Assessment.signer(fromCodesignDisplay: display.combined)
+        }
+        return Assessment(signature: signature, gatekeeperAccepts: verdict.accepts, notarized: verdict.notarized, signer: signer, checksumMatched: checksumMatched)
     }
 
     // MARK: running apps, backups, uninstall

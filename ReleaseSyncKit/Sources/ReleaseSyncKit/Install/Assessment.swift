@@ -35,6 +35,15 @@ public struct Assessment: Equatable, Sendable {
         return (accepted, notarized, value("origin"))
     }
 
+    /// Who signed an app, from `codesign -dv --verbose=2`: the first "Authority=" line (the developer's certificate), with the team id when there is one.
+    public static func signer(fromCodesignDisplay text: String) -> String? {
+        let lines = text.split(whereSeparator: \.isNewline).map(String.init)
+        guard let authority = lines.first(where: { $0.hasPrefix("Authority=") }).map({ String($0.dropFirst(10)).trimmingCharacters(in: .whitespaces) }), !authority.isEmpty else { return nil }
+        let team = lines.first { $0.hasPrefix("TeamIdentifier=") }.map { String($0.dropFirst(15)).trimmingCharacters(in: .whitespaces) }
+        if let team, !team.isEmpty, team != "not set", !authority.contains(team) { return authority + " (" + team + ")" }
+        return authority
+    }
+
     /// Outcomes, worst first.
     public enum Verdict: Equatable, Sendable {
         /// Stop and delete the download: the checksum doesn't match, or the signature is broken.

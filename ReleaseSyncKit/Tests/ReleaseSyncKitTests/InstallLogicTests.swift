@@ -42,6 +42,14 @@ final class InstallLogicTests: XCTestCase {
         XCTAssertFalse(no.accepts); XCTAssertFalse(no.notarized)
     }
 
+    func testTheSignerIsReadFromCodesign() {
+        let out = "Executable=/x/Rectangle.app/Contents/MacOS/Rectangle\nIdentifier=com.knollsoft.Rectangle\nAuthority=Developer ID Application: Example Ltd (ABCDE12345)\nAuthority=Developer ID Certification Authority\nAuthority=Apple Root CA\nTeamIdentifier=ABCDE12345\n"
+        XCTAssertEqual(Assessment.signer(fromCodesignDisplay: out), "Developer ID Application: Example Ltd (ABCDE12345)")
+        XCTAssertEqual(Assessment.signer(fromCodesignDisplay: "Authority=Software Signing\nTeamIdentifier=not set\n"), "Software Signing")
+        XCTAssertEqual(Assessment.signer(fromCodesignDisplay: "Authority=Some Developer\nTeamIdentifier=ZZZ9999999\n"), "Some Developer (ZZZ9999999)")
+        XCTAssertNil(Assessment.signer(fromCodesignDisplay: "Identifier=x\nSignature=adhoc\n"))
+    }
+
     func testWhatHappensForEachAssessment() {
         func a(_ s: Assessment.Signature, gk: Bool, sum: Bool?) -> Assessment { Assessment(signature: s, gatekeeperAccepts: gk, notarized: gk, checksumMatched: sum) }
         XCTAssertEqual(a(.signed, gk: true, sum: nil).verdict(trustUnsigned: false), .ok)
