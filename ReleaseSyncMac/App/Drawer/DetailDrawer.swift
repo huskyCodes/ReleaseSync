@@ -45,17 +45,17 @@ struct DetailDrawer: View {
                     label("ORGANIZE")
                     if model.canEdit { organizeEditable } else { organizeReadOnly }
                     label("OPTIONS")
-                    card {
-                        row("Install", app.mode.friendlyName)
-                        row("Pre-releases", app.includePrereleases ? "Included" : "Not included")
-                        row("Update automatically", app.autoUpdate ? "Yes" : "No")
-                        row("Updates", app.ignoreUpdates ? "Ignored" : "Watched")
-                        if let v = app.skippedVersion, !v.isEmpty { row("Skipped version", v) }
-                        if let p = app.assetPattern, !p.isEmpty { row("Preferred file", p) }
-                        if let a = app.customArgs, !a.isEmpty { row("Installer arguments", a) }
-                        row("Unsigned apps", app.trustUnsigned ? "Trusted" : "Not trusted", last: true)
+                    if model.canEdit { optionsEditable } else {
+                        card {
+                            row("Install", app.mode.friendlyName)
+                            row("Pre-releases", app.includePrereleases ? "Included" : "Not included")
+                            row("Updates", app.ignoreUpdates ? "Ignored" : "Watched")
+                            if let v = app.skippedVersion, !v.isEmpty { row("Skipped version", v) }
+                            if let p = app.assetPattern, !p.isEmpty { row("Preferred file", p) }
+                            row("Unsigned apps", app.trustUnsigned ? "Trusted" : "Not trusted", last: true)
+                        }
                     }
-                    Text(model.canEdit ? "Favorite, hidden, group and notes are saved to your library. For the other options, use ReleaseSync on your other device for now."
+                    Text(model.canEdit ? "Changes here are saved to your library and shared with your other devices."
                                        : "To change any of this, use ReleaseSync on your other device for now. The Mac app only reads your library (you can allow changes in Settings).")
                         .font(.faint).foregroundStyle(Theme.faint).fixedSize(horizontal: false, vertical: true)
                 }
@@ -71,6 +71,11 @@ struct DetailDrawer: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 InstallButton(app: app, facts: facts)
+                if facts.hasUpdate && !working && model.canEdit {
+                    let tag = facts.latestTag
+                    Button("Skip \(tag)") { change { LibraryEdits.setSkippedVersion(app.key, tag, in: &$0, now: $1) } }.buttonStyle(OutlineButtonStyle(height: 28))
+                        .help("Don't offer this version again. A newer one will still be offered.")
+                }
                 if facts.isInstalled && !working {
                     Button("Open") { install.open(app) }.buttonStyle(OutlineButtonStyle(height: 28))
                     Button("Show in Finder") { install.reveal(app) }.buttonStyle(OutlineButtonStyle(height: 28))
@@ -155,6 +160,36 @@ struct DetailDrawer: View {
             Button("Remove", role: .destructive) { change { LibraryEdits.removeApp(key, in: &$0, now: $1) } }
             Button("Cancel", role: .cancel) {}
         } message: { Text("It is removed on all your devices. You can add it again later.") }
+    }
+
+    private var optionsEditable: some View {
+        let key = app.key
+        return card {
+            Toggle("Include pre-releases", isOn: Binding(get: { app.includePrereleases }, set: { on in change { LibraryEdits.setIncludePrereleases(key, on, in: &$0, now: $1) } }))
+                .toggleStyle(.switch).font(.dim).padding(.vertical, 9)
+            Divider().overlay(Theme.line.opacity(0.6))
+            Toggle("Ignore updates", isOn: Binding(get: { app.ignoreUpdates }, set: { on in change { LibraryEdits.setIgnoreUpdates(key, on, in: &$0, now: $1) } }))
+                .toggleStyle(.switch).font(.dim).padding(.vertical, 9)
+            Divider().overlay(Theme.line.opacity(0.6))
+            Toggle("Don't ask before installing it unsigned", isOn: Binding(get: { app.trustUnsigned }, set: { on in change { LibraryEdits.setTrustUnsigned(key, on, in: &$0, now: $1) } }))
+                .toggleStyle(.switch).font(.dim).padding(.vertical, 9)
+            if let v = app.skippedVersion, !v.isEmpty {
+                Divider().overlay(Theme.line.opacity(0.6))
+                HStack {
+                    Text("Skipped version").font(.dim).foregroundStyle(Theme.dim); Spacer()
+                    Text(v).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
+                    Button("Stop skipping") { change { LibraryEdits.setSkippedVersion(key, nil, in: &$0, now: $1) } }.buttonStyle(OutlineButtonStyle(height: 24))
+                }.padding(.vertical, 9)
+            }
+            if let p = app.assetPattern, !p.isEmpty {
+                Divider().overlay(Theme.line.opacity(0.6))
+                HStack {
+                    Text("Preferred file").font(.dim).foregroundStyle(Theme.dim); Spacer(minLength: 12)
+                    Text(p).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.faint).lineLimit(1).truncationMode(.middle)
+                    Button("Reset") { change { LibraryEdits.setAssetPattern(key, nil, in: &$0, now: $1) } }.buttonStyle(OutlineButtonStyle(height: 24))
+                }.padding(.vertical, 9)
+            }
+        }
     }
 
     private var notesEditor: some View {
@@ -269,6 +304,7 @@ struct DetailDrawer: View {
                         if r.tag == latest { Pill(text: "latest", kind: .accent) }
                         Spacer(minLength: 8)
                         if let p = r.published { Text(p.friendlyAgo).font(.faint).foregroundStyle(Theme.faint) }
+                        versionButton(r)
                         if let u = r.url, let url = URL(string: u), url.scheme == "https" {
                             Link(destination: url) { Image(systemName: "arrow.up.right.square").font(.system(size: 12)).foregroundStyle(Theme.dim) }.help("Open this release")
                         }
@@ -278,6 +314,19 @@ struct DetailDrawer: View {
                 }
             }
             .card(padding: EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)).padding(.bottom, 22)
+        }
+    }
+
+    /// Installs that exact version: a newer one, the same one again, or an older one to roll back to.
+    @ViewBuilder private func versionButton(_ r: ReleaseSummary) -> some View {
+        let facts = install.facts(app, model.releases[app.key])
+        if install.progress(for: app.key) == nil, MacAssets.pick(r.assets, pattern: app.assetPattern) != nil, r.tag != facts.installed || facts.isInstalled {
+            let title: String = {
+                guard let have = facts.installed else { return "Install" }
+                if r.tag == have { return "Reinstall" }
+                return facts.isNewer(r.tag, than: have) ? "Update to this" : "Roll back"
+            }()
+            Button(title) { Task { await install.install(app, info: facts.info, tag: r.tag) } }.buttonStyle(OutlineButtonStyle(height: 24))
         }
     }
 

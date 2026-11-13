@@ -133,6 +133,22 @@ final class AddModel {
         }
     }
 
+    /// Opens a Try later item's page to add it to the library.
+    func open(_ item: TryLaterItem) async {
+        var info = RepoInfo()
+        info.source = item.source; info.ownerLogin = item.owner; info.name = item.repo; info.fullName = item.fullName
+        info.description = item.description; info.language = item.language; info.stars = item.stars; info.avatarUrl = item.avatarUrl; info.topics = item.topics ?? []
+        await open(repo: info)
+    }
+
+    func removeFromTryLater(_ item: TryLaterItem) async {
+        await withPermission { [self] in
+            let key = item.key
+            let problem = await library.edit { LibraryEdits.removeTryLater(key, in: &$0, now: $1) }
+            if let problem { toasts.show(problem, .error) } else { log.add("Removed \(item.fullName) from Try later", .info); toasts.show("Removed \(item.repo) from Try later", .info) }
+        }
+    }
+
     // MARK: asking before the first change
 
     private func withPermission(_ work: @escaping () async -> Void) async {

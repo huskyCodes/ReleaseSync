@@ -101,6 +101,17 @@ private struct OpenLinkButton: View {
     }
 }
 
+private struct TryActions: View {
+    @Environment(AddModel.self) private var add
+    let item: TryLaterItem
+    var body: some View {
+        HStack(spacing: 8) {
+            Button { Task { await add.removeFromTryLater(item) } } label: { Image(systemName: "trash") }.buttonStyle(OutlineButtonStyle(height: 28)).help("Remove from Try later")
+            Button("Add") { Task { await add.open(item) } }.buttonStyle(PrimaryButtonStyle(height: 28)).help("Look at what it offers and add it to your library")
+        }
+    }
+}
+
 private struct StatsLine: View {
     let item: TryLaterItem
     var body: some View {
@@ -119,6 +130,7 @@ private struct StatsLine: View {
 }
 
 struct TryCard: View {
+    @Environment(AddModel.self) private var add
     let item: TryLaterItem
 
     var body: some View {
@@ -135,6 +147,7 @@ struct TryCard: View {
             Text(isBlankText(item.description) ? " " : item.description!).font(.dim).foregroundStyle(Theme.dim).lineLimit(2)
                 .frame(maxWidth: .infinity, minHeight: 36, alignment: .topLeading).padding(.vertical, 12)
             StatsLine(item: item)
+            HStack { Spacer(); TryActions(item: item) }.padding(.top, 10)
             if !isBlankText(item.note) {
                 Label(item.note!, systemImage: "note.text").font(.system(size: 12.5)).foregroundStyle(Theme.text).lineLimit(3)
                     .padding(.horizontal, 12).padding(.vertical, 9).frame(maxWidth: .infinity, alignment: .leading)
@@ -144,11 +157,16 @@ struct TryCard: View {
             }
         }
         .card()
-        .contextMenu { if let url = item.url { Link("Open on \(RepoLinks.sourceName(item.source))", destination: url) } }
+        .contextMenu {
+            Button("Add to library…") { Task { await add.open(item) } }
+            Button("Remove from Try later") { Task { await add.removeFromTryLater(item) } }
+            if let url = item.url { Link("Open on \(RepoLinks.sourceName(item.source))", destination: url) }
+        }
     }
 }
 
 struct TryRow: View {
+    @Environment(AddModel.self) private var add
     let item: TryLaterItem
 
     var body: some View {
@@ -175,9 +193,14 @@ struct TryRow: View {
                     .padding(.horizontal, 10).padding(.vertical, 7)
                     .background(Theme.input, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             }
+            TryActions(item: item)
             OpenLinkButton(item: item)
         }
         .card(radius: Theme.rowRadius, padding: EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-        .contextMenu { if let url = item.url { Link("Open on \(RepoLinks.sourceName(item.source))", destination: url) } }
+        .contextMenu {
+            Button("Add to library…") { Task { await add.open(item) } }
+            Button("Remove from Try later") { Task { await add.removeFromTryLater(item) } }
+            if let url = item.url { Link("Open on \(RepoLinks.sourceName(item.source))", destination: url) }
+        }
     }
 }
