@@ -336,11 +336,17 @@ public sealed class InstallService
         if (archive.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) { ZipFile.ExtractToDirectory(archive, folder, true); return; }
         var tar = Path.Combine(Environment.SystemDirectory, "tar.exe");
         if (!File.Exists(tar)) throw new IOException($"Windows can't unpack {Path.GetExtension(archive)} files on this PC. It needs Windows 11 or an up-to-date Windows 10.");
+        Directory.CreateDirectory(folder);      // unlike unzipping, tar won't create the folder it unpacks into
         using var p = Process.Start(new ProcessStartInfo(tar) { ArgumentList = { "-xf", archive, "-C", folder }, UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true })
             ?? throw new IOException("Couldn't start Windows' archive tool.");
-        var errors = p.StandardError.ReadToEnd();
+        var errors = p.StandardError.ReadToEnd().Trim();
         p.WaitForExit();
-        if (p.ExitCode != 0) throw new IOException($"Couldn't unpack {Path.GetFileName(archive)}. Windows may be too old to read {Path.GetExtension(archive)} files. ({errors.Trim()})");
+        if (p.ExitCode == 0) return;
+        // only blame the format when tar says it can't read it
+        bool unreadable = errors.Contains("Unrecognized archive format", StringComparison.OrdinalIgnoreCase) || errors.Contains("not supported", StringComparison.OrdinalIgnoreCase);
+        throw new IOException(unreadable
+            ? $"Couldn't unpack {Path.GetFileName(archive)}: this version of Windows can't read {Path.GetExtension(archive)} files. Windows 11 or an up-to-date Windows 10 can."
+            : $"Couldn't unpack {Path.GetFileName(archive)}. ({errors})");
     }
 
     static void CopyOver(string source, string destination, CancellationToken ct)
