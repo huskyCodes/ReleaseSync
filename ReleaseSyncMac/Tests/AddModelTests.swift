@@ -121,4 +121,20 @@ final class AddModelTests: XCTestCase {
         XCTAssertTrue(hit("Tool-1.2.3-arm64.dmg")); XCTAssertTrue(hit("Tool-2.0-arm64.dmg")); XCTAssertTrue(hit("Tool-10.11.12-arm64.dmg"))
         XCTAssertFalse(hit("Tool-2.0-x64.dmg")); XCTAssertFalse(hit("Tool-2.0-arm64.pkg")); XCTAssertFalse(hit("MyTool-2.0-arm64.dmg"))
     }
+
+    func testImportingAListAddsEverythingAtOnceWithOneSave() async throws {
+        let r = try await rig()
+        let before = await r.transport.writes
+        await r.add.importList("https://github.com/fake/cool\nfake/other\nnot a link\nfake/cool", group: "Imported", installAfter: false)
+        XCTAssertEqual(Set(r.library.apps.map(\.key)), ["github:fake/cool", "github:fake/other"])
+        XCTAssertEqual(Set(r.library.apps.compactMap(\.group)), ["Imported"])
+        XCTAssertTrue(r.library.customGroups.contains("Imported"))
+        let after = await r.transport.writes
+        XCTAssertEqual(after - before, 1, "one save for the whole list")
+        XCTAssertTrue(r.add.importStatus.hasPrefix("Imported 2 projects"), r.add.importStatus)
+        await r.add.importList("fake/cool", group: "", installAfter: false)
+        XCTAssertTrue(r.add.importStatus.contains("already in your library"), r.add.importStatus)
+        await r.add.importList("   ", group: "", installAfter: false)
+        XCTAssertTrue(r.add.importStatus.contains("Paste some"))
+    }
 }

@@ -12,6 +12,17 @@ protocol ProcessRunning: Sendable {
     func run(_ executable: String, _ arguments: [String], timeout: TimeInterval) async throws -> ProcessResult
 }
 
+private final class Buffers: @unchecked Sendable {
+    private let lock = NSLock()
+    private var out = Data(), err = Data()
+    func append(out d: Data) { lock.lock(); out.append(d); lock.unlock() }
+    func append(err d: Data) { lock.lock(); err.append(d); lock.unlock() }
+    func result(status: Int32) -> ProcessResult {
+        lock.lock(); defer { lock.unlock() }
+        return ProcessResult(status: status, output: String(decoding: out, as: UTF8.self), error: String(decoding: err, as: UTF8.self))
+    }
+}
+
 struct ProcessRunner: ProcessRunning {
     struct Failed: Error, LocalizedError { let tool: String; let reason: String; var errorDescription: String? { "\(tool) \(reason)" } }
 
@@ -24,20 +35,16 @@ struct ProcessRunner: ProcessRunning {
             let out = Pipe(), err = Pipe()
             process.standardOutput = out; process.standardError = err
             process.standardInput = FileHandle.nullDevice
-            var outData = Data(), errData = Data()
-            let lock = NSLock()
-            out.fileHandleForReading.readabilityHandler = { h in let d = h.availableData; lock.lock(); outData.append(d); lock.unlock() }
-            err.fileHandleForReading.readabilityHandler = { h in let d = h.availableData; lock.lock(); errData.append(d); lock.unlock() }
+            let buffers = Buffers()
+            out.fileHandleForReading.readabilityHandler = { h in buffers.append(out: h.availableData) }
+            err.fileHandleForReading.readabilityHandler = { h in buffers.append(err: h.availableData) }
             let timer = DispatchWorkItem { if process.isRunning { process.terminate() } }
             DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: timer)
             process.terminationHandler = { p in
                 timer.cancel()
                 out.fileHandleForReading.readabilityHandler = nil; err.fileHandleForReading.readabilityHandler = nil
-                lock.lock()
-                outData.append(out.fileHandleForReading.readDataToEndOfFile()); errData.append(err.fileHandleForReading.readDataToEndOfFile())
-                let result = ProcessResult(status: p.terminationStatus, output: String(decoding: outData, as: UTF8.self), error: String(decoding: errData, as: UTF8.self))
-                lock.unlock()
-                cont.resume(returning: result)
+                buffers.append(out: out.fileHandleForReading.readDataToEndOfFile()); buffers.append(err: err.fileHandleForReading.readDataToEndOfFile())
+                cont.resume(returning: buffers.result(status: p.terminationStatus))
             }
             do { try process.run() } catch { timer.cancel(); cont.resume(throwing: Failed(tool: (executable as NSString).lastPathComponent, reason: "couldn't start: \(error.localizedDescription)")) }
         }

@@ -113,4 +113,9 @@ public enum LibraryEdits {
     public static func setSkippedVersion(_ key: String, _ tag: String?, in doc: inout SyncDoc, now: Timestamp) -> Bool { edit(key, in: &doc, now: now) { $0.skippedVersion = tag } }
     /// The download the person prefers, as a pattern (nil: pick automatically).
     public static func setAssetPattern(_ key: String, _ pattern: String?, in doc: inout SyncDoc, now: Timestamp) -> Bool { edit(key, in: &doc, now: now) { $0.assetPattern = pattern } }
+    /// A name to show instead of the repository's (a blank name goes back to the repository's).
+    public static func setDisplayName(_ key: String, _ name: String?, in doc: inout SyncDoc, now: Timestamp) -> Bool {
+        let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return edit(key, in: &doc, now: now) { $0.displayName = (trimmed?.isEmpty ?? true) ? nil : trimmed }
+    }
 }

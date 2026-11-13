@@ -72,6 +72,7 @@ struct PageHost: View {
             case .discover: DiscoverPage()
             case .updates: UpdatesPage()
             case .scan: ScanPage()
+            case .importExport: ImportExportPage()
             case .activity: ActivityPage()
             case .settings: SettingsPage()
             default: ComingPage(page: page)

@@ -149,6 +149,60 @@ final class AddModel {
         }
     }
 
+    // MARK: importing a list
+
+    private(set) var importStatus = ""
+    private(set) var isImporting = false
+
+    /// Adds every project in `text` (links, owner/repo lines, or a ReleaseSync or Obtainium export) in one go.
+    func importList(_ text: String, group: String, installAfter: Bool) async {
+        guard !isImporting else { return }
+        guard !library.isDemo else { importStatus = "This is a demo, so nothing is imported."; return }
+        guard library.phase == .loaded else { importStatus = "Connect your library first (Settings)."; return }
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { importStatus = "Paste some GitHub links or choose a file first."; return }
+        let parsed = Importer.parse(text)
+        let known = Set(library.apps.map(\.key))
+        let fresh = parsed.entries.filter { !known.contains(SyncApp.makeKey(source: "github", owner: $0.owner, repo: $0.repo)) }
+        let already = parsed.entries.count - fresh.count
+        if fresh.isEmpty {
+            importStatus = parsed.entries.isEmpty ? "No GitHub links were found in that." : "All \(already) projects are already in your library."
+            return
+        }
+        isImporting = true
+        defer { isImporting = false }
+        let chosenGroup = group.trimmingCharacters(in: .whitespacesAndNewlines)
+        await withPermission { [self] in
+            importStatus = "Importing \(fresh.count)…"
+            let problem = await library.edit { doc, now in
+                var changed = false
+                for e in fresh {
+                    if LibraryEdits.addApp(source: "github", owner: e.owner, repo: e.repo, in: &doc, now: now) {
+                        changed = true
+                        let key = SyncApp.makeKey(source: "github", owner: e.owner, repo: e.repo)
+                        if let name = e.name, !name.isEmpty, name.caseInsensitiveCompare(e.repo) != .orderedSame { _ = LibraryEdits.setDisplayName(key, name, in: &doc, now: now) }
+                        if e.prereleases { _ = LibraryEdits.setIncludePrereleases(key, true, in: &doc, now: now) }
+                        let g = !chosenGroup.isEmpty ? chosenGroup : (e.group ?? "")
+                        if !g.trimmingCharacters(in: .whitespaces).isEmpty { _ = LibraryEdits.setGroup(key, g, in: &doc, now: now) }
+                    }
+                }
+                return changed
+            }
+            if let problem { importStatus = problem; toasts.show(problem, .error); return }
+            var parts = ["Imported \(fresh.count) project\(fresh.count == 1 ? "" : "s")"]
+            if already > 0 { parts.append("\(already) already in your library") }
+            if parsed.skipped > 0 { parts.append("\(parsed.skipped) skipped (not on GitHub)") }
+            importStatus = parts.joined(separator: "  ·  ")
+            log.add(importStatus, .success); toasts.show("Imported \(fresh.count) project\(fresh.count == 1 ? "" : "s")", .success)
+            await library.checkForUpdates(manual: false)
+            if installAfter {
+                for e in fresh {
+                    let key = SyncApp.makeKey(source: "github", owner: e.owner, repo: e.repo)
+                    if let app = library.apps.first(where: { $0.key == key }), let info = library.releases[key] { await self.install.install(app, info: info) }
+                }
+            }
+        }
+    }
+
     // MARK: asking before the first change
 
     private func withPermission(_ work: @escaping () async -> Void) async {

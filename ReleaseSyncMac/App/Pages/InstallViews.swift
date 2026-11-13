@@ -245,3 +245,86 @@ private struct ScanRow: View {
         }
     }
 }
+
+// MARK: Import & Export
+
+struct ImportExportPage: View {
+    @Environment(LibraryModel.self) private var model
+    @Environment(AddModel.self) private var add
+    @Environment(Toasts.self) private var toasts
+    @State private var text = ""
+    @State private var group = ""
+    @State private var installAfter = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                PageHeader(title: "Import & Export", subtitle: "Restore a backup, add a whole set of project links at once, or save your library.")
+                HStack(alignment: .top, spacing: 18) {
+                    importCard
+                    exportCard
+                }
+            }
+            .padding(.horizontal, Theme.pagePadding).padding(.top, 14).padding(.bottom, 32)
+        }
+    }
+
+    private var importCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Import apps").font(.h2).foregroundStyle(Theme.text)
+            Button { chooseFile() } label: { Label("Choose a backup or list (.json, .txt)", systemImage: "doc") }.buttonStyle(OutlineButtonStyle())
+            Text("OR PASTE LINKS").font(.label).foregroundStyle(Theme.faint)
+            TextEditor(text: $text).font(.system(size: 12.5, design: .monospaced)).scrollContentBackground(.hidden).frame(minHeight: 120, maxHeight: 200)
+                .padding(8).background(Theme.input, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
+            HStack {
+                Text("Put imported apps in").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
+                Spacer()
+                TextField("A group (or leave empty to keep theirs)", text: $group).textFieldStyle(.roundedBorder).frame(maxWidth: 260)
+            }
+            Toggle("Install everything after importing", isOn: $installAfter).toggleStyle(.switch)
+            HStack {
+                Button { Task { await add.importList(text, group: group, installAfter: installAfter); if add.importStatus.hasPrefix("Imported") { text = "" } } } label: {
+                    HStack(spacing: 8) { if add.isImporting { ProgressView().controlSize(.small) }; Text(add.isImporting ? "Importing…" : "Import") }
+                }.buttonStyle(PrimaryButtonStyle()).disabled(add.isImporting || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Text(add.importStatus).font(.dim).foregroundStyle(Theme.dim).fixedSize(horizontal: false, vertical: true)
+            }
+            Text("Tip: without a GitHub token, GitHub allows about 60 requests an hour. Add a token in Settings before importing big lists.").font(.faint).foregroundStyle(Theme.faint)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).card(padding: EdgeInsets(top: 20, leading: 22, bottom: 20, trailing: 22))
+    }
+
+    private var exportCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Export your library").font(.h2).foregroundStyle(Theme.text)
+            Text("Save a backup of everything you track, with groups and pre-release choices, or share a plain list of links.").font(.dim).foregroundStyle(Theme.dim).fixedSize(horizontal: false, vertical: true)
+            Button { save(name: "releasesync-library.json", type: "json", content: Importer.exportJSON(model.apps)) } label: { Label("Export as ReleaseSync backup (.json)", systemImage: "square.and.arrow.down") }
+                .buttonStyle(OutlineButtonStyle()).disabled(model.apps.isEmpty)
+            Button { save(name: "releasesync-links.txt", type: "txt", content: Importer.exportLinks(model.apps)) } label: { Label("Export as link list (.txt)", systemImage: "list.bullet") }
+                .buttonStyle(OutlineButtonStyle()).disabled(model.apps.isEmpty)
+            Button { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(Importer.exportLinks(model.apps), forType: .string); toasts.show("Copied \(model.apps.count) links", .success) } label: { Label("Copy all links", systemImage: "doc.on.doc") }
+                .buttonStyle(OutlineButtonStyle()).disabled(model.apps.isEmpty)
+            Text("WHAT CAN BE IMPORTED").font(.label).foregroundStyle(Theme.faint).padding(.top, 10)
+            ForEach(["ReleaseSync backups, from Windows or the Mac", "Obtainium exports", "Any text with GitHub links", "Plain owner/repo lines"], id: \.self) { Label($0, systemImage: "checkmark").font(.dim).foregroundStyle(Theme.dim) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).card(padding: EdgeInsets(top: 20, leading: 22, bottom: 20, trailing: 22))
+    }
+
+    private func chooseFile() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json, .plainText]
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let data = try? Data(contentsOf: url), data.count < 5_000_000, let s = String(data: data, encoding: .utf8) else { toasts.show("That file couldn't be read.", .error); return }
+        text = s
+    }
+
+    private func save(name: String, type: String, content: String) {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = name
+        panel.allowedContentTypes = [type == "json" ? .json : .plainText]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do { try Data(content.utf8).write(to: url, options: .atomic); toasts.show("Exported \(model.apps.count) apps", .success) }
+        catch { toasts.show("Export failed: \(error.localizedDescription)", .error) }
+    }
+}

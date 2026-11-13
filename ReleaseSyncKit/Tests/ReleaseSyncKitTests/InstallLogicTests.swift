@@ -124,3 +124,47 @@ final class AppMatcherTests: XCTestCase {
         XCTAssertNil(AppMatcher.match(ScannedApp(name: "", path: "/x"), library: library))
     }
 }
+
+final class ImporterTests: XCTestCase {
+    func names(_ r: Importer.Result) -> [String] { r.entries.map { "\($0.owner)/\($0.repo)" } }
+
+    func testLinksAndPlainLinesAreFoundOnceEach() {
+        let text = """
+        Some notes
+        https://github.com/rxhanson/Rectangle
+        git@github.com:iina/iina.git
+        rxhanson/rectangle
+        fake/tool
+        https://example.test/not/github
+        """
+        XCTAssertEqual(names(Importer.parse(text)), ["rxhanson/Rectangle", "iina/iina", "fake/tool"])
+    }
+
+    func testAReleaseSyncExportIsReadWithItsGroupsAndPrereleases() {
+        let json = #"{"format":"releasesync","version":1,"apps":[{"url":"https://github.com/a/b","name":"Bee","group":"Tools","includePrereleases":true},{"url":"https://gitlab.com/x/y"},{"name":"no url"},{"url":"https://github.com/a/b.git"}]}"#
+        let r = Importer.parse(json)
+        XCTAssertEqual(names(r), ["a/b"])
+        XCTAssertEqual(r.entries[0].name, "Bee"); XCTAssertEqual(r.entries[0].group, "Tools"); XCTAssertTrue(r.entries[0].prereleases)
+        XCTAssertEqual(r.skipped, 2, "the GitLab one and the one with no link")
+    }
+
+    func testAnObtainiumExportIsRead() {
+        let json = #"[{"url":"https://github.com/c/d","categories":["Media"],"additionalSettings":"{\"includePrereleases\":true}"}]"#
+        let r = Importer.parse(json)
+        XCTAssertEqual(r.entries.first?.group, "Media"); XCTAssertEqual(r.entries.first?.prereleases, true)
+    }
+
+    func testBrokenJsonFallsBackToTextScanning() {
+        XCTAssertEqual(names(Importer.parse("[ not json https://github.com/e/f")), ["e/f"])
+        XCTAssertTrue(Importer.parse("nothing useful here").entries.isEmpty)
+    }
+
+    func testWhatWeExportTheImporterReadsBack() {
+        var a = SyncApp(); a.owner = "fake"; a.repo = "one"; a.key = "github:fake/one"; a.group = "Tools"; a.includePrereleases = true; a.displayName = "One!"
+        var b = SyncApp(); b.owner = "fake"; b.repo = "two"; b.key = "github:fake/two"
+        let back = Importer.parse(Importer.exportJSON([a, b], exported: Timestamp(text: "2026-01-01T12:00:00Z")!))
+        XCTAssertEqual(names(back), ["fake/one", "fake/two"])
+        XCTAssertEqual(back.entries[0].name, "One!"); XCTAssertEqual(back.entries[0].group, "Tools"); XCTAssertTrue(back.entries[0].prereleases)
+        XCTAssertEqual(names(Importer.parse(Importer.exportLinks([a, b]))), ["fake/one", "fake/two"])
+    }
+}
