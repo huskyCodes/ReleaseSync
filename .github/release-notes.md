@@ -2,8 +2,9 @@
 
 **New in this version**
 
-- Installers that need their license accepted, like VeraCrypt's, no longer just fail. ReleaseSync shows you the project's license and asks first. If you accept, it installs and remembers your choice for future updates, and you can remove it in the app's details.
-- Automatic updates never accept a license for you.
+- Apps that ship as `.7z` archives can now be installed and updated.
+- When a project can't be found any more, for example after it moved to another site, it shows as Project not found, with a Change repository button to point ReleaseSync at its new home. Your installed version and settings carry over.
+- When Install or Update can't be clicked because a release has no usable file, the details now say why.
 
 Code signing: ReleaseSync is applying to use SignPath Foundation. See the [code signing policy](https://github.com/huskyCodes/ReleaseSync/blob/main/docs/CODE-SIGNING.md).
 
