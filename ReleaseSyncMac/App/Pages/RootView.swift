@@ -8,6 +8,7 @@ struct RootView: View {
     @Environment(Toasts.self) private var toasts
     @Environment(Navigator.self) private var nav
     @Environment(InstallModel.self) private var install
+    @Environment(AddModel.self) private var add
 
     var body: some View {
         NavigationSplitView {
@@ -46,6 +47,7 @@ struct RootView: View {
             await install.reconcile(releases: model.releases)
         }
         .installQuestions()
+        .sheet(isPresented: Binding(get: { add.isOpen }, set: { if !$0 { add.close() } })) { AddSheet() }
         .onChange(of: model.doc?.apps.map(\.key)) { _, keys in if let d = nav.drawerApp, keys?.contains(d.key) != true { nav.closeDrawer() } }
         .frame(minWidth: 820, minHeight: 520)
     }
@@ -154,6 +156,8 @@ private struct NavButton: View {
 struct TopBar: View {
     @Environment(LibraryModel.self) private var model
     @Environment(Toasts.self) private var toasts
+    @Environment(AddModel.self) private var add
+    @State private var text = ""
 
     private var buttonText: String {
         if model.isBusy { return "Syncing…" }
@@ -163,17 +167,19 @@ struct TopBar: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            // the search-and-add box: the Windows app finds projects on GitHub from here; that is coming to the Mac
+            // the search-and-add box: a link or owner/repo shows the project; anything else searches GitHub
             HStack(spacing: 0) {
                 Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(Theme.faint).frame(width: 46)
-                Text("Search GitHub, or paste a repository link to add it… (coming soon)").font(.system(size: 13)).foregroundStyle(Theme.faint).lineLimit(1)
-                Spacer(minLength: 0)
+                TextField("Search GitHub, or paste a repository link to add it…", text: $text)
+                    .textFieldStyle(.plain).font(.system(size: 13)).foregroundStyle(Theme.text)
+                    .onSubmit { let t = text; text = ""; Task { await add.open(t) } }
+                if !text.isEmpty { Button { text = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.faint) }.buttonStyle(.plain).padding(.trailing, 14) }
             }
             .frame(height: 44)
             .background(Theme.input, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
             .frame(maxWidth: 760)
-            .help("Searching GitHub and adding apps from the Mac is coming. It works in ReleaseSync on Windows.")
+            .help("Search GitHub, or paste a link or owner/repo and press Return")
 
             Spacer(minLength: 0)
 

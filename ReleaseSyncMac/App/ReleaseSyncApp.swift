@@ -8,6 +8,7 @@ struct ReleaseSyncApp: App {
     @State private var toasts: Toasts
     @State private var activity: ActivityLog
     @State private var install: InstallModel
+    @State private var add: AddModel
     @State private var nav = Navigator()
     @State private var discover: DiscoverModel
     @State private var lan: LanModel
@@ -52,6 +53,7 @@ struct ReleaseSyncApp: App {
         _toasts = State(initialValue: toasts)
         _activity = State(initialValue: activity)
         _install = State(initialValue: install)
+        _add = State(initialValue: AddModel(library: model, install: install, toasts: toasts, log: activity, allowChanges: { prefs.allowLibraryChanges = true }))
         _model = State(initialValue: model)
         _nav = State(initialValue: nav)
     }
@@ -59,7 +61,7 @@ struct ReleaseSyncApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environment(model).environment(prefs).environment(toasts).environment(nav).environment(discover).environment(lan).environment(activity).environment(install)
+                .environment(model).environment(prefs).environment(toasts).environment(nav).environment(discover).environment(lan).environment(activity).environment(install).environment(add)
                 .preferredColorScheme(prefs.appearance == .system ? nil : (prefs.appearance == .dark ? .dark : .light))
                 #if DEBUG
                 .task { await WindowSnapshot.takeIfAsked() }

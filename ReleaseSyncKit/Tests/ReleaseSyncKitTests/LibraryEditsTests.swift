@@ -88,4 +88,49 @@ final class LibraryEditsTests: XCTestCase {
         XCTAssertEqual(d.tombstones["later:" + item.key], at(5))
         XCTAssertTrue(merged(old: old, edited: d).tryLater.isEmpty)
     }
+
+    // MARK: adding and options
+
+    func testAddingAProjectLeavesTryLaterAndForgetsAnEarlierDeletion() {
+        var item = TryLaterItem(); item.owner = "fake"; item.repo = "new-one"; item.savedAt = t0
+        var d = doc([app("zzz")])
+        d.tryLater = [item]
+        d.tombstones["github:fake/new-one"] = at(1)
+        XCTAssertTrue(LibraryEdits.addApp(source: "github", owner: "fake", repo: "new-one", in: &d, now: at(5)))
+        XCTAssertEqual(d.apps.map(\.key), ["github:fake/new-one", "github:fake/zzz"], "kept in key order")
+        XCTAssertEqual(d.apps[0].addedAt, at(5)); XCTAssertEqual(d.apps[0].modifiedAt, at(5))
+        XCTAssertTrue(d.tryLater.isEmpty)
+        XCTAssertEqual(d.tombstones["later:" + item.key], at(5), "so other devices drop it from Try later too")
+        XCTAssertNil(d.tombstones["github:fake/new-one"])
+        XCTAssertFalse(LibraryEdits.addApp(source: "github", owner: "fake", repo: "new-one", in: &d, now: at(6)), "already there")
+        XCTAssertFalse(LibraryEdits.addApp(source: "github", owner: "", repo: "x", in: &d, now: at(6)))
+        // an old copy that still has the deletion does not remove the re-added app
+        var old = doc([]); old.tombstones["github:fake/new-one"] = at(1)
+        XCTAssertEqual(merged(old: old, edited: d).apps.map(\.repo), ["new-one", "zzz"])
+    }
+
+    func testSavingForLaterFillsInWhatIsKnown() {
+        var info = RepoInfo(); info.source = "github"; info.ownerLogin = "fake"; info.name = "cool"; info.description = "d"; info.stars = 42; info.language = "Rust"; info.topics = ["a"]
+        var d = doc([app("mine")])
+        XCTAssertTrue(LibraryEdits.saveForLater(info, in: &d, now: at(2)))
+        let t = d.tryLater[0]
+        XCTAssertEqual([t.owner, t.repo, t.platform, t.description, t.language], ["fake", "cool", "Mac", "d", "Rust"]); XCTAssertEqual(t.stars, 42); XCTAssertEqual(t.savedAt, at(2))
+        XCTAssertFalse(LibraryEdits.saveForLater(info, in: &d, now: at(3)), "already saved")
+        var inLibrary = RepoInfo(); inLibrary.ownerLogin = "fake"; inLibrary.name = "mine"
+        XCTAssertFalse(LibraryEdits.saveForLater(inLibrary, in: &d, now: at(3)), "already in the library")
+    }
+
+    func testOptionsAreEditsThatWinTheMerge() {
+        let old = doc([app("a")])
+        var d = old
+        XCTAssertTrue(LibraryEdits.setIgnoreUpdates("github:fake/a", true, in: &d, now: at(1)))
+        XCTAssertTrue(LibraryEdits.setIncludePrereleases("github:fake/a", true, in: &d, now: at(2)))
+        XCTAssertTrue(LibraryEdits.setTrustUnsigned("github:fake/a", true, in: &d, now: at(3)))
+        XCTAssertTrue(LibraryEdits.setSkippedVersion("github:fake/a", "v2.0", in: &d, now: at(4)))
+        XCTAssertTrue(LibraryEdits.setAssetPattern("github:fake/a", #"\.dmg$"#, in: &d, now: at(5)))
+        let m = merged(old: old, edited: d).apps[0]
+        XCTAssertEqual([m.ignoreUpdates, m.includePrereleases, m.trustUnsigned], [true, true, true]); XCTAssertEqual(m.skippedVersion, "v2.0"); XCTAssertEqual(m.assetPattern, #"\.dmg$"#)
+        XCTAssertFalse(LibraryEdits.setSkippedVersion("github:fake/a", "v2.0", in: &d, now: at(6)))
+        XCTAssertTrue(LibraryEdits.setSkippedVersion("github:fake/a", nil, in: &d, now: at(7)))
+    }
 }

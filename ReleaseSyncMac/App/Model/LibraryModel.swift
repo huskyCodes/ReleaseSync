@@ -44,8 +44,9 @@ final class LibraryModel {
     let meter: RateMeter
     private(set) var lastCheck: Date?
     private let client: SourceClient
-    /// The client the model talks to GitHub with (tests look at it).
+    /// The client the model talks to GitHub with (tests look at it; adding a project uses it too).
     func releasesClientForTests() -> SourceClient { client }
+    var sourceClient: SourceClient { client }
     private let releaseStore: ReleaseStore
     private var cacheLoaded = false
 

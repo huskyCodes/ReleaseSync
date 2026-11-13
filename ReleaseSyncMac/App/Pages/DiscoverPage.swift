@@ -199,6 +199,7 @@ struct RateBadge: View {
 
 struct DiscoverCard: View {
     @Environment(LibraryModel.self) private var model
+    @Environment(AddModel.self) private var add
     let item: DiscoverItem
     let showRank: Bool
 
@@ -239,6 +240,12 @@ struct DiscoverCard: View {
                 else if item.hasMacBuild == false { Pill(text: "No Mac download", kind: .warn) }
                 if inLibrary { Pill(text: "In your library", kind: .accent) } else if saved { Pill(text: "Saved for later", kind: .accent) }
                 Spacer(minLength: 0)
+                if !inLibrary {
+                    if !saved {
+                        Button { Task { await add.saveForLater(repo) } } label: { Image(systemName: "bookmark") }.buttonStyle(OutlineButtonStyle(height: 28)).help("Save to Try later")
+                    }
+                    Button("Add") { Task { await add.open(repo: repo) } }.buttonStyle(PrimaryButtonStyle(height: 28)).help("Look at what it offers and add it to your library")
+                }
             }
             .frame(minHeight: 26).padding(.top, 10)
         }
