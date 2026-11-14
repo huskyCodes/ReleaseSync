@@ -133,6 +133,50 @@ public sealed class SourceClient
         };
     }
 
+    /// <summary>
+    /// The project's source code as if it were a release: the newest commit on its main branch, with the code as one .zip to download. Its version reads like
+    /// main@5397c0a, and its date is the commit's, so a newer commit shows as an update.
+    /// </summary>
+    public async Task<ReleaseResult> GetSourceAsync(string source, string owner, string repo, CancellationToken ct = default)
+    {
+        var (kind, host) = Split(source);
+        var info = await GetRepoAsync(source, owner, repo, ct);
+        string branch, sha, message, archive; DateTime? date;
+        if (kind == "gitlab")
+        {
+            var id = Uri.EscapeDataString(owner + "/" + repo);
+            using (var p = await GetJsonAsync($"https://{host}/api/v4/projects/{id}", $"{owner}/{repo}", ct)) branch = S(p.RootElement, "default_branch") ?? "main";
+            using var c = await GetJsonAsync($"https://{host}/api/v4/projects/{id}/repository/commits/{Uri.EscapeDataString(branch)}", $"{owner}/{repo}", ct);
+            sha = S(c.RootElement, "id") ?? ""; message = S(c.RootElement, "message") ?? ""; date = D(c.RootElement, "committed_date");
+            archive = $"https://{host}/{owner}/{repo}/-/archive/{sha}/{repo}-{sha}.zip";
+        }
+        else if (kind == "forgejo")
+        {
+            branch = info.DefaultBranch ?? "main";
+            using var c = await GetJsonAsync($"https://{host}/api/v1/repos/{owner}/{repo}/commits?sha={Uri.EscapeDataString(branch)}&limit=1&stat=false", $"{owner}/{repo}", ct);
+            var e = c.RootElement.EnumerateArray().FirstOrDefault();
+            if (e.ValueKind != JsonValueKind.Object) throw new GitHubException($"{owner}/{repo} has no source code yet.");
+            var commit = e.GetProperty("commit");
+            sha = S(e, "sha") ?? ""; message = S(commit, "message") ?? ""; date = commit.TryGetProperty("committer", out var who) ? D(who, "date") : null;
+            archive = $"https://{host}/{owner}/{repo}/archive/{sha}.zip";
+        }
+        else
+        {
+            branch = info.DefaultBranch ?? "main";
+            (sha, date, message) = await gh.GetHeadAsync(owner, repo, branch, ct);
+            archive = $"https://github.com/{owner}/{repo}/archive/{sha}.zip";
+        }
+        if (sha.Length < 7) throw new GitHubException($"{owner}/{repo} has no source code yet.");
+        var shortSha = sha[..7];
+        var rel = new ReleaseInfo
+        {
+            Tag = $"{branch}@{shortSha}", Name = $"Source code, {branch} branch", Body = message, PublishedAt = date,
+            HtmlUrl = $"{RepoRef.UrlFor(source, owner, repo)}/{(kind == "gitlab" ? "-/commit" : "commit")}/{sha}",
+            Assets = new List<AssetDto> { new() { Name = $"{repo}-{branch}-{shortSha}.zip", Url = archive } },
+        };
+        return new ReleaseResult { Releases = new List<ReleaseInfo> { rel } };
+    }
+
     // ---------------- helpers ----------------
     async Task<JsonDocument> GetJsonAsync(string url, string what, CancellationToken ct)
     {
@@ -204,7 +248,7 @@ public sealed class SourceClient
         {
             FullName = S(e, "full_name") ?? $"{owner}/{repo}", Name = S(e, "name") ?? repo, Description = S(e, "description"), Stars = I(e, "stars_count"), Forks = I(e, "forks_count"),
             OpenIssues = I(e, "open_issues_count"), Watchers = I(e, "watchers_count"), HtmlUrl = S(e, "html_url"), Homepage = S(e, "website"), Archived = B(e, "archived"), Fork = B(e, "fork"),
-            Language = S(e, "language"), CreatedAt = D(e, "created_at"), PushedAt = D(e, "updated_at"),
+            Language = S(e, "language"), CreatedAt = D(e, "created_at"), PushedAt = D(e, "updated_at"), DefaultBranch = S(e, "default_branch"),
             OwnerInfo = new OwnerDto { Login = o.ValueKind == JsonValueKind.Object ? S(o, "login") ?? owner : owner, AvatarUrl = (o.ValueKind == JsonValueKind.Object ? S(o, "avatar_url") : null) ?? S(e, "avatar_url") },
         };
     }

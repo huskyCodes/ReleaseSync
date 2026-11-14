@@ -474,6 +474,7 @@ public sealed partial class MainViewModel : Observable
     public ICommand LocationCommand { get; private set; } = null!;
     public ICommand MoveCommand { get; private set; } = null!;
     public ICommand MarkInstalledCommand { get; private set; } = null!;
+    public ICommand FollowSourceCommand { get; private set; } = null!;
     public ICommand ReinstallCommand { get; private set; } = null!;
     public ICommand UninstallCommand { get; private set; } = null!;
     public ICommand InstallPickedCommand { get; private set; } = null!;
@@ -538,9 +539,28 @@ public sealed partial class MainViewModel : Observable
         OpenCommand = new RelayCommand(p => { if (p is TrackedApp a) SelectedApp = a; });
         CloseDrawerCommand = new RelayCommand(() => SelectedApp = null);
         RemoveCommand = new RelayCommand(p => { if (p is TrackedApp a) AskRemove(a); });
-        LaunchCommand = new RelayCommand(p => { if (p is TrackedApp a && a.CanLaunch) Shell.Open(a.InstallPath); });
+        LaunchCommand = new RelayCommand(p =>
+        {
+            if (p is not TrackedApp a || !a.CanLaunch) return;
+            if (!a.TrackSource) { Shell.Open(a.InstallPath); return; }
+            var folder = !string.IsNullOrEmpty(a.InstallPath) ? Path.GetDirectoryName(a.InstallPath) : InstallService.PortableTarget(a);
+            if (folder != null && Directory.Exists(folder)) Shell.Open(folder);
+            else Toast($"{a.Title}'s folder isn't there any more. Update source to download it again.", "info");
+        });
         LocationCommand = new RelayCommand(async p => { if (p is TrackedApp a) await ShowLocationAsync(a); });
         MoveCommand = new RelayCommand(async p => { if (p is TrackedApp a) await MoveAppAsync(a); });
+        // switch between a project's releases and its source code; what's installed stays installed, and the next check shows whether there's anything newer
+        FollowSourceCommand = new RelayCommand(async p =>
+        {
+            if (p is not TrackedApp a || a.IsBusy) return;
+            a.TrackSource = !a.TrackSource;
+            a.ETag = null; a.LastError = null; a.LatestVersion = null; a.LatestNotes = null; a.LatestName = null; a.LatestPublished = null; a.Assets = new(); a.Releases = new(); a.SkippedVersion = null; a.AssetPattern = null;
+            AddLog($"{a.Title} now follows its {(a.TrackSource ? "source code" : "releases")}", "info");
+            await CheckAppAsync(a, true);
+            if (a == DrawerApp) DrawerPicker = new ReleasePickerVM(a, true);
+            a.NotifyAll(); RefreshViews(); ScheduleSaveApps();
+            Toast(a.HasError ? $"{a.Title}: {a.LastError}" : a.TrackSource ? $"{a.Title} now follows its source code: {a.LatestVersion}" : $"{a.Title} now follows its releases", a.HasError ? "error" : "success");
+        });
         MarkInstalledCommand = new RelayCommand(p =>
         {
             if (p is TrackedApp a && a.HasRelease) { a.InstalledVersion = a.LatestVersion; ScheduleSaveApps(); Toast($"{a.Title} marked as installed ({a.LatestVersion})", "success"); AddLog($"Marked {a.FullName} as installed at {a.LatestVersion}", "info"); }
@@ -764,7 +784,7 @@ public sealed partial class MainViewModel : Observable
                      nameof(NoLibraryMatches), nameof(NoUpdates), nameof(Subtitle), nameof(EmptyGroups), nameof(LastCheckText) }) Raise(n);
     }
 
-    static string PrefSig(TrackedApp a) => string.Join("|", a.Group, a.Pinned, a.Hidden, a.IncludePrereleases, a.IgnoreUpdates, a.AutoUpdate, a.Mode, a.CustomArgs, a.DisplayName, a.Note, a.Tags, a.SkippedVersion, a.AssetPattern, a.TrustUnsigned);
+    static string PrefSig(TrackedApp a) => string.Join("|", a.Group, a.Pinned, a.Hidden, a.IncludePrereleases, a.IgnoreUpdates, a.AutoUpdate, a.Mode, a.CustomArgs, a.TrackSource, a.DisplayName, a.Note, a.Tags, a.SkippedVersion, a.AssetPattern, a.TrustUnsigned);
 
     void AppChanged(object? s, PropertyChangedEventArgs e)
     {
@@ -956,7 +976,7 @@ public sealed partial class MainViewModel : Observable
         var rel = SelectRelease(rels, app.IncludePrereleases);
         if (rel == null)
         {
-            app.LastError = rels.Count > 0 ? "No stable releases yet. Turn on pre-releases to track the newest build." : "No releases have been published for this repository.";
+            app.LastError = rels.Count > 0 ? "No stable releases yet. Turn on pre-releases to track the newest build." : "No releases have been published for this repository. You can follow its source code instead.";
             return;
         }
         app.LatestVersion = rel.Tag;
@@ -1305,7 +1325,7 @@ public sealed partial class MainViewModel : Observable
                 catch (GitHubException) { app.MetaFetched = true; }
             }
             var etag = force || !app.HasRelease ? null : app.ETag;
-            var res = await Sources.GetReleasesAsync(app.Source, app.Owner, app.Repo, etag);
+            var res = app.TrackSource ? await Sources.GetSourceAsync(app.Source, app.Owner, app.Repo) : await Sources.GetReleasesAsync(app.Source, app.Owner, app.Repo, etag);
             if (!res.NotModified) { app.ETag = res.ETag; ApplyRelease(app, res.Releases); }
             else if (app.Releases.Count == 0 && app.HasRelease) { var again = await Sources.GetReleasesAsync(app.Source, app.Owner, app.Repo, null); app.ETag = again.ETag; ApplyRelease(app, again.Releases); }   // older saved library: fetch the history once
             // an app can update itself without ReleaseSync, so a version the PC shows is recorded instead of offering it again
@@ -1675,7 +1695,7 @@ public sealed partial class MainViewModel : Observable
     {
         var path = await Task.Run(() => FindLocation(app));
         if (path == null) { Toast($"Couldn't find where {app.Title} is installed", "info"); return; }
-        if (File.Exists(path) && string.IsNullOrEmpty(app.InstallPath)) { app.InstallPath = path; ScheduleSaveApps(); }      // now Launch works for it too
+        if (File.Exists(path) && string.IsNullOrEmpty(app.InstallPath) && !app.TrackSource) { app.InstallPath = path; ScheduleSaveApps(); }      // now Launch works for it too (source code has no program to adopt)
         AddLog($"{app.Title} is in {path}", "info");
         Shell.Reveal(path);
     }

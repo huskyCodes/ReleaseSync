@@ -18,6 +18,7 @@ public sealed class SyncApp
     public bool AutoUpdate { get; set; }
     public InstallMode Mode { get; set; }
     public string? CustomArgs { get; set; }
+    public bool TrackSource { get; set; }
     public string? DisplayName { get; set; }
     public string? Note { get; set; }
     public string? Tags { get; set; }

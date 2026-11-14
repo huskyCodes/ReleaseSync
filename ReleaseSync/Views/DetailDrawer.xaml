@@ -64,15 +64,23 @@
                             Visibility="{Binding HasUpdate, Converter={StaticResource BoolVis}}" Command="{Binding SkipCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                     <Button Height="40" Padding="18,0" Margin="0,0,8,8" Content="Stop skipping" Visibility="{Binding IsSkipped, Converter={StaticResource BoolVis}}"
                             Command="{Binding SkipCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
-                    <Button Height="40" Padding="18,0" Margin="0,0,8,8" Content="Reinstall" Visibility="{Binding CanReinstall, Converter={StaticResource BoolVis}}"
+                    <Button Height="40" Padding="18,0" Margin="0,0,8,8" Content="{Binding ReinstallText}" Visibility="{Binding CanReinstall, Converter={StaticResource BoolVis}}"
                             Command="{Binding ReinstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
-                    <Button Height="40" Padding="18,0" Margin="0,0,8,8" Content="Launch" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}"
+                    <Button Height="40" Padding="18,0" Margin="0,0,8,8" Content="{Binding LaunchText}" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}"
                             Command="{Binding LaunchCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                     <Button Height="40" Padding="18,0" Margin="0,0,8,8" Style="{StaticResource OutlineButton}" ToolTip="Check this app for updates"
                             Command="{Binding CheckCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}">
                         <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource Icon}" Text="&#xE72C;" FontSize="13" Margin="0,0,8,0"/><TextBlock Text="Check now"/></StackPanel>
                     </Button>
                 </WrapPanel>
+
+                <!-- source code, not a release: say plainly what that means -->
+                <Border Background="{DynamicResource CardBrush}" CornerRadius="10" Padding="14,11" Margin="0,0,0,18" Visibility="{Binding TrackSource, Converter={StaticResource BoolVis}}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Left" Style="{StaticResource Icon}" Text="&#xE943;" FontSize="14" Margin="0,2,12,0" VerticalAlignment="Top"/>
+                        <TextBlock Text="{Binding SourceNoteText}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource DimBrush}" LineHeight="19"/>
+                    </DockPanel>
+                </Border>
 
                 <!-- a guessed link needs confirming -->
                 <Border Background="{DynamicResource WarnSoftBrush}" CornerRadius="10" Padding="14,12" Margin="0,0,0,18" Visibility="{Binding NeedsLinkConfirm, Converter={StaticResource BoolVis}}">
@@ -98,6 +106,9 @@
                         <!-- a project that moved: the fix is one click away -->
                         <Button Content="Change repository…" Height="32" Padding="14,0" Margin="26,10,0,0" HorizontalAlignment="Left" Visibility="{Binding RepoMissing, Converter={StaticResource BoolVis}}"
                                 Command="{Binding RelinkCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                        <!-- no releases at all: the source code can still be followed -->
+                        <Button Content="Follow source code instead" Height="32" Padding="14,0" Margin="26,10,0,0" HorizontalAlignment="Left" Visibility="{Binding CanFollowSource, Converter={StaticResource BoolVis}}"
+                                Command="{Binding FollowSourceCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                     </StackPanel>
                 </Border>
                 <!-- a release with no file ReleaseSync can use, which is why Install or Update can't be clicked -->
@@ -113,9 +124,9 @@
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <TextBlock Text="Installed" Style="{StaticResource KeyLabel}" Margin="0,9"/>
                         <TextBlock Grid.Column="1" Text="{Binding InstalledText}" Style="{StaticResource KeyValue}"/>
-                        <TextBlock Grid.Row="1" Text="Latest release" Style="{StaticResource KeyLabel}" Margin="0,9"/>
+                        <TextBlock Grid.Row="1" Text="{Binding LatestLabel}" Style="{StaticResource KeyLabel}" Margin="0,9"/>
                         <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestText}" Style="{StaticResource KeyValue}"/>
-                        <TextBlock Grid.Row="2" Text="Released" Style="{StaticResource KeyLabel}" Margin="0,9"/>
+                        <TextBlock Grid.Row="2" Text="{Binding ReleasedLabel}" Style="{StaticResource KeyLabel}" Margin="0,9"/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding PublishedText}" Style="{StaticResource KeyValue}"/>
                         <TextBlock Grid.Row="3" Text="Last checked" Style="{StaticResource KeyLabel}" Margin="0,9"/>
                         <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LastCheckedText}" Style="{StaticResource KeyValue}"/>
@@ -130,7 +141,7 @@
                 <!-- notes (every release since your version when you're behind) -->
                 <Grid Margin="0,0,0,8">
                     <TextBlock Text="{Binding NotesHeader}" Style="{StaticResource Label}" VerticalAlignment="Center"/>
-                    <Button Style="{StaticResource LinkButton}" HorizontalAlignment="Right" FontSize="12" Content="Full release page" Command="{Binding ReleasesCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Style="{StaticResource LinkButton}" HorizontalAlignment="Right" FontSize="12" Content="{Binding ReleasePageText}" Command="{Binding ReleasesCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                 </Grid>
                 <Border Style="{StaticResource Card}" Padding="16,14" Margin="0,0,0,22" Background="{DynamicResource CardBrush}">
                     <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
@@ -243,6 +254,7 @@
                 <!-- danger -->
                 <StackPanel Margin="0,30,0,0">
                     <Button Content="Mark as installed (current version)" Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Command="{Binding MarkInstalledCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
+                    <Button Content="{Binding TrackSourceText}" Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Command="{Binding FollowSourceCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                     <Button Content="Wrong project? Change repository…" Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Command="{Binding RelinkCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                     <Button Content="Find a better match" Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Command="{Binding FindBetterCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                     <Button Content="Show installed files" Height="38" Margin="0,0,0,8" HorizontalContentAlignment="Left" Padding="16,0" Visibility="{Binding InstallPath, Converter={StaticResource NullVis}}"

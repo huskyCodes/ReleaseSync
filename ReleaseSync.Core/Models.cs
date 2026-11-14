@@ -141,6 +141,11 @@ public class TrackedApp : Observable
     string? _args; public string? CustomArgs { get => _args; set => SetAll(ref _args, value); }
     /// <summary>The project's page answered "not found": it may have moved or been removed, and the user can point ReleaseSync at its new home.</summary>
     bool _missing; public bool RepoMissing { get => _missing; set => SetAll(ref _missing, value); }
+    /// <summary>Follows the project's source code (its newest commit) instead of its releases, for projects that don't publish any.</summary>
+    bool _source; public bool TrackSource { get => _source; set => SetAll(ref _source, value); }
+    [JsonIgnore] public string TrackSourceText => TrackSource ? "Follow releases instead of source code" : "Follow source code instead of releases";
+    /// <summary>A project with no releases at all, which could still be followed through its source code.</summary>
+    [JsonIgnore] public bool CanFollowSource => !TrackSource && !HasRelease && HasError && LastError!.StartsWith("No releases", StringComparison.Ordinal);
     string? _path; public string? InstallPath { get => _path; set => SetAll(ref _path, value); }
     DateTime? _checked; public DateTime? LastChecked { get => _checked; set => SetAll(ref _checked, value); }
     string? _error; public string? LastError { get => _error; set => SetAll(ref _error, value); }
@@ -215,8 +220,20 @@ public class TrackedApp : Observable
     [JsonIgnore] public bool CanInstall => ChosenAsset != null && !IsBusy;
     [JsonIgnore] public bool CanReinstall => IsInstalled && !HasUpdate && !IsBusy && ChosenAsset != null;
     [JsonIgnore] public bool ShowAction => !IsBusy && (HasUpdate || !IsInstalled);
-    [JsonIgnore] public bool CanLaunch => !IsBusy && !string.IsNullOrEmpty(InstallPath) && File.Exists(InstallPath);
-    [JsonIgnore] public string ActionText => IsInstalled ? "Update" : "Install";
+    // source code has no program to run, so its "launch" opens the folder instead, and every label says it's source code
+    [JsonIgnore] public bool CanLaunch => !IsBusy && (TrackSource ? IsInstalled : !string.IsNullOrEmpty(InstallPath) && File.Exists(InstallPath));
+    [JsonIgnore] public string LaunchText => TrackSource ? "Open folder" : "Launch";
+    [JsonIgnore] public string ReinstallText => TrackSource ? "Download source again" : "Reinstall";
+    [JsonIgnore] public string LatestLabel => TrackSource ? "Latest commit" : "Latest release";
+    [JsonIgnore] public string ReleasedLabel => TrackSource ? "Committed" : "Released";
+    [JsonIgnore] public string ReleasePageText => TrackSource ? "View this commit" : "Full release page";
+    [JsonIgnore] public string PublishedLine => $"{ReleasedLabel} {PublishedText}";
+    [JsonIgnore] public string LaunchGlyph => TrackSource ? "" : "";
+    [JsonIgnore] public string ActionText => TrackSource ? (IsInstalled ? "Update source" : "Download source") : IsInstalled ? "Update" : "Install";
+    [JsonIgnore] public string SourceNoteText =>
+        $"This follows the project's source code on its {(LatestVersion?.Split('@')[0] is { Length: > 0 } branch ? branch : "main")} branch, not a release. Each update downloads the code exactly as published into "
+        + (HasCustomInstallDir ? CustomInstallDir : "its folder in ReleaseSync's apps folder")
+        + ". There's no program to launch and nothing is built for you, so Open folder shows the files. Your own files in that folder are kept.";
     [JsonIgnore] public string ActionGlyph => IsInstalled ? "" : "";
     [JsonIgnore] public string ChosenAssetText => ChosenAsset?.Name ?? "No compatible Windows file found";
     /// <summary>A release exists but none of its files is one ReleaseSync can install, which is why Install or Update can't be clicked.</summary>
@@ -271,9 +288,9 @@ public class TrackedApp : Observable
     {
         "Busy" => string.IsNullOrEmpty(BusyText) ? "Working…" : BusyText,
         "Error" => RepoMissing ? "Project not found" : LastError != null && LastError.StartsWith("No ") ? "No releases" : "Check failed",
-        "Update" => "Update available",
+        "Update" => TrackSource ? "New source code" : "Update available",
         "Ignored" => IsSkipped ? $"Skipped {LatestVersion}" : "Update ignored",
-        "UpToDate" => "Up to date",
+        "UpToDate" => TrackSource ? "Latest source" : "Up to date",
         "NotInstalled" => "Not installed",
         _ => "Not checked yet"
     };
@@ -482,6 +499,7 @@ public class RepoInfo : Observable
     [JsonPropertyName("homepage")] public string? Homepage { get; set; }
     [JsonPropertyName("created_at")] public DateTime? CreatedAt { get; set; }
     [JsonPropertyName("pushed_at")] public DateTime? PushedAt { get; set; }
+    [JsonPropertyName("default_branch")] public string? DefaultBranch { get; set; }
 
     [JsonIgnore] public string ForksText => Fmt.Count(Forks);
     [JsonIgnore] public string IssuesText => Fmt.Count(OpenIssues);

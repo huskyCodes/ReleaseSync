@@ -323,6 +323,18 @@ public sealed class GitHubService
         return text.Length > 40000 ? text[..40000] : text;
     }
 
+    /// <summary>The newest commit on a branch: its id, when it was made, and its message.</summary>
+    public async Task<(string Sha, DateTime? Date, string Message)> GetHeadAsync(string owner, string repo, string branch, CancellationToken ct = default)
+    {
+        using var r = await SendAsync($"https://api.github.com/repos/{owner}/{repo}/commits/{Uri.EscapeDataString(branch)}", null, null, ct);
+        if (!r.IsSuccessStatusCode) throw Failure(r, $"{owner}/{repo}");
+        using var doc = await JsonDocument.ParseAsync(await r.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+        var e = doc.RootElement;
+        var commit = e.GetProperty("commit");
+        DateTime? date = commit.TryGetProperty("committer", out var c) && c.TryGetProperty("date", out var d) && d.TryGetDateTime(out var when) ? when : null;
+        return (e.GetProperty("sha").GetString() ?? "", date, commit.TryGetProperty("message", out var m) ? m.GetString() ?? "" : "");
+    }
+
     /// <summary>The repository's license as plain text, or null if it has none.</summary>
     public async Task<string?> GetLicenseAsync(string owner, string repo, CancellationToken ct = default)
     {

@@ -19,7 +19,7 @@
             <MenuItem Header="{Binding ActionText}" Command="{Binding InstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding ShowAction, Converter={StaticResource BoolVis}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE896;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Launch" Command="{Binding LaunchCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}">
+            <MenuItem Header="{Binding LaunchText}" Command="{Binding LaunchCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}">
                 <MenuItem.Icon><TextBlock Style="{StaticResource Icon}" Text="&#xE768;" FontSize="14"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="See file location" Command="{Binding LocationCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Visibility="{Binding IsInstalled, Converter={StaticResource BoolVis}}">
@@ -147,11 +147,11 @@
                                     <TextBlock Text="{Binding ActionText}"/>
                                 </StackPanel>
                             </Button>
-                            <Button Style="{StaticResource BaseButton}" Padding="12,0" Height="{DynamicResource BtnHeight}" MinHeight="0" Content="Launch" Margin="8,0,0,0" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}"
+                            <Button Style="{StaticResource BaseButton}" Padding="12,0" Height="{DynamicResource BtnHeight}" MinHeight="0" Content="{Binding LaunchText}" Margin="8,0,0,0" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}"
                                     Command="{Binding LaunchCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
-                            <TextBlock VerticalAlignment="Center" Style="{StaticResource Faint}" Text="{Binding PublishedText, StringFormat='Released {0}'}"
+                            <TextBlock VerticalAlignment="Center" Style="{StaticResource Faint}" Text="{Binding PublishedLine}"
                                        Visibility="{Binding ShowAction, Converter={StaticResource BoolVis}}" Margin="12,0,0,0"/>
-                            <TextBlock VerticalAlignment="Center" Style="{StaticResource Faint}" Text="{Binding PublishedText, StringFormat='Released {0}'}"
+                            <TextBlock VerticalAlignment="Center" Style="{StaticResource Faint}" Text="{Binding PublishedLine}"
                                        Visibility="{Binding ShowAction, Converter={StaticResource InvBoolVis}}" Margin="2,0,0,0"/>
                         </StackPanel>
                     </Grid>
@@ -195,7 +195,7 @@
                         </StackPanel>
                         <Button Style="{StaticResource PrimaryButton}" Padding="14,0" Height="{DynamicResource BtnHeight}" MinHeight="0" Visibility="{Binding ShowAction, Converter={StaticResource BoolVis}}" IsEnabled="{Binding CanInstall}"
                                 Command="{Binding InstallCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}" Content="{Binding ActionText}"/>
-                        <Button Style="{StaticResource SmallIconButton}" Content="&#xE768;" ToolTip="Launch" Margin="6,0,0,0" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}"
+                        <Button Style="{StaticResource SmallIconButton}" Content="{Binding LaunchGlyph}" ToolTip="{Binding LaunchText}" Margin="6,0,0,0" Visibility="{Binding CanLaunch, Converter={StaticResource BoolVis}}"
                                 Command="{Binding LaunchCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                         <Button Style="{StaticResource StarButton}" Margin="6,0,0,0" Command="{Binding PinCommand, Source={x:Static app:App.VM}}" CommandParameter="{Binding}"/>
                         <Button Style="{StaticResource SmallIconButton}" Content="&#xE712;" Margin="2,0,0,0" Click="More_Click" ToolTip="More actions"/>

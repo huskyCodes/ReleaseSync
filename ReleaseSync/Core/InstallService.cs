@@ -319,7 +319,8 @@ public sealed class InstallService
                     Directory.Move(root, target);
                 }
                 InstallManifest.Save(app.Id, target, shipped);
-                var exe = FindMainExe(target, app.Repo);
+                // source code isn't a program: a tool exe inside it must never be taken for the app and launched
+                var exe = app.TrackSource ? null : FindMainExe(target, app.Repo);
                 app.InstallPath = exe;
                 if (exe != null && s.CreateShortcuts) CreateShortcut(app, exe);
             }

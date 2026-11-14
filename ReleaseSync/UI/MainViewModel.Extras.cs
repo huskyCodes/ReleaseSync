@@ -555,7 +555,7 @@ public sealed partial class MainViewModel
     static void ApplyPrefs(TrackedApp a, SyncApp d)
     {
         a.Group = d.Group; a.Pinned = d.Pinned; a.Hidden = d.Hidden; a.IncludePrereleases = d.IncludePrereleases; a.IgnoreUpdates = d.IgnoreUpdates; a.AutoUpdate = d.AutoUpdate;
-        a.Mode = d.Mode; a.CustomArgs = d.CustomArgs; a.DisplayName = d.DisplayName; a.Note = d.Note; a.Tags = d.Tags; a.SkippedVersion = d.SkippedVersion;
+        a.Mode = d.Mode; a.CustomArgs = d.CustomArgs; a.TrackSource = d.TrackSource; a.DisplayName = d.DisplayName; a.Note = d.Note; a.Tags = d.Tags; a.SkippedVersion = d.SkippedVersion;
         a.AssetPattern = d.AssetPattern; a.TrustUnsigned = d.TrustUnsigned;
     }
 
@@ -615,7 +615,7 @@ public sealed partial class MainViewModel
         Apps = Apps.Select(a => new SyncApp
         {
             Key = a.Key, Source = a.Source, Owner = a.Owner, Repo = a.Repo, Group = a.Group, Pinned = a.Pinned, Hidden = a.Hidden, IncludePrereleases = a.IncludePrereleases,
-            IgnoreUpdates = a.IgnoreUpdates, AutoUpdate = a.AutoUpdate, Mode = a.Mode, CustomArgs = a.CustomArgs, DisplayName = a.DisplayName, Note = a.Note, Tags = a.Tags,
+            IgnoreUpdates = a.IgnoreUpdates, AutoUpdate = a.AutoUpdate, Mode = a.Mode, CustomArgs = a.CustomArgs, TrackSource = a.TrackSource, DisplayName = a.DisplayName, Note = a.Note, Tags = a.Tags,
             SkippedVersion = a.SkippedVersion, AssetPattern = a.AssetPattern, TrustUnsigned = a.TrustUnsigned, AddedAt = a.AddedAt, ModifiedAt = a.ModifiedAt,
         }).ToList(),
     };
